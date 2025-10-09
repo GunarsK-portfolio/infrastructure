@@ -68,17 +68,18 @@ All repositories under organization: **GunarsK-portfolio**
 - **UI Framework**: Tailwind CSS + DaisyUI
 
 ### Backend
-- **Language**: Go 1.21+
+- **Language**: Go 1.25+
 - **Web Framework**: Gin
 - **ORM**: GORM
 - **Auth**: JWT tokens (golang-jwt/jwt)
 - **API Docs**: Swagger (swaggo/swag)
 - **Database Driver**: pgx
+- **Task Runner**: Task (Taskfile)
 
 ### Data Layer
-- **Database**: PostgreSQL 15+
-- **Migration Tool**: Flyway
-- **Cache**: Redis 7+
+- **Database**: PostgreSQL 18+
+- **Migration Tool**: Flyway (timestamp-based migrations)
+- **Cache**: Redis 7.4+
 - **Object Storage**: MinIO (local) / AWS S3 (production)
 
 ### Infrastructure
@@ -105,7 +106,7 @@ All repositories under organization: **GunarsK-portfolio**
 ### User
 ```sql
 CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id BIGSERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
@@ -117,7 +118,7 @@ CREATE TABLE users (
 ### Profile
 ```sql
 CREATE TABLE profile (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id BIGSERIAL PRIMARY KEY,
     full_name VARCHAR(100) NOT NULL,
     title VARCHAR(100),
     bio TEXT,
@@ -133,7 +134,7 @@ CREATE TABLE profile (
 ### Work Experience
 ```sql
 CREATE TABLE work_experience (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id BIGSERIAL PRIMARY KEY,
     company VARCHAR(100) NOT NULL,
     position VARCHAR(100) NOT NULL,
     description TEXT,
@@ -149,7 +150,7 @@ CREATE TABLE work_experience (
 ### Certifications
 ```sql
 CREATE TABLE certifications (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id BIGSERIAL PRIMARY KEY,
     name VARCHAR(200) NOT NULL,
     issuer VARCHAR(100) NOT NULL,
     issue_date DATE NOT NULL,
@@ -165,7 +166,7 @@ CREATE TABLE certifications (
 ### Miniature Projects
 ```sql
 CREATE TABLE miniature_projects (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id BIGSERIAL PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
     description TEXT,
     completed_date DATE,
@@ -178,8 +179,8 @@ CREATE TABLE miniature_projects (
 ### Images
 ```sql
 CREATE TABLE images (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    miniature_project_id UUID REFERENCES miniature_projects(id) ON DELETE CASCADE,
+    id BIGSERIAL PRIMARY KEY,
+    miniature_project_id BIGINT REFERENCES miniature_projects(id) ON DELETE CASCADE,
     title VARCHAR(200),
     description TEXT,
     s3_key VARCHAR(500) NOT NULL,
@@ -246,9 +247,10 @@ GET  /swagger/*                   - Swagger documentation
 
 ### Prerequisites
 - Docker Desktop
+- [Task](https://taskfile.dev/installation/) (task runner)
 - Git
 - Node.js 18+ (for local web development)
-- Go 1.21+ (for local API development)
+- Go 1.25+ (for local API development)
 
 ### Running Everything
 ```bash
@@ -257,17 +259,33 @@ git clone git@github.com:GunarsK-portfolio/infrastructure.git
 cd infrastructure
 
 # Start all services
-docker-compose up -d
+task up
 
 # View logs
-docker-compose logs -f
+task logs
 
 # Stop all services
-docker-compose down
+task down
 ```
 
 ### Running Individual Services
-Each repository contains its own `docker-compose.yml` for standalone development.
+```bash
+# Stop a service for local debugging
+task stop-auth
+
+# Rebuild and restart after code changes
+task rebuild-auth
+
+# View logs for specific service
+task logs-auth
+```
+
+Each repository also has its own Taskfile.yml for local development:
+```bash
+cd ../auth-service
+cp .env.example .env
+task run  # or press F5 in VS Code to debug
+```
 
 ## AWS Deployment Architecture
 
