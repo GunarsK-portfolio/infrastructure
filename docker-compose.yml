@@ -1,0 +1,211 @@
+services:
+  # Database
+  postgres:
+    image: postgres:18-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_DB: portfolio
+      POSTGRES_USER: portfolio_user
+      POSTGRES_PASSWORD: portfolio_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portfolio_user -d portfolio"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7.4-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO (S3-compatible storage)
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # Database Migrations (Flyway)
+  flyway:
+    image: flyway/flyway:11
+    container_name: flyway
+    command: migrate
+    volumes:
+      - ../database/migrations:/flyway/sql
+      - ../database/seeds:/flyway/seeds
+    environment:
+      - FLYWAY_URL=jdbc:postgresql://postgres:5432/portfolio
+      - FLYWAY_USER=portfolio_user
+      - FLYWAY_PASSWORD=portfolio_pass
+      - FLYWAY_BASELINE_ON_MIGRATE=true
+      - FLYWAY_LOCATIONS=filesystem:/flyway/sql,filesystem:/flyway/seeds
+    networks:
+      - network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ../auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    environment:
+      - PORT=8084
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=portfolio_user
+      - DB_PASSWORD=portfolio_pass
+      - DB_NAME=portfolio
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=your-secret-key-change-in-production
+      - JWT_ACCESS_EXPIRY=15m
+      - JWT_REFRESH_EXPIRY=168h
+    ports:
+      - "8084:8084"
+    networks:
+      - network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+
+  # Public API
+  public-api:
+    build:
+      context: ../public-api
+      dockerfile: Dockerfile
+    container_name: public-api
+    environment:
+      - PORT=8082
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=portfolio_user
+      - DB_PASSWORD=portfolio_pass
+      - DB_NAME=portfolio
+      - S3_ENDPOINT=http://minio:9000
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - S3_BUCKET=images
+      - S3_USE_SSL=false
+    ports:
+      - "8082:8082"
+    networks:
+      - network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+
+  # Admin API
+  admin-api:
+    build:
+      context: ../admin-api
+      dockerfile: Dockerfile
+    container_name: admin-api
+    environment:
+      - PORT=8083
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=portfolio_user
+      - DB_PASSWORD=portfolio_pass
+      - DB_NAME=portfolio
+      - AUTH_SERVICE_URL=http://auth-service:8084
+      - S3_ENDPOINT=http://minio:9000
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - S3_BUCKET=images
+      - S3_USE_SSL=false
+    ports:
+      - "8083:8083"
+    networks:
+      - network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      flyway:
+        condition: service_completed_successfully
+
+  # Public Web
+  public-web:
+    build:
+      context: ../public-web
+      dockerfile: Dockerfile
+    container_name: public-web
+    environment:
+      - VITE_API_URL=http://localhost:8082
+    ports:
+      - "8080:80"
+    networks:
+      - network
+    depends_on:
+      - public-api
+
+  # Admin Web
+  admin-web:
+    build:
+      context: ../admin-web
+      dockerfile: Dockerfile
+    container_name: admin-web
+    environment:
+      - VITE_API_URL=http://localhost:8083
+      - VITE_AUTH_URL=http://localhost:8084
+    ports:
+      - "8081:80"
+    networks:
+      - network
+    depends_on:
+      - admin-api
+      - auth-service
+
+networks:
+  network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:

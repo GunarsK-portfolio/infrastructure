@@ -1,0 +1,119 @@
+version: '3'
+
+tasks:
+  up:
+    desc: Start all services with docker-compose
+    cmds:
+      - docker-compose up -d
+
+  down:
+    desc: Stop all services
+    cmds:
+      - docker-compose down
+
+  build:
+    desc: Build all services
+    cmds:
+      - docker-compose up --build -d
+
+  logs:
+    desc: View logs from all services
+    cmds:
+      - docker-compose logs -f
+
+  logs-auth:
+    desc: View auth service logs
+    cmds:
+      - docker-compose logs -f auth-service
+
+  logs-public:
+    desc: View public API logs
+    cmds:
+      - docker-compose logs -f public-api
+
+  logs-admin:
+    desc: View admin API logs
+    cmds:
+      - docker-compose logs -f admin-api
+
+  logs-public-web:
+    desc: View public web logs
+    cmds:
+      - docker-compose logs -f public-web
+
+  logs-admin-web:
+    desc: View admin web logs
+    cmds:
+      - docker-compose logs -f admin-web
+
+  logs-db:
+    desc: View database logs
+    cmds:
+      - docker-compose logs -f postgres
+
+  restart:
+    desc: Restart all services
+    cmds:
+      - docker-compose restart
+
+  ps:
+    desc: List running services
+    cmds:
+      - docker-compose ps
+
+  clean:
+    desc: Stop services and remove volumes
+    cmds:
+      - docker-compose down -v
+
+  # Stop individual services
+  stop-auth:
+    desc: Stop auth service
+    cmds:
+      - docker-compose stop auth-service
+
+  stop-public-api:
+    desc: Stop public API
+    cmds:
+      - docker-compose stop public-api
+
+  stop-admin-api:
+    desc: Stop admin API
+    cmds:
+      - docker-compose stop admin-api
+
+  stop-public-web:
+    desc: Stop public web
+    cmds:
+      - docker-compose stop public-web
+
+  stop-admin-web:
+    desc: Stop admin web
+    cmds:
+      - docker-compose stop admin-web
+
+  # Rebuild and restart individual services
+  rebuild-auth:
+    desc: Rebuild and restart auth service
+    cmds:
+      - docker-compose up -d --build auth-service
+
+  rebuild-public-api:
+    desc: Rebuild and restart public API
+    cmds:
+      - docker-compose up -d --build public-api
+
+  rebuild-admin-api:
+    desc: Rebuild and restart admin API
+    cmds:
+      - docker-compose up -d --build admin-api
+
+  rebuild-public-web:
+    desc: Rebuild and restart public web
+    cmds:
+      - docker-compose up -d --build public-web
+
+  rebuild-admin-web:
+    desc: Rebuild and restart admin web
+    cmds:
+      - docker-compose up -d --build admin-web
