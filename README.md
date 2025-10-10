@@ -66,11 +66,11 @@ Once all services are running:
 | Public API | http://localhost/api/v1/* | Public REST API |
 | **Admin Portal** | http://localhost:81 | Content management |
 | Admin API | http://localhost:81/api/v1/* | Admin REST API |
-| Auth API | http://localhost:81/auth/* | Authentication endpoints |
+| Auth API | http://localhost:81/auth/v1/* | Authentication endpoints |
 | **API Docs** | http://localhost:82 | Swagger documentation |
-| - Public API Docs | http://localhost:82/public/ | Public API Swagger |
-| - Admin API Docs | http://localhost:82/admin/ | Admin API Swagger |
-| - Auth API Docs | http://localhost:82/auth/ | Auth API Swagger |
+| - Public API Docs | http://localhost:82/public/swagger/index.html | Public API Swagger |
+| - Admin API Docs | http://localhost:82/admin/swagger/index.html | Admin API Swagger |
+| - Auth API Docs | http://localhost:82/auth/swagger/index.html | Auth API Swagger |
 
 **Direct Service Access (for debugging):**
 

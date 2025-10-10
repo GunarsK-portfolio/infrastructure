@@ -14,7 +14,8 @@ tasks:
   build:
     desc: Build all services
     cmds:
-      - docker-compose up --build -d
+      - docker-compose build --progress=plain
+      - docker-compose up -d
 
   logs:
     desc: View logs from all services

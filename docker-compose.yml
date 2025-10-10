@@ -134,11 +134,13 @@ services:
         condition: service_completed_successfully
     labels:
       - "traefik.enable=true"
-      # Auth API on admin entrypoint - rewrite /auth/* to /api/v1/auth/*
-      - "traefik.http.routers.auth-api.rule=PathPrefix(`/auth/`)"
+      # Auth API on admin entrypoint - rewrite /auth/v1/* to /api/v1/auth/*
+      - "traefik.http.routers.auth-api.rule=PathPrefix(`/auth/v1/`)"
       - "traefik.http.routers.auth-api.entrypoints=admin"
       - "traefik.http.routers.auth-api.middlewares=auth-rewrite"
-      - "traefik.http.middlewares.auth-rewrite.replacepathregex.regex=^/auth/(.*)"
+      - "traefik.http.routers.auth-api.priority=100"
+      - "traefik.http.routers.auth-api.service=auth-api"
+      - "traefik.http.middlewares.auth-rewrite.replacepathregex.regex=^/auth/v1/(.*)"
       - "traefik.http.middlewares.auth-rewrite.replacepathregex.replacement=/api/v1/auth/$$1"
       - "traefik.http.services.auth-api.loadbalancer.server.port=8084"
       # Swagger docs
@@ -261,7 +263,7 @@ services:
     container_name: admin-web
     environment:
       - VITE_API_URL=http://localhost:81/api/v1
-      - VITE_AUTH_URL=http://localhost:81/auth
+      - VITE_AUTH_URL=http://localhost:81/auth/v1
     ports:
       - "8081:80"
     networks:
