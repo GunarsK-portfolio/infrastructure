@@ -1,4 +1,31 @@
 services:
+  # Traefik Reverse Proxy
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.admin.address=:81"
+      - "--entrypoints.swagger.address=:82"
+    ports:
+      - "80:80"    # Public web + API
+      - "81:81"    # Admin web + API
+      - "82:82"    # Swagger docs
+      # Traefik dashboard on :8080 (access via http://traefik:8080 from within network)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - network
+    depends_on:
+      - public-web
+      - admin-web
+      - public-api
+      - admin-api
+      - auth-service
+
   # Database
   postgres:
     image: postgres:18-alpine
@@ -105,6 +132,20 @@ services:
         condition: service_healthy
       flyway:
         condition: service_completed_successfully
+    labels:
+      - "traefik.enable=true"
+      # Auth API on admin entrypoint - rewrite /auth/* to /api/v1/auth/*
+      - "traefik.http.routers.auth-api.rule=PathPrefix(`/auth/`)"
+      - "traefik.http.routers.auth-api.entrypoints=admin"
+      - "traefik.http.routers.auth-api.middlewares=auth-rewrite"
+      - "traefik.http.middlewares.auth-rewrite.replacepathregex.regex=^/auth/(.*)"
+      - "traefik.http.middlewares.auth-rewrite.replacepathregex.replacement=/api/v1/auth/$$1"
+      - "traefik.http.services.auth-api.loadbalancer.server.port=8084"
+      # Swagger docs
+      - "traefik.http.routers.auth-swagger.rule=PathPrefix(`/auth/`)"
+      - "traefik.http.routers.auth-swagger.entrypoints=swagger"
+      - "traefik.http.routers.auth-swagger.middlewares=auth-swagger-strip"
+      - "traefik.http.middlewares.auth-swagger-strip.stripprefix.prefixes=/auth"
 
   # Public API
   public-api:
@@ -135,6 +176,17 @@ services:
         condition: service_healthy
       flyway:
         condition: service_completed_successfully
+    labels:
+      - "traefik.enable=true"
+      # Public API on web entrypoint
+      - "traefik.http.routers.public-api.rule=PathPrefix(`/api/`)"
+      - "traefik.http.routers.public-api.entrypoints=web"
+      - "traefik.http.services.public-api.loadbalancer.server.port=8082"
+      # Swagger docs
+      - "traefik.http.routers.public-swagger.rule=PathPrefix(`/public/`)"
+      - "traefik.http.routers.public-swagger.entrypoints=swagger"
+      - "traefik.http.routers.public-swagger.middlewares=public-swagger-strip"
+      - "traefik.http.middlewares.public-swagger-strip.stripprefix.prefixes=/public"
 
   # Admin API
   admin-api:
@@ -168,6 +220,17 @@ services:
         condition: service_started
       flyway:
         condition: service_completed_successfully
+    labels:
+      - "traefik.enable=true"
+      # Admin API on admin entrypoint
+      - "traefik.http.routers.admin-api.rule=PathPrefix(`/api/`)"
+      - "traefik.http.routers.admin-api.entrypoints=admin"
+      - "traefik.http.services.admin-api.loadbalancer.server.port=8083"
+      # Swagger docs
+      - "traefik.http.routers.admin-swagger.rule=PathPrefix(`/admin/`)"
+      - "traefik.http.routers.admin-swagger.entrypoints=swagger"
+      - "traefik.http.routers.admin-swagger.middlewares=admin-swagger-strip"
+      - "traefik.http.middlewares.admin-swagger-strip.stripprefix.prefixes=/admin"
 
   # Public Web
   public-web:
@@ -176,13 +239,19 @@ services:
       dockerfile: Dockerfile
     container_name: public-web
     environment:
-      - VITE_API_URL=http://localhost:8082
+      - VITE_API_URL=http://localhost/api/v1
     ports:
       - "8080:80"
     networks:
       - network
     depends_on:
       - public-api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.public-web.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.public-web.entrypoints=web"
+      - "traefik.http.routers.public-web.priority=1"
+      - "traefik.http.services.public-web.loadbalancer.server.port=80"
 
   # Admin Web
   admin-web:
@@ -191,8 +260,8 @@ services:
       dockerfile: Dockerfile
     container_name: admin-web
     environment:
-      - VITE_API_URL=http://localhost:8083
-      - VITE_AUTH_URL=http://localhost:8084
+      - VITE_API_URL=http://localhost:81/api/v1
+      - VITE_AUTH_URL=http://localhost:81/auth
     ports:
       - "8081:80"
     networks:
@@ -200,6 +269,12 @@ services:
     depends_on:
       - admin-api
       - auth-service
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin-web.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.admin-web.entrypoints=admin"
+      - "traefik.http.routers.admin-web.priority=1"
+      - "traefik.http.services.admin-web.loadbalancer.server.port=80"
 
 networks:
   network:

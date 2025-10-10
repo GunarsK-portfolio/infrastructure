@@ -14,6 +14,7 @@ The portfolio system is built with a microservices architecture consisting of:
 - **Database** - PostgreSQL with Flyway migrations
 - **Cache** - Redis for sessions
 - **Storage** - MinIO (local) / S3 (AWS) for images
+- **Reverse Proxy** - Traefik for unified routing and load balancing
 
 ## Quick Start
 
@@ -57,16 +58,29 @@ task ps
 
 Once all services are running:
 
+**Primary Access (via Traefik Reverse Proxy):**
+
 | Service | URL | Description |
 |---------|-----|-------------|
-| Public Website | http://localhost:8080 | Public portfolio |
-| Admin Portal | http://localhost:8081 | Content management |
-| Public API | http://localhost:8082 | Public REST API |
-| Public API Swagger | http://localhost:8082/swagger/index.html | API Documentation |
-| Admin API | http://localhost:8083 | Admin REST API |
-| Admin API Swagger | http://localhost:8083/swagger/index.html | API Documentation |
-| Auth Service | http://localhost:8084 | Authentication API |
-| Auth Swagger | http://localhost:8084/swagger/index.html | API Documentation |
+| **Public Portfolio** | http://localhost | Public website |
+| Public API | http://localhost/api/v1/* | Public REST API |
+| **Admin Portal** | http://localhost:81 | Content management |
+| Admin API | http://localhost:81/api/v1/* | Admin REST API |
+| Auth API | http://localhost:81/auth/* | Authentication endpoints |
+| **API Docs** | http://localhost:82 | Swagger documentation |
+| - Public API Docs | http://localhost:82/public/ | Public API Swagger |
+| - Admin API Docs | http://localhost:82/admin/ | Admin API Swagger |
+| - Auth API Docs | http://localhost:82/auth/ | Auth API Swagger |
+
+**Direct Service Access (for debugging):**
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| Public Web | http://localhost:8080 | Direct access to website |
+| Admin Web | http://localhost:8081 | Direct access to admin portal |
+| Public API | http://localhost:8082 | Direct access to public API |
+| Admin API | http://localhost:8083 | Direct access to admin API |
+| Auth Service | http://localhost:8084 | Direct access to auth service |
 | MinIO Console | http://localhost:9001 | Object storage UI |
 
 ### Default Credentials

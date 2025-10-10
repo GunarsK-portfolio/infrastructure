@@ -7,42 +7,49 @@ This is a microservices-based portfolio management system with separate public-f
 ## Services Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         Client Layer                            │
-├──────────────────────────────┬──────────────────────────────────┤
-│  Public Portfolio (Vue.js)   │  Admin Portal (Vue.js + Auth)    │
-│  Port: 8080                  │  Port: 8081                      │
-└──────────────┬───────────────┴──────────────┬───────────────────┘
-               │                               │
-               │                               │
-┌──────────────▼───────────────┬──────────────▼───────────────────┐
-│                         API Gateway Layer                        │
-├──────────────────────────────┼──────────────────────────────────┤
-│  Public API (Go)             │  Admin API (Go)                  │
-│  Port: 8082                  │  Port: 8083                      │
-│  + Swagger Docs              │  + Swagger Docs + Auth           │
-└──────────────┬───────────────┴──────────────┬───────────────────┘
-               │                               │
-               │                    ┌──────────▼───────────────┐
-               │                    │  Auth Service (Go)        │
-               │                    │  Port: 8084               │
-               │                    │  + JWT Token Management   │
-               │                    └──────────┬───────────────┘
-               │                               │
-┌──────────────▼───────────────────────────────▼───────────────────┐
-│                      Data & Cache Layer                          │
-├──────────────────────────────┬──────────────────────────────────┤
-│  PostgreSQL                  │  Redis Cache                     │
-│  Port: 5432                  │  Port: 6379                      │
-│  + Portfolio Data            │  + Session Storage               │
-└──────────────────────────────┴──────────────────────────────────┘
-                               │
-┌──────────────────────────────▼───────────────────────────────────┐
-│                      Storage Layer                               │
-│  MinIO (Local) / S3 (AWS)                                        │
-│  Port: 9000 (MinIO)                                              │
-│  + Image Storage                                                 │
-└──────────────────────────────────────────────────────────────────┘
+                         ┌─────────────────────┐
+                         │   Traefik Proxy     │
+                         │   Port: 80, 81, 82  │
+                         │   + Rate Limiting   │
+                         │   + Path Routing    │
+                         └──────────┬──────────┘
+                                    │
+         ┌──────────────────────────┼──────────────────────────┐
+         │                          │                           │
+┌────────▼────────┐      ┌─────────▼──────────┐    ┌──────────▼───────────┐
+│ Public Web      │      │  Admin Web         │    │  API Documentation   │
+│ (Vue.js)        │      │  (Vue.js + Auth)   │    │  (Swagger)           │
+│ Port: 80        │      │  Port: 81          │    │  Port: 82            │
+└────────┬────────┘      └─────────┬──────────┘    └──────────────────────┘
+         │                         │
+         │ /api/v1/*               │ /api/v1/* & /auth/*
+         │                         │
+┌────────▼────────────────┬────────▼──────────────────┐
+│  Public API (Go)        │  Admin API (Go)           │
+│  Internal: 8082         │  Internal: 8083           │
+│  + Swagger Docs         │  + Swagger Docs + Auth    │
+└────────┬────────────────┴────────┬──────────────────┘
+         │                         │
+         │              ┌──────────▼───────────────┐
+         │              │  Auth Service (Go)       │
+         │              │  Internal: 8084          │
+         │              │  + JWT Token Management  │
+         │              └──────────┬───────────────┘
+         │                         │
+┌────────▼─────────────────────────▼───────────────────┐
+│              Data & Cache Layer                      │
+├──────────────────────────┬───────────────────────────┤
+│  PostgreSQL 18           │  Redis 7.4                │
+│  Port: 5432              │  Port: 6379               │
+│  + Flyway Migrations     │  + Session Storage        │
+└──────────────────────────┴───────────────────────────┘
+                           │
+┌──────────────────────────▼───────────────────────────┐
+│              Storage Layer                           │
+│  MinIO (Local) / S3 (AWS)                            │
+│  Port: 9000 (MinIO API), 9001 (Console)              │
+│  + Image Storage                                     │
+└──────────────────────────────────────────────────────┘
 ```
 
 ## Repository Structure
@@ -84,18 +91,29 @@ All repositories under organization: **GunarsK-portfolio**
 
 ### Infrastructure
 - **Container Runtime**: Docker / Docker Compose
+- **Reverse Proxy**: Traefik v3.5+ (auto-discovery, rate limiting)
 - **Cloud Provider**: AWS
 - **CI/CD**: GitHub Actions
 
 ## Port Allocation
 
+### External Access (via Traefik)
+
+| Service | Port | Routes | Description |
+|---------|------|--------|-------------|
+| **Public Portfolio** | 80 | `/` → public-web<br>`/api/v1/*` → public-api | Main website + API |
+| **Admin Portal** | 81 | `/` → admin-web<br>`/api/v1/*` → admin-api<br>`/auth/*` → auth-service | Admin dashboard + APIs |
+| **API Documentation** | 82 | `/public/` → public-api/swagger<br>`/admin/` → admin-api/swagger<br>`/auth/` → auth-service/swagger | Swagger docs |
+
+### Internal Services (Direct Access)
+
 | Service | Port | Description |
 |---------|------|-------------|
-| Public Web | 8080 | Vue.js public portfolio |
-| Admin Web | 8081 | Vue.js admin portal |
-| Public API | 8082 | Go public REST API |
-| Admin API | 8083 | Go admin REST API |
-| Auth Service | 8084 | Go authentication service |
+| Public Web | 8080 | Vue.js public portfolio (direct) |
+| Admin Web | 8081 | Vue.js admin portal (direct) |
+| Public API | 8082 | Go public REST API (direct) |
+| Admin API | 8083 | Go admin REST API (direct) |
+| Auth Service | 8084 | Go authentication service (direct) |
 | PostgreSQL | 5432 | Database |
 | Redis | 6379 | Cache |
 | MinIO | 9000 | Object storage (local) |
