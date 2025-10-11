@@ -1,315 +1,184 @@
 # Portfolio Infrastructure
 
-This repository contains infrastructure configuration, documentation, and orchestration for the portfolio microservices system.
+Docker Compose orchestration for the portfolio project microservices.
 
 ## Overview
 
-The portfolio system is built with a microservices architecture consisting of:
+This repository contains the Docker Compose configuration and Traefik reverse proxy setup for running all portfolio services together.
 
-- **Public Web** - Vue.js portfolio site
-- **Admin Web** - Vue.js admin portal with authentication
-- **Public API** - Go REST API for public data
-- **Admin API** - Go REST API for content management
-- **Auth Service** - Go authentication & authorization service
-- **Database** - PostgreSQL with Flyway migrations
-- **Cache** - Redis for sessions
-- **Storage** - MinIO (local) / S3 (AWS) for images
-- **Reverse Proxy** - Traefik for unified routing and load balancing
+## Services
 
-## Quick Start
+- **Traefik** - Reverse proxy and load balancer
+- **PostgreSQL** - Main database
+- **Redis** - Session and cache store
+- **MinIO** - S3-compatible object storage
+- **Flyway** - Database migrations
+- **auth-service** - JWT authentication service
+- **public-api** - Public API service
+- **admin-api** - Admin API service
+- **public-web** - Public frontend (Vue.js)
+- **admin-web** - Admin frontend (Vue.js)
 
-### Prerequisites
+## Prerequisites
 
-- Docker Desktop installed and running
-- [Task](https://taskfile.dev/installation/) (task runner)
-- Git
-- At least 4GB RAM available for Docker
-
-### Run All Services
-
-```bash
-# Clone this repository
-git clone git@github.com:GunarsK-portfolio/infrastructure.git
-cd infrastructure
-
-# Clone all service repositories (adjacent to this repo)
-cd ..
-git clone git@github.com:GunarsK-portfolio/public-web.git
-git clone git@github.com:GunarsK-portfolio/public-api.git
-git clone git@github.com:GunarsK-portfolio/admin-web.git
-git clone git@github.com:GunarsK-portfolio/admin-api.git
-git clone git@github.com:GunarsK-portfolio/auth-service.git
-git clone git@github.com:GunarsK-portfolio/database.git
-
-# Return to infrastructure directory
-cd infrastructure
-
-# Start all services
-task up
-
-# View logs
-task logs
-
-# Check status
-task ps
-```
-
-### Access Services
-
-Once all services are running:
-
-**Primary Access (via Traefik Reverse Proxy):**
-
-| Service | URL | Description |
-|---------|-----|-------------|
-| **Public Portfolio** | http://localhost | Public website |
-| Public API | http://localhost/api/v1/* | Public REST API |
-| **Admin Portal** | http://localhost:81 | Content management |
-| Admin API | http://localhost:81/api/v1/* | Admin REST API |
-| Auth API | http://localhost:81/auth/v1/* | Authentication endpoints |
-| **API Docs** | http://localhost:82 | Swagger documentation |
-| - Public API Docs | http://localhost:82/public/swagger/index.html | Public API Swagger |
-| - Admin API Docs | http://localhost:82/admin/swagger/index.html | Admin API Swagger |
-| - Auth API Docs | http://localhost:82/auth/swagger/index.html | Auth API Swagger |
-
-**Direct Service Access (for debugging):**
-
-| Service | URL | Description |
-|---------|-----|-------------|
-| Public Web | http://localhost:8080 | Direct access to website |
-| Admin Web | http://localhost:8081 | Direct access to admin portal |
-| Public API | http://localhost:8082 | Direct access to public API |
-| Admin API | http://localhost:8083 | Direct access to admin API |
-| Auth Service | http://localhost:8084 | Direct access to auth service |
-| MinIO Console | http://localhost:9001 | Object storage UI |
-
-### Default Credentials
-
-**Admin Portal:**
-- Username: `admin`
-- Password: `admin123` (set via database seed)
-
-**MinIO:**
-- Access Key: `minioadmin`
-- Secret Key: `minioadmin`
-
-**Database:**
-- Host: `localhost:5432`
-- Database: `portfolio`
-- Username: `portfolio_user`
-- Password: `portfolio_pass`
-
-**Redis:**
-- Host: `localhost:6379`
-- No password (local development)
+- Docker and Docker Compose
+- [Task](https://taskfile.dev/) (optional, for Taskfile commands)
+- Clone all service repositories in the parent directory
 
 ## Repository Structure
 
+Expected directory layout:
 ```
-infrastructure/
-├── docker/                     # Docker configurations
-│   ├── nginx/                 # Nginx configs for web apps
-│   └── postgres/              # PostgreSQL init scripts
-├── docs/                      # Documentation
-│   ├── ARCHITECTURE.md        # System architecture
-│   ├── API.md                 # API documentation
-│   └── DEPLOYMENT.md          # Deployment guide
-├── terraform/                 # AWS infrastructure as code
-│   ├── modules/              # Terraform modules
-│   ├── environments/         # Environment configs
-│   │   ├── dev/
-│   │   ├── staging/
-│   │   └── prod/
-│   └── main.tf
-├── docker-compose.yml         # Main compose file (all services)
-├── docker-compose.dev.yml     # Development overrides
-├── Taskfile.yml              # Task runner configuration
-├── .env.example              # Environment variables template
-└── README.md                 # This file
+portfolio/
+├── infrastructure/     # This repo
+├── auth-service/       # Auth service repo
+├── public-api/         # Public API repo
+├── admin-api/          # Admin API repo
+├── public-web/         # Public web repo
+├── admin-web/          # Admin web repo
+└── database/           # Database repo
 ```
 
-## Development
+## Quick Start
 
-### Managing Individual Services
+1. Ensure all service repositories are cloned in the parent directory
 
-Stop/start/rebuild individual services:
-
+2. Start all services:
 ```bash
-# Stop a service (for local debugging)
-task stop-auth
-task stop-public-api
-task stop-admin-api
-
-# Rebuild and restart after code changes
-task rebuild-auth
-task rebuild-public-api
-task rebuild-admin-api
-
-# View logs for specific service
-task logs-auth
-task logs-public-api
+docker-compose up -d
 ```
 
-### Running Services Locally (Outside Docker)
-
-Each service has a `.env.example` file:
-
+Or using Task:
 ```bash
-# In any service directory (auth-service, public-api, etc.)
-cd ../auth-service
-
-# Copy environment file
-cp .env.example .env
-
-# Edit .env with your settings
-
-# Run locally with Task
-task run
-
-# Or debug in VS Code (F5)
-```
-
-**Note:** Make sure Docker services (postgres, redis, minio) are still running for local development.
-
-### Database Migrations
-
-Migrations are managed in the `database` repository using Flyway.
-
-```bash
-# Run migrations manually
-docker-compose run flyway migrate
-
-# Check migration status
-docker-compose run flyway info
-
-# Rollback last migration
-docker-compose run flyway undo
-```
-
-### Stopping Services
-
-```bash
-# Stop all services
-task down
-
-# Stop and remove volumes (WARNING: deletes all data)
-task clean
-```
-
-## Deployment
-
-### AWS Deployment
-
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed AWS deployment instructions.
-
-Quick overview:
-1. Configure AWS credentials
-2. Update Terraform variables
-3. Run Terraform to provision infrastructure
-4. Push Docker images to ECR
-5. Deploy services to ECS
-
-```bash
-cd terraform/environments/prod
-terraform init
-terraform plan
-terraform apply
-```
-
-### CI/CD
-
-Each service repository has GitHub Actions workflows for:
-- Running tests
-- Building Docker images
-- Pushing to ECR
-- Deploying to ECS (on merge to main)
-
-## Architecture
-
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed system architecture.
-
-## Monitoring
-
-### Local Development
-
-```bash
-# View logs for all services
-task logs
-
-# View logs for specific service
-task logs-auth
-
-# Check service health
-curl http://localhost:8084/api/v1/health
-```
-
-### Production
-
-- **CloudWatch** - Logs and metrics
-- **AWS X-Ray** - Distributed tracing
-- **Application Load Balancer** - Health checks
-
-## Troubleshooting
-
-### Services won't start
-
-```bash
-# Check Docker is running
-docker info
-
-# Check available resources
-docker stats
-
-# Restart Docker Desktop
-```
-
-### Database connection errors
-
-```bash
-# Check PostgreSQL is healthy
-docker-compose ps postgres
-
-# Check logs
-docker-compose logs postgres
-
-# Connect to database
-docker-compose exec postgres psql -U portfolio_user -d portfolio
-```
-
-### Port conflicts
-
-If ports are already in use, edit `docker-compose.yml` to use different ports.
-
-### Clean slate
-
-```bash
-# Stop everything and remove volumes
-task clean
-
-# Remove all portfolio images
-docker images | grep portfolio | awk '{print $3}' | xargs docker rmi -f
-
-# Start fresh
 task up
 ```
 
-## Contributing
+3. Access the applications:
 
-1. Create feature branch
-2. Make changes
-3. Test locally with Docker Compose
-4. Submit Pull Request
-5. Wait for CI/CD to pass
-6. Merge after review
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| Public Website | http://localhost | - |
+| Public Website (HTTPS) | https://localhost | - |
+| Admin Panel | http://localhost:81 | - |
+| Admin Panel (HTTPS) | https://localhost:8443 | - |
+| Swagger Docs | http://localhost:82 | - |
+| - Public API Docs | http://localhost:82/public/ | - |
+| - Admin API Docs | http://localhost:82/admin/ | - |
+| - Auth API Docs | http://localhost:82/auth/ | - |
+| Traefik Dashboard | http://localhost:9002 | - |
+| MinIO Console | http://localhost:9001 | minioadmin / minioadmin |
 
-## Related Repositories
+## Available Commands
 
-- [public-web](https://github.com/GunarsK-portfolio/public-web)
-- [public-api](https://github.com/GunarsK-portfolio/public-api)
-- [admin-web](https://github.com/GunarsK-portfolio/admin-web)
-- [admin-api](https://github.com/GunarsK-portfolio/admin-api)
-- [auth-service](https://github.com/GunarsK-portfolio/auth-service)
-- [database](https://github.com/GunarsK-portfolio/database)
+### Using Task (Recommended)
+
+```bash
+task up              # Start all services
+task down            # Stop all services
+task build           # Build and start all services
+task logs            # View all logs
+task ps              # List running services
+task restart         # Restart all services
+task clean           # Stop and remove volumes
+```
+
+View logs for specific services:
+```bash
+task logs-auth
+task logs-public-api
+task logs-admin-api
+task logs-public-web
+task logs-admin-web
+task logs-db
+```
+
+Rebuild individual services:
+```bash
+task rebuild-auth
+task rebuild-public-api
+task rebuild-admin-api
+task rebuild-public-web
+task rebuild-admin-web
+```
+
+### Using Docker Compose Directly
+
+```bash
+docker-compose up -d                    # Start services
+docker-compose down                     # Stop services
+docker-compose logs -f [service]        # View logs
+docker-compose ps                       # List services
+docker-compose restart [service]        # Restart service
+docker-compose up -d --build [service]  # Rebuild service
+```
+
+## Port Mapping
+
+| Port | Service |
+|------|---------|
+| 80 | Public web (HTTP) |
+| 443 | Public web (HTTPS) |
+| 81 | Admin web (HTTP) |
+| 8443 | Admin web (HTTPS) |
+| 82 | Swagger documentation |
+| 5432 | PostgreSQL |
+| 6379 | Redis |
+| 8082 | Public API |
+| 8083 | Admin API |
+| 8084 | Auth Service |
+| 9000 | MinIO API |
+| 9001 | MinIO Console |
+| 9002 | Traefik Dashboard |
+
+## Configuration
+
+### SSL/TLS
+Self-signed certificates are in `docker/traefik/certs/`. For production, configure Let's Encrypt in [docker-compose.yml](docker-compose.yml).
+
+### Environment Variables
+Key configurations in [docker-compose.yml](docker-compose.yml):
+- **PostgreSQL**: `portfolio` database, `portfolio_user`, `portfolio_pass`
+- **MinIO**: `minioadmin` / `minioadmin`
+- **JWT Secret**: Change `JWT_SECRET` for production
+
+### Database Migrations
+Migrations run automatically on startup via Flyway from `../database/migrations/` and `../database/seeds/`.
+
+## Development
+
+For local development without Docker:
+
+1. Start only infrastructure services:
+```bash
+docker-compose up -d postgres redis minio flyway
+```
+
+2. Run each application service locally (see individual service READMEs)
+
+## Troubleshooting
+
+### Access PostgreSQL
+```bash
+docker exec -it postgres psql -U portfolio_user -d portfolio
+```
+
+### Access Redis CLI
+```bash
+docker exec -it redis redis-cli
+```
+
+### Clean restart
+```bash
+docker-compose down -v  # Remove volumes
+docker-compose up -d
+```
+
+## Persistent Data
+
+Volumes:
+- `postgres_data` - Database
+- `redis_data` - Cache
+- `minio_data` - Object storage
 
 ## License
 

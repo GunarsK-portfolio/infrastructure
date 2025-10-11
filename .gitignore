@@ -1,0 +1,18 @@
+# SSL/TLS Certificates
+docker/traefik/certs/*.crt
+docker/traefik/certs/*.key
+docker/traefik/certs/*.pem
+
+# Let's Encrypt
+docker/traefik/letsencrypt/
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

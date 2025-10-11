@@ -1,16 +1,17 @@
-# Portfolio Microservices Architecture
+# Portfolio Project Architecture
 
-## System Overview
+## Overview
 
-This is a microservices-based portfolio management system with separate public-facing and admin portals.
+This document describes the architecture of the portfolio project, a microservices-based application with separate public and admin portals.
 
-## Services Architecture
+## System Architecture Diagram
 
 ```
                          ┌─────────────────────┐
                          │   Traefik Proxy     │
-                         │   Port: 80, 81, 82  │
-                         │   + Rate Limiting   │
+                         │   :80, :443, :81    │
+                         │   :8443, :82, :9002 │
+                         │   + SSL/TLS         │
                          │   + Path Routing    │
                          └──────────┬──────────┘
                                     │
@@ -19,337 +20,386 @@ This is a microservices-based portfolio management system with separate public-f
 ┌────────▼────────┐      ┌─────────▼──────────┐    ┌──────────▼───────────┐
 │ Public Web      │      │  Admin Web         │    │  API Documentation   │
 │ (Vue.js)        │      │  (Vue.js + Auth)   │    │  (Swagger)           │
-│ Port: 80        │      │  Port: 81          │    │  Port: 82            │
+│ Port: :8080     │      │  Port: :8081       │    │  Port: :82           │
 └────────┬────────┘      └─────────┬──────────┘    └──────────────────────┘
          │                         │
-         │ /api/v1/*               │ /api/v1/* & /auth/*
+         │ /api/v1/*               │ /api/v1/* & /auth/v1/*
          │                         │
 ┌────────▼────────────────┬────────▼──────────────────┐
 │  Public API (Go)        │  Admin API (Go)           │
-│  Internal: 8082         │  Internal: 8083           │
-│  + Swagger Docs         │  + Swagger Docs + Auth    │
+│  Internal: :8082        │  Internal: :8083          │
+│  + Read-only            │  + Full CRUD + Auth       │
+│  + Swagger Docs         │  + Swagger Docs           │
 └────────┬────────────────┴────────┬──────────────────┘
          │                         │
          │              ┌──────────▼───────────────┐
          │              │  Auth Service (Go)       │
-         │              │  Internal: 8084          │
-         │              │  + JWT Token Management  │
+         │              │  Internal: :8084         │
+         │              │  + JWT Tokens            │
+         │              │  + Refresh Tokens        │
          │              └──────────┬───────────────┘
          │                         │
 ┌────────▼─────────────────────────▼───────────────────┐
 │              Data & Cache Layer                      │
 ├──────────────────────────┬───────────────────────────┤
 │  PostgreSQL 18           │  Redis 7.4                │
-│  Port: 5432              │  Port: 6379               │
+│  Port: :5432             │  Port: :6379              │
 │  + Flyway Migrations     │  + Session Storage        │
+│  + Auto Schema Mgmt      │  + Token Blacklist        │
 └──────────────────────────┴───────────────────────────┘
                            │
 ┌──────────────────────────▼───────────────────────────┐
 │              Storage Layer                           │
-│  MinIO (Local) / S3 (AWS)                            │
-│  Port: 9000 (MinIO API), 9001 (Console)              │
+│  MinIO (S3-compatible)                               │
+│  Port: :9000 (API), :9001 (Console)                  │
 │  + Image Storage                                     │
+│  + Project Assets                                    │
 └──────────────────────────────────────────────────────┘
 ```
 
-## Repository Structure
+## Component Details
 
-All repositories under organization: **GunarsK-portfolio**
+### Reverse Proxy Layer
 
-1. **public-web** - Public Vue.js portfolio
-2. **public-api** - Public-facing REST API (Go)
-3. **admin-web** - Admin content management portal (Vue.js)
-4. **admin-api** - Admin REST API with auth (Go)
-5. **auth-service** - Authentication provider (Go)
-6. **database** - Database migrations, schemas, and seed data (Flyway)
-7. **infrastructure** - Infrastructure as Code, docs, docker-compose
+#### Traefik
+- **Ports**: 80 (HTTP), 443 (HTTPS), 81 (Admin HTTP), 8443 (Admin HTTPS), 82 (Swagger), 9002 (Dashboard)
+- **Purpose**: Reverse proxy, load balancer, SSL/TLS termination
+- **Features**:
+  - Path-based routing
+  - Automatic service discovery via Docker labels
+  - Multiple entrypoints (public, admin, docs)
+  - Self-signed certificates (dev) / Let's Encrypt (prod)
+  - Dashboard for monitoring
+
+### Frontend Layer
+
+#### Public Web
+- **Technology**: Vue 3, Vite, TailwindCSS, DaisyUI, Pinia, Vue Router, Axios
+- **Port**: 8080 (internal), 80/443 (external via Traefik)
+- **Purpose**: Public-facing portfolio website
+- **Features**:
+  - Browse projects
+  - View skills, experience, certifications
+  - Responsive design
+  - Static content display
+
+#### Admin Web
+- **Technology**: Vue 3, Vite, TailwindCSS, DaisyUI, Pinia, Vue Router, Axios
+- **Port**: 8081 (internal), 81/8443 (external via Traefik)
+- **Purpose**: Admin panel for content management
+- **Features**:
+  - User authentication (login/logout)
+  - Protected routes with navigation guards
+  - Full CRUD operations
+  - Image upload
+  - Token refresh handling
+
+### Backend Layer
+
+#### Public API
+- **Technology**: Go 1.25, Gin, GORM
+- **Port**: 8082
+- **Purpose**: Serve public portfolio content (read-only)
+- **Authentication**: None
+- **Endpoints**:
+  - GET /health
+  - GET /api/v1/projects
+  - GET /api/v1/projects/:id
+  - GET /api/v1/skills
+  - GET /api/v1/experience
+  - GET /api/v1/certifications
+- **Integration**: PostgreSQL for data, MinIO for images
+
+#### Admin API
+- **Technology**: Go 1.25, Gin, GORM
+- **Port**: 8083
+- **Purpose**: Manage portfolio content (full CRUD)
+- **Authentication**: JWT validation via middleware
+- **Endpoints**:
+  - GET /health
+  - Full CRUD for projects, skills, experience, certifications
+  - POST /api/v1/images/upload
+- **Integration**: PostgreSQL for data, MinIO for uploads, Auth Service for validation
+
+#### Auth Service
+- **Technology**: Go 1.25, Gin, GORM, JWT, bcrypt
+- **Port**: 8084
+- **Purpose**: User authentication and token management
+- **Endpoints**:
+  - POST /api/v1/auth/register
+  - POST /api/v1/auth/login
+  - POST /api/v1/auth/refresh
+  - POST /api/v1/auth/logout
+- **Features**:
+  - JWT access tokens (15min expiry)
+  - JWT refresh tokens (7 days expiry)
+  - Bcrypt password hashing
+  - Redis session storage
+  - Token blacklisting
+
+### Data Layer
+
+#### PostgreSQL
+- **Version**: 18-alpine
+- **Port**: 5432
+- **Purpose**: Primary relational database
+- **Tables**:
+  - users (authentication)
+  - profile (portfolio info)
+  - work_experience
+  - certifications
+  - miniature_projects
+  - images (metadata)
+- **Migration**: Flyway (automatic on startup)
+
+#### Redis
+- **Version**: 7.4-alpine
+- **Port**: 6379
+- **Purpose**: Cache and session store
+- **Usage**:
+  - Auth tokens and sessions
+  - Token blacklist (logout)
+  - Future: API response caching
+
+#### MinIO
+- **Port**: 9000 (API), 9001 (Console)
+- **Purpose**: S3-compatible object storage
+- **Usage**:
+  - Project images
+  - Avatar images
+  - Static assets
+- **Credentials**: minioadmin / minioadmin (change in production)
+
+## Data Flow Diagrams
+
+### Public Content Access Flow
+```
+┌──────┐      ┌─────────┐      ┌────────┐      ┌──────────┐      ┌──────────┐
+│ User │─────►│ Traefik │─────►│ Public │─────►│ Public   │─────►│PostgreSQL│
+│      │      │         │      │  Web   │      │   API    │      │          │
+└──────┘      └─────────┘      └────────┘      └────┬─────┘      └──────────┘
+                                                     │
+                                                     │ (images)
+                                                     ▼
+                                               ┌──────────┐
+                                               │  MinIO   │
+                                               └──────────┘
+```
+
+### Admin Content Management Flow
+```
+┌──────┐   ┌─────────┐   ┌────────┐   ┌──────────┐   ┌──────────┐
+│Admin │──►│ Traefik │──►│ Admin  │──►│   Auth   │──►│  Redis   │
+│ User │   │         │   │  Web   │   │ Service  │   │(sessions)│
+└──────┘   └─────────┘   └────┬───┘   └──────────┘   └──────────┘
+                              │            │
+                              │ (JWT)      │ (validates)
+                              ▼            │
+                         ┌──────────┐      │
+                         │  Admin   │◄─────┘
+                         │   API    │
+                         └────┬─────┘
+                              │
+                ┌─────────────┴──────────────┐
+                ▼                            ▼
+          ┌──────────┐                 ┌──────────┐
+          │PostgreSQL│                 │  MinIO   │
+          │  (CRUD)  │                 │(uploads) │
+          └──────────┘                 └──────────┘
+```
+
+### Authentication Flow
+```
+1. Login Request
+   Admin Web → Auth Service → PostgreSQL (verify user)
+                            → Redis (create session)
+                            → Admin Web (return JWT tokens)
+
+2. API Request with Auth
+   Admin Web → Admin API (with JWT header)
+              → (JWT validation via middleware)
+              → PostgreSQL (perform operation)
+              → Admin Web (response)
+
+3. Token Refresh
+   Admin Web → Auth Service (refresh token)
+              → Redis (verify session)
+              → Admin Web (new access token)
+
+4. Logout
+   Admin Web → Auth Service → Redis (blacklist token)
+```
+
+## Network Architecture
+
+All services run in a Docker bridge network named `network`.
+
+### Port Mapping
+
+| Service | Internal | External | Access |
+|---------|----------|----------|--------|
+| **Public Facing** |
+| Public Web | 80 | 80 | HTTP |
+| Public Web | 443 | 443 | HTTPS |
+| Admin Web | 80 | 81 | HTTP |
+| Admin Web | 443 | 8443 | HTTPS |
+| Swagger Docs | - | 82 | HTTP |
+| **Internal Services** |
+| Public API | 8082 | 8082 | Direct (dev) |
+| Admin API | 8083 | 8083 | Direct (dev) |
+| Auth Service | 8084 | 8084 | Direct (dev) |
+| **Infrastructure** |
+| PostgreSQL | 5432 | 5432 | TCP |
+| Redis | 6379 | 6379 | TCP |
+| MinIO API | 9000 | 9000 | HTTP |
+| MinIO Console | 9001 | 9001 | HTTP |
+| Traefik Dashboard | 8080 | 9002 | HTTP |
+
+## Security Architecture
+
+### Authentication & Authorization
+- **JWT-based authentication**
+  - Access tokens: 15 minutes expiry
+  - Refresh tokens: 7 days expiry
+  - Signed with configurable secret
+- **Password security**
+  - Bcrypt hashing with automatic salt
+  - No plain text storage
+- **Session management**
+  - Redis-based session store
+  - Token blacklist on logout
+- **Route protection**
+  - Admin API middleware validates JWT
+  - Admin Web navigation guards
+  - 401 responses for unauthorized access
+
+### Network Security
+- Internal service communication via Docker network
+- External access only through Traefik
+- SSL/TLS termination at reverse proxy
+- Environment-based secrets
+
+### Data Security
+- Database credentials in environment variables
+- S3/MinIO access keys configurable
+- Secrets must be changed for production
+
+## Service Dependencies
+
+Startup order and dependencies:
+
+```
+1. Infrastructure Layer
+   ├── PostgreSQL (no dependencies)
+   ├── Redis (no dependencies)
+   └── MinIO (no dependencies)
+
+2. Migration Layer
+   └── Flyway (waits for PostgreSQL health check)
+
+3. Backend Services
+   ├── Auth Service (depends on PostgreSQL, Redis)
+   ├── Public API (depends on PostgreSQL, MinIO, Flyway)
+   └── Admin API (depends on PostgreSQL, MinIO, Auth Service, Flyway)
+
+4. Frontend Services
+   ├── Public Web (depends on Public API)
+   └── Admin Web (depends on Admin API, Auth Service)
+
+5. Reverse Proxy
+   └── Traefik (depends on all services)
+```
 
 ## Technology Stack
 
-### Frontend
-- **Framework**: Vue.js 3 (Composition API)
-- **Build Tool**: Vite
-- **HTTP Client**: Axios
-- **State Management**: Pinia
-- **Router**: Vue Router
-- **UI Framework**: Tailwind CSS + DaisyUI
+| Layer | Technologies |
+|-------|-------------|
+| **Frontend** | Vue 3, Vite, TailwindCSS, DaisyUI, Axios, Pinia, Vue Router |
+| **Backend** | Go 1.25, Gin, GORM, JWT, bcrypt |
+| **Database** | PostgreSQL 18 |
+| **Cache** | Redis 7.4 |
+| **Storage** | MinIO (S3-compatible) |
+| **Proxy** | Traefik (latest) |
+| **Migrations** | Flyway 11 |
+| **Container** | Docker, Docker Compose |
+| **Task Runner** | Task (Taskfile) |
+| **Documentation** | Swagger/OpenAPI |
 
-### Backend
-- **Language**: Go 1.25+
-- **Web Framework**: Gin
-- **ORM**: GORM
-- **Auth**: JWT tokens (golang-jwt/jwt)
-- **API Docs**: Swagger (swaggo/swag)
-- **Database Driver**: pgx
-- **Task Runner**: Task (Taskfile)
+## Scalability Considerations
 
-### Data Layer
-- **Database**: PostgreSQL 18+
-- **Migration Tool**: Flyway (timestamp-based migrations)
-- **Cache**: Redis 7.4+
-- **Object Storage**: MinIO (local) / AWS S3 (production)
+### Current Architecture
+- Stateless API services (horizontally scalable)
+- Shared session store (Redis)
+- Centralized object storage (MinIO)
+- Single database instance
 
-### Infrastructure
-- **Container Runtime**: Docker / Docker Compose
-- **Reverse Proxy**: Traefik v3.5+ (auto-discovery, rate limiting)
-- **Cloud Provider**: AWS
-- **CI/CD**: GitHub Actions
+### Horizontal Scaling Options
+- Multiple API service instances behind Traefik
+- Load balancing via Traefik
+- Redis cluster for session replication
+- MinIO distributed mode
 
-## Port Allocation
+### Vertical Scaling Options
+- Increase PostgreSQL resources
+- Increase Redis memory
+- Expand MinIO storage
 
-### External Access (via Traefik)
+### Future Improvements
+- Database read replicas for read-heavy loads
+- API rate limiting (Traefik middleware)
+- Response caching layer (Redis)
+- CDN for static assets
+- Monitoring (Prometheus + Grafana)
+- Centralized logging (ELK stack)
+- Message queue for async operations
+- Database connection pooling optimization
 
-| Service | Port | Routes | Description |
-|---------|------|--------|-------------|
-| **Public Portfolio** | 80 | `/` → public-web<br>`/api/v1/*` → public-api | Main website + API |
-| **Admin Portal** | 81 | `/` → admin-web<br>`/api/v1/*` → admin-api<br>`/auth/*` → auth-service | Admin dashboard + APIs |
-| **API Documentation** | 82 | `/public/` → public-api/swagger<br>`/admin/` → admin-api/swagger<br>`/auth/` → auth-service/swagger | Swagger docs |
+## Deployment Environments
 
-### Internal Services (Direct Access)
+### Development (Current)
+- All services in Docker Compose
+- Self-signed SSL certificates
+- Hot reload for frontends
+- Direct database access
+- MinIO for local storage
+- Default credentials
 
-| Service | Port | Description |
-|---------|------|-------------|
-| Public Web | 8080 | Vue.js public portfolio (direct) |
-| Admin Web | 8081 | Vue.js admin portal (direct) |
-| Public API | 8082 | Go public REST API (direct) |
-| Admin API | 8083 | Go admin REST API (direct) |
-| Auth Service | 8084 | Go authentication service (direct) |
-| PostgreSQL | 5432 | Database |
-| Redis | 6379 | Cache |
-| MinIO | 9000 | Object storage (local) |
-| MinIO Console | 9001 | MinIO admin console |
+### Production Considerations
+- Enable Let's Encrypt for SSL
+- Use managed database (AWS RDS, etc.)
+- Use managed Redis (AWS ElastiCache, etc.)
+- Use S3 instead of MinIO
+- Strong JWT secrets
+- Secure passwords and credentials
+- HTTP to HTTPS redirect
+- Rate limiting enabled
+- Health checks and monitoring
+- Automated backups
+- Log aggregation
+- CDN for static content
 
-## Data Models
+## API Documentation
 
-### User
-```sql
-CREATE TABLE users (
-    id BIGSERIAL PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+Swagger UI available for all backend services:
 
-### Profile
-```sql
-CREATE TABLE profile (
-    id BIGSERIAL PRIMARY KEY,
-    full_name VARCHAR(100) NOT NULL,
-    title VARCHAR(100),
-    bio TEXT,
-    email VARCHAR(100),
-    phone VARCHAR(20),
-    location VARCHAR(100),
-    avatar_url VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+- **Public API**: http://localhost:82/public/
+- **Admin API**: http://localhost:82/admin/
+- **Auth Service**: http://localhost:82/auth/
 
-### Work Experience
-```sql
-CREATE TABLE work_experience (
-    id BIGSERIAL PRIMARY KEY,
-    company VARCHAR(100) NOT NULL,
-    position VARCHAR(100) NOT NULL,
-    description TEXT,
-    start_date DATE NOT NULL,
-    end_date DATE,
-    is_current BOOLEAN DEFAULT FALSE,
-    display_order INT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+Each service generates its own OpenAPI 3.0 specification.
 
-### Certifications
-```sql
-CREATE TABLE certifications (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(200) NOT NULL,
-    issuer VARCHAR(100) NOT NULL,
-    issue_date DATE NOT NULL,
-    expiry_date DATE,
-    credential_id VARCHAR(100),
-    credential_url VARCHAR(255),
-    display_order INT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+## Health Checks
 
-### Miniature Projects
-```sql
-CREATE TABLE miniature_projects (
-    id BIGSERIAL PRIMARY KEY,
-    title VARCHAR(200) NOT NULL,
-    description TEXT,
-    completed_date DATE,
-    display_order INT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+All services implement health endpoints:
 
-### Images
-```sql
-CREATE TABLE images (
-    id BIGSERIAL PRIMARY KEY,
-    miniature_project_id BIGINT REFERENCES miniature_projects(id) ON DELETE CASCADE,
-    title VARCHAR(200),
-    description TEXT,
-    s3_key VARCHAR(500) NOT NULL,
-    s3_bucket VARCHAR(100) NOT NULL,
-    url VARCHAR(500) NOT NULL,
-    display_order INT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+- **Endpoint**: `GET /health`
+- **Response**: `200 OK` if healthy
 
-## Authentication Flow
+Docker Compose health checks:
+- PostgreSQL: `pg_isready -U portfolio_user -d portfolio`
+- Redis: `redis-cli ping`
+- MinIO: HTTP probe to `/minio/health/live`
 
-1. Admin logs in via Admin Web → Auth Service
-2. Auth Service validates credentials against PostgreSQL
-3. On success, generates JWT token
-4. Stores session in Redis with TTL
-5. Returns JWT to client
-6. Client includes JWT in Authorization header for subsequent requests
-7. Admin API validates JWT with Auth Service before processing requests
+## License
 
-## API Endpoints
-
-### Public API (public-api)
-```
-GET  /api/v1/profile              - Get profile info
-GET  /api/v1/experience           - List work experience
-GET  /api/v1/certifications       - List certifications
-GET  /api/v1/miniatures           - List miniature projects
-GET  /api/v1/miniatures/:id       - Get miniature project details
-GET  /api/v1/health               - Health check
-GET  /swagger/*                   - Swagger documentation
-```
-
-### Admin API (admin-api)
-```
-POST   /api/v1/profile            - Update profile
-POST   /api/v1/experience         - Create work experience
-PUT    /api/v1/experience/:id     - Update work experience
-DELETE /api/v1/experience/:id     - Delete work experience
-POST   /api/v1/certifications     - Create certification
-PUT    /api/v1/certifications/:id - Update certification
-DELETE /api/v1/certifications/:id - Delete certification
-POST   /api/v1/miniatures         - Create miniature project
-PUT    /api/v1/miniatures/:id     - Update miniature project
-DELETE /api/v1/miniatures/:id     - Delete miniature project
-POST   /api/v1/images             - Upload image
-DELETE /api/v1/images/:id         - Delete image
-GET    /api/v1/health             - Health check
-GET    /swagger/*                 - Swagger documentation
-```
-
-### Auth API (auth-service)
-```
-POST /api/v1/auth/login           - Login
-POST /api/v1/auth/logout          - Logout
-POST /api/v1/auth/refresh         - Refresh token
-POST /api/v1/auth/validate        - Validate token
-GET  /api/v1/health               - Health check
-GET  /swagger/*                   - Swagger documentation
-```
-
-## Local Development
-
-### Prerequisites
-- Docker Desktop
-- [Task](https://taskfile.dev/installation/) (task runner)
-- Git
-- Node.js 18+ (for local web development)
-- Go 1.25+ (for local API development)
-
-### Running Everything
-```bash
-# Clone infrastructure repo
-git clone git@github.com:GunarsK-portfolio/infrastructure.git
-cd infrastructure
-
-# Start all services
-task up
-
-# View logs
-task logs
-
-# Stop all services
-task down
-```
-
-### Running Individual Services
-```bash
-# Stop a service for local debugging
-task stop-auth
-
-# Rebuild and restart after code changes
-task rebuild-auth
-
-# View logs for specific service
-task logs-auth
-```
-
-Each repository also has its own Taskfile.yml for local development:
-```bash
-cd ../auth-service
-cp .env.example .env
-task run  # or press F5 in VS Code to debug
-```
-
-## AWS Deployment Architecture
-
-### Services
-- **ECS/Fargate** - Container orchestration for Go APIs and Vue.js apps
-- **RDS PostgreSQL** - Managed database
-- **ElastiCache Redis** - Managed cache
-- **S3** - Image storage
-- **CloudFront** - CDN for web apps
-- **Application Load Balancer** - Traffic distribution
-- **Route 53** - DNS management
-- **ACM** - SSL/TLS certificates
-- **ECR** - Container registry
-- **VPC** - Network isolation
-
-### CI/CD Pipeline
-- GitHub Actions for build and test
-- Push Docker images to ECR
-- Deploy to ECS via AWS CLI/Terraform
-
-## Security Considerations
-
-1. **JWT Tokens**: Short-lived access tokens (15 min) with refresh tokens (7 days)
-2. **HTTPS Only**: All production traffic over TLS
-3. **CORS**: Properly configured for web apps
-4. **SQL Injection**: Use parameterized queries (GORM)
-5. **Rate Limiting**: Implement on all APIs
-6. **Environment Variables**: Never commit secrets
-7. **S3 Bucket**: Private with signed URLs for images
-8. **Database**: Encrypt at rest, secure credentials in AWS Secrets Manager
-
-## Development Workflow
-
-1. Create feature branch in respective repository
-2. Develop and test locally with Docker Compose
-3. Commit and push to GitHub
-4. Open Pull Request
-5. CI/CD runs tests and builds
-6. Merge to main after review
-7. Auto-deploy to AWS (main branch only)
-
-## Next Steps
-
-1. Set up GitHub organization and repositories
-2. Initialize each service with proper structure
-3. Set up local docker-compose for development
-4. Implement core services
-5. Deploy to AWS
-6. Set up monitoring and logging
+MIT

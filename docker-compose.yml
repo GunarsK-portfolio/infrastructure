@@ -4,19 +4,41 @@ services:
     image: traefik:latest
     container_name: traefik
     command:
+      # API
+      - "--api.dashboard=true"
       - "--api.insecure=true"
+      # Docker provider
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.directory=/config"
+      - "--providers.file.watch=true"
+      # Entrypoints
       - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
       - "--entrypoints.admin.address=:81"
+      - "--entrypoints.adminsecure.address=:8443"
       - "--entrypoints.swagger.address=:82"
+      # HTTP to HTTPS redirect (uncomment for production)
+      # - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      # - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      # Let's Encrypt (uncomment and configure for production)
+      # - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      # - "--certificatesresolvers.letsencrypt.acme.email=your-email@example.com"
+      # - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      # Uncomment for Let's Encrypt staging (testing)
+      # - "--certificatesresolvers.letsencrypt.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
     ports:
-      - "80:80"    # Public web + API
-      - "81:81"    # Admin web + API
-      - "82:82"    # Swagger docs
-      # Traefik dashboard on :8080 (access via http://traefik:8080 from within network)
+      - "80:80"      # HTTP
+      - "443:443"    # HTTPS
+      - "81:81"      # Admin HTTP
+      - "8443:8443"  # Admin HTTPS
+      - "82:82"      # Swagger docs
+      - "9002:8080"  # Traefik dashboard
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./docker/traefik/certs:/certs:ro
+      - ./docker/traefik/dynamic.yml:/config/dynamic.yml:ro
+      # - ./docker/traefik/letsencrypt:/letsencrypt  # For Let's Encrypt
     networks:
       - network
     depends_on:
@@ -134,12 +156,20 @@ services:
         condition: service_completed_successfully
     labels:
       - "traefik.enable=true"
-      # Auth API on admin entrypoint - rewrite /auth/v1/* to /api/v1/auth/*
+      # HTTP router - rewrite /auth/v1/* to /api/v1/auth/*
       - "traefik.http.routers.auth-api.rule=PathPrefix(`/auth/v1/`)"
       - "traefik.http.routers.auth-api.entrypoints=admin"
       - "traefik.http.routers.auth-api.middlewares=auth-rewrite"
       - "traefik.http.routers.auth-api.priority=100"
       - "traefik.http.routers.auth-api.service=auth-api"
+      # HTTPS router
+      - "traefik.http.routers.auth-api-secure.rule=PathPrefix(`/auth/v1/`)"
+      - "traefik.http.routers.auth-api-secure.entrypoints=adminsecure"
+      - "traefik.http.routers.auth-api-secure.middlewares=auth-rewrite"
+      - "traefik.http.routers.auth-api-secure.priority=100"
+      - "traefik.http.routers.auth-api-secure.tls=true"
+      - "traefik.http.routers.auth-api-secure.service=auth-api"
+      # Middleware and service
       - "traefik.http.middlewares.auth-rewrite.replacepathregex.regex=^/auth/v1/(.*)"
       - "traefik.http.middlewares.auth-rewrite.replacepathregex.replacement=/api/v1/auth/$$1"
       - "traefik.http.services.auth-api.loadbalancer.server.port=8084"
@@ -180,9 +210,14 @@ services:
         condition: service_completed_successfully
     labels:
       - "traefik.enable=true"
-      # Public API on web entrypoint
+      # HTTP router
       - "traefik.http.routers.public-api.rule=PathPrefix(`/api/`)"
       - "traefik.http.routers.public-api.entrypoints=web"
+      # HTTPS router
+      - "traefik.http.routers.public-api-secure.rule=PathPrefix(`/api/`)"
+      - "traefik.http.routers.public-api-secure.entrypoints=websecure"
+      - "traefik.http.routers.public-api-secure.tls=true"
+      - "traefik.http.routers.public-api-secure.service=public-api"
       - "traefik.http.services.public-api.loadbalancer.server.port=8082"
       # Swagger docs
       - "traefik.http.routers.public-swagger.rule=PathPrefix(`/public/`)"
@@ -224,9 +259,14 @@ services:
         condition: service_completed_successfully
     labels:
       - "traefik.enable=true"
-      # Admin API on admin entrypoint
+      # HTTP router
       - "traefik.http.routers.admin-api.rule=PathPrefix(`/api/`)"
       - "traefik.http.routers.admin-api.entrypoints=admin"
+      # HTTPS router
+      - "traefik.http.routers.admin-api-secure.rule=PathPrefix(`/api/`)"
+      - "traefik.http.routers.admin-api-secure.entrypoints=adminsecure"
+      - "traefik.http.routers.admin-api-secure.tls=true"
+      - "traefik.http.routers.admin-api-secure.service=admin-api"
       - "traefik.http.services.admin-api.loadbalancer.server.port=8083"
       # Swagger docs
       - "traefik.http.routers.admin-swagger.rule=PathPrefix(`/admin/`)"
@@ -241,7 +281,7 @@ services:
       dockerfile: Dockerfile
     container_name: public-web
     environment:
-      - VITE_API_URL=http://localhost/api/v1
+      - VITE_API_URL=https://localhost/api/v1
     ports:
       - "8080:80"
     networks:
@@ -250,9 +290,16 @@ services:
       - public-api
     labels:
       - "traefik.enable=true"
+      # HTTP router
       - "traefik.http.routers.public-web.rule=PathPrefix(`/`)"
       - "traefik.http.routers.public-web.entrypoints=web"
       - "traefik.http.routers.public-web.priority=1"
+      # HTTPS router
+      - "traefik.http.routers.public-web-secure.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.public-web-secure.entrypoints=websecure"
+      - "traefik.http.routers.public-web-secure.priority=1"
+      - "traefik.http.routers.public-web-secure.tls=true"
+      - "traefik.http.routers.public-web-secure.service=public-web"
       - "traefik.http.services.public-web.loadbalancer.server.port=80"
 
   # Admin Web
@@ -262,8 +309,8 @@ services:
       dockerfile: Dockerfile
     container_name: admin-web
     environment:
-      - VITE_API_URL=http://localhost:81/api/v1
-      - VITE_AUTH_URL=http://localhost:81/auth/v1
+      - VITE_API_URL=https://localhost:8443/api/v1
+      - VITE_AUTH_URL=https://localhost:8443/auth/v1
     ports:
       - "8081:80"
     networks:
@@ -273,9 +320,16 @@ services:
       - auth-service
     labels:
       - "traefik.enable=true"
+      # HTTP router
       - "traefik.http.routers.admin-web.rule=PathPrefix(`/`)"
       - "traefik.http.routers.admin-web.entrypoints=admin"
       - "traefik.http.routers.admin-web.priority=1"
+      # HTTPS router
+      - "traefik.http.routers.admin-web-secure.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.admin-web-secure.entrypoints=adminsecure"
+      - "traefik.http.routers.admin-web-secure.priority=1"
+      - "traefik.http.routers.admin-web-secure.tls=true"
+      - "traefik.http.routers.admin-web-secure.service=admin-web"
       - "traefik.http.services.admin-web.loadbalancer.server.port=80"
 
 networks:
