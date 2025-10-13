@@ -1,12 +1,13 @@
 services:
   # Traefik Reverse Proxy
   traefik:
-    image: traefik:latest
+    image: traefik:v3.5.3
     container_name: traefik
+    restart: unless-stopped
     command:
       # API
       - "--api.dashboard=true"
-      - "--api.insecure=true"
+      - "--api.insecure=false"
       # Docker provider
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
@@ -36,7 +37,7 @@ services:
       - "9002:8080"  # Traefik dashboard
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./docker/traefik/certs:/certs:ro
+      - ${TRAEFIK_CERT_DIR:-./docker/traefik/certs}:/certs:ro
       - ./docker/traefik/dynamic.yml:/config/dynamic.yml:ro
       # - ./docker/traefik/letsencrypt:/letsencrypt  # For Let's Encrypt
     networks:
@@ -47,15 +48,22 @@ services:
       - public-api
       - admin-api
       - auth-service
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
 
   # Database
   postgres:
     image: postgres:18-alpine
     container_name: postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: portfolio
-      POSTGRES_USER: portfolio_user
-      POSTGRES_PASSWORD: portfolio_pass
+      POSTGRES_DB: ${POSTGRES_DB:-portfolio}
+      POSTGRES_USER: ${POSTGRES_USER:-portfolio_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-portfolio_pass}
     ports:
       - "5432:5432"
     volumes:
@@ -67,11 +75,18 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
 
   # Redis Cache
   redis:
     image: redis:7.4-alpine
     container_name: redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
@@ -83,15 +98,22 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
 
   # MinIO (S3-compatible storage)
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: minio
+    restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -104,19 +126,26 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
 
   # Database Migrations (Flyway)
   flyway:
     image: flyway/flyway:11
     container_name: flyway
+    restart: "no"
     command: migrate
     volumes:
       - ../database/migrations:/flyway/sql
       - ../database/seeds:/flyway/seeds
     environment:
-      - FLYWAY_URL=jdbc:postgresql://postgres:5432/portfolio
-      - FLYWAY_USER=portfolio_user
-      - FLYWAY_PASSWORD=portfolio_pass
+      - FLYWAY_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-portfolio}
+      - FLYWAY_USER=${POSTGRES_USER:-portfolio_user}
+      - FLYWAY_PASSWORD=${POSTGRES_PASSWORD:-portfolio_pass}
       - FLYWAY_BASELINE_ON_MIGRATE=true
       - FLYWAY_LOCATIONS=filesystem:/flyway/sql,filesystem:/flyway/seeds
     networks:
@@ -131,16 +160,17 @@ services:
       context: ../auth-service
       dockerfile: Dockerfile
     container_name: auth-service
+    restart: unless-stopped
     environment:
       - PORT=8084
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=portfolio_user
-      - DB_PASSWORD=portfolio_pass
-      - DB_NAME=portfolio
+      - DB_USER=${POSTGRES_USER:-portfolio_user}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-portfolio_pass}
+      - DB_NAME=${POSTGRES_DB:-portfolio}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - JWT_SECRET=your-secret-key-change-in-production
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
       - JWT_ACCESS_EXPIRY=15m
       - JWT_REFRESH_EXPIRY=168h
     ports:
@@ -154,6 +184,18 @@ services:
         condition: service_healthy
       flyway:
         condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
     labels:
       - "traefik.enable=true"
       # HTTP router - rewrite /auth/v1/* to /api/v1/auth/*
@@ -185,16 +227,17 @@ services:
       context: ../public-api
       dockerfile: Dockerfile
     container_name: public-api
+    restart: unless-stopped
     environment:
       - PORT=8082
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=portfolio_user
-      - DB_PASSWORD=portfolio_pass
-      - DB_NAME=portfolio
+      - DB_USER=${POSTGRES_USER:-portfolio_user}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-portfolio_pass}
+      - DB_NAME=${POSTGRES_DB:-portfolio}
       - S3_ENDPOINT=http://minio:9000
-      - S3_ACCESS_KEY=minioadmin
-      - S3_SECRET_KEY=minioadmin
+      - S3_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
+      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
       - S3_BUCKET=images
       - S3_USE_SSL=false
     ports:
@@ -208,14 +251,29 @@ services:
         condition: service_healthy
       flyway:
         condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
     labels:
       - "traefik.enable=true"
       # HTTP router
       - "traefik.http.routers.public-api.rule=PathPrefix(`/api/`)"
       - "traefik.http.routers.public-api.entrypoints=web"
+      - "traefik.http.routers.public-api.priority=100"
+      - "traefik.http.routers.public-api.service=public-api"
       # HTTPS router
       - "traefik.http.routers.public-api-secure.rule=PathPrefix(`/api/`)"
       - "traefik.http.routers.public-api-secure.entrypoints=websecure"
+      - "traefik.http.routers.public-api-secure.priority=100"
       - "traefik.http.routers.public-api-secure.tls=true"
       - "traefik.http.routers.public-api-secure.service=public-api"
       - "traefik.http.services.public-api.loadbalancer.server.port=8082"
@@ -231,17 +289,18 @@ services:
       context: ../admin-api
       dockerfile: Dockerfile
     container_name: admin-api
+    restart: unless-stopped
     environment:
       - PORT=8083
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=portfolio_user
-      - DB_PASSWORD=portfolio_pass
-      - DB_NAME=portfolio
+      - DB_USER=${POSTGRES_USER:-portfolio_user}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-portfolio_pass}
+      - DB_NAME=${POSTGRES_DB:-portfolio}
       - AUTH_SERVICE_URL=http://auth-service:8084
       - S3_ENDPOINT=http://minio:9000
-      - S3_ACCESS_KEY=minioadmin
-      - S3_SECRET_KEY=minioadmin
+      - S3_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
+      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
       - S3_BUCKET=images
       - S3_USE_SSL=false
     ports:
@@ -257,16 +316,36 @@ services:
         condition: service_started
       flyway:
         condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
     labels:
       - "traefik.enable=true"
-      # HTTP router
-      - "traefik.http.routers.admin-api.rule=PathPrefix(`/api/`)"
+      # HTTP router - rewrite /admin-api/v1/* to /api/v1/*
+      - "traefik.http.routers.admin-api.rule=PathPrefix(`/admin-api/`)"
       - "traefik.http.routers.admin-api.entrypoints=admin"
+      - "traefik.http.routers.admin-api.middlewares=admin-api-rewrite"
+      - "traefik.http.routers.admin-api.priority=100"
+      - "traefik.http.routers.admin-api.service=admin-api"
       # HTTPS router
-      - "traefik.http.routers.admin-api-secure.rule=PathPrefix(`/api/`)"
+      - "traefik.http.routers.admin-api-secure.rule=PathPrefix(`/admin-api/`)"
       - "traefik.http.routers.admin-api-secure.entrypoints=adminsecure"
+      - "traefik.http.routers.admin-api-secure.middlewares=admin-api-rewrite"
+      - "traefik.http.routers.admin-api-secure.priority=100"
       - "traefik.http.routers.admin-api-secure.tls=true"
       - "traefik.http.routers.admin-api-secure.service=admin-api"
+      # Middleware and service
+      - "traefik.http.middlewares.admin-api-rewrite.replacepathregex.regex=^/admin-api/(.*)"
+      - "traefik.http.middlewares.admin-api-rewrite.replacepathregex.replacement=/api/$$1"
       - "traefik.http.services.admin-api.loadbalancer.server.port=8083"
       # Swagger docs
       - "traefik.http.routers.admin-swagger.rule=PathPrefix(`/admin/`)"
@@ -279,23 +358,30 @@ services:
     build:
       context: ../public-web
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: https://localhost/api/v1
     container_name: public-web
-    environment:
-      - VITE_API_URL=https://localhost/api/v1
+    restart: unless-stopped
     ports:
       - "8080:80"
     networks:
       - network
     depends_on:
       - public-api
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
     labels:
       - "traefik.enable=true"
       # HTTP router
-      - "traefik.http.routers.public-web.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.public-web.rule=PathPrefix(`/`) && !PathPrefix(`/api/`)"
       - "traefik.http.routers.public-web.entrypoints=web"
       - "traefik.http.routers.public-web.priority=1"
       # HTTPS router
-      - "traefik.http.routers.public-web-secure.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.public-web-secure.rule=PathPrefix(`/`) && !PathPrefix(`/api/`)"
       - "traefik.http.routers.public-web-secure.entrypoints=websecure"
       - "traefik.http.routers.public-web-secure.priority=1"
       - "traefik.http.routers.public-web-secure.tls=true"
@@ -307,10 +393,11 @@ services:
     build:
       context: ../admin-web
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: https://localhost:8443/admin-api/v1
+        VITE_AUTH_URL: https://localhost:8443/auth/v1
     container_name: admin-web
-    environment:
-      - VITE_API_URL=https://localhost:8443/api/v1
-      - VITE_AUTH_URL=https://localhost:8443/auth/v1
+    restart: unless-stopped
     ports:
       - "8081:80"
     networks:
@@ -318,6 +405,12 @@ services:
     depends_on:
       - admin-api
       - auth-service
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
     labels:
       - "traefik.enable=true"
       # HTTP router

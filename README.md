@@ -132,17 +132,71 @@ docker-compose up -d --build [service]  # Rebuild service
 
 ## Configuration
 
-### SSL/TLS
-Self-signed certificates are in `docker/traefik/certs/`. For production, configure Let's Encrypt in [docker-compose.yml](docker-compose.yml).
-
 ### Environment Variables
-Key configurations in [docker-compose.yml](docker-compose.yml):
-- **PostgreSQL**: `portfolio` database, `portfolio_user`, `portfolio_pass`
-- **MinIO**: `minioadmin` / `minioadmin`
-- **JWT Secret**: Change `JWT_SECRET` for production
+
+1. Copy the example environment file:
+```bash
+cp .env.example .env
+```
+
+2. Update `.env` with your settings (defaults work for local development):
+```env
+# Database
+POSTGRES_DB=portfolio
+POSTGRES_USER=portfolio_user
+POSTGRES_PASSWORD=portfolio_pass
+
+# MinIO
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin
+
+# JWT
+JWT_SECRET=your-secret-key-change-in-production
+
+# SSL/TLS Certificates
+TRAEFIK_CERT_DIR=./docker/traefik/certs
+TLS_CERT_FILE=localhost.crt
+TLS_KEY_FILE=localhost.key
+
+# Environment
+ENVIRONMENT=development
+```
+
+**Important**: Change `JWT_SECRET` and passwords for production!
+
+### SSL/TLS Certificates
+
+Certificate paths are configurable via environment variables:
+- `TRAEFIK_CERT_DIR` - Directory containing certificates (default: `./docker/traefik/certs`)
+- `TLS_CERT_FILE` - Certificate filename (default: `localhost.crt`)
+- `TLS_KEY_FILE` - Private key filename (default: `localhost.key`)
+
+For local development, self-signed certificates are in `docker/traefik/certs/`. See [docker/traefik/certs/README.md](docker/traefik/certs/README.md) for generation instructions.
+
+For production, configure Let's Encrypt in [docker-compose.yml](docker-compose.yml) or point `TRAEFIK_CERT_DIR` to your production certificates.
 
 ### Database Migrations
 Migrations run automatically on startup via Flyway from `../database/migrations/` and `../database/seeds/`.
+
+### Resource Limits
+All services have memory limits configured:
+- **Infrastructure** (Traefik, Postgres, Redis, MinIO): 128M-512M
+- **Go services** (APIs): 256M limit, 128M reserved
+- **Web services** (Vue apps): 128M limit, 64M reserved
+
+Adjust in `docker-compose.yml` if needed for your environment.
+
+### Docker Compose Override
+For personal development settings, create `docker-compose.override.yml`:
+```bash
+cp docker-compose.override.yml.example docker-compose.override.yml
+```
+
+This file is gitignored and loaded automatically. Use it for:
+- Custom port mappings
+- Volume mounts for hot reload
+- Debug settings
+- Resource limit overrides
 
 ## Development
 

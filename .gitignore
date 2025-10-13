@@ -10,6 +10,9 @@ docker/traefik/letsencrypt/
 .env
 .env.local
 
+# Docker Compose overrides (personal dev settings)
+docker-compose.override.yml
+
 # Logs
 *.log
 

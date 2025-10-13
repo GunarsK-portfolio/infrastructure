@@ -1,0 +1,32 @@
+# Docker Compose Override Example
+# Copy this file to docker-compose.override.yml and customize for your local development
+# docker-compose.override.yml is gitignored for personal settings
+
+services:
+  # Example: Mount source code for hot reload during development
+  # auth-service:
+  #   volumes:
+  #     - ../auth-service:/app:ro
+  #   command: go run cmd/api/main.go
+
+  # Example: Expose additional ports for debugging
+  # postgres:
+  #   ports:
+  #     - "5433:5432"  # Alternative port if 5432 is busy
+
+  # Example: Increase resource limits for local testing
+  # public-api:
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 512M
+
+  # Example: Enable verbose logging
+  # traefik:
+  #   command:
+  #     - "--log.level=DEBUG"
+
+  # Example: Run specific services locally outside Docker
+  # auth-service:
+  #   profiles:
+  #     - disabled  # Disable this service in Docker

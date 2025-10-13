@@ -1,5 +1,7 @@
 tls:
   certificates:
+    # Certificate files are mounted from ${TRAEFIK_CERT_DIR}
+    # Default: localhost.crt and localhost.key
     - certFile: /certs/localhost.crt
       keyFile: /certs/localhost.key
   stores:
