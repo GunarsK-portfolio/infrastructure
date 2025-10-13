@@ -84,7 +84,7 @@ services:
 
   # Redis Cache
   redis:
-    image: redis:7.4-alpine
+    image: redis:8.2-alpine
     container_name: redis
     restart: unless-stopped
     ports:
