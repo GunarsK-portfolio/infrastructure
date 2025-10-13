@@ -16,8 +16,8 @@ This repository contains the Docker Compose configuration and Traefik reverse pr
 - **auth-service** - JWT authentication service
 - **public-api** - Public API service
 - **admin-api** - Admin API service
-- **public-web** - Public frontend (Vue.js)
-- **admin-web** - Admin frontend (Vue.js)
+- **public-web** - Public frontend (Vue.js + Naive UI)
+- **admin-web** - Admin frontend (Vue.js + Naive UI)
 
 ## Prerequisites
 
