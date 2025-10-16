@@ -8,39 +8,35 @@
     ":combinePatchMinorReleases",
     ":label(infrastructure)"
   ],
-  "prCreation": "immediate",
   "timezone": "Europe/Riga",
-  "schedule": [],
+  "schedule": ["every weekend"],
   "packageRules": [
     {
-      "matchManagers": [
-        "terraform"
-      ],
-      "groupName": "Terraform modules",
-      "automerge": false,
-      "labels": [
-        "terraform"
-      ]
+      "matchManagers": ["terraform"],
+      "matchUpdateTypes": ["patch"],
+      "groupName": "Terraform module patches",
+      "automerge": true,
+      "automergeType": "pr",
+      "labels": ["terraform", "automerge"]
     },
     {
-      "matchManagers": [
-        "dockerfile"
-      ],
+      "matchManagers": ["terraform"],
+      "matchUpdateTypes": ["minor", "major"],
+      "groupName": "Terraform module updates",
+      "dependencyDashboardApproval": true,
+      "labels": ["terraform", "manual-review"]
+    },
+    {
+      "matchManagers": ["dockerfile"],
       "groupName": "Docker base images",
-      "automerge": false,
-      "labels": [
-        "docker"
-      ]
+      "dependencyDashboardApproval": true,
+      "labels": ["docker", "manual-review"]
     },
     {
-      "matchManagers": [
-        "github-actions"
-      ],
+      "matchManagers": ["github-actions"],
       "groupName": "GitHub Actions",
       "automerge": true,
-      "labels": [
-        "ci"
-      ]
+      "labels": ["ci"]
     }
   ],
   "prHourlyLimit": 5,
