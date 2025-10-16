@@ -48,6 +48,7 @@ services:
       - public-api
       - admin-api
       - auth-service
+      - files-api
     deploy:
       resources:
         limits:
@@ -245,11 +246,7 @@ services:
       - DB_USER=${DB_USER_READONLY:-portfolio_public}
       - DB_PASSWORD=${DB_PASSWORD_READONLY:-portfolio_public_dev_pass}
       - DB_NAME=${POSTGRES_DB:-portfolio}
-      - S3_ENDPOINT=http://minio:9000
-      - S3_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
-      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
-      - S3_BUCKET=images
-      - S3_USE_SSL=false
+      - FILES_API_URL=${FILES_API_URL:-http://files-api:8085}
     ports:
       - "8082:8082"
     networks:
@@ -257,8 +254,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      minio:
-        condition: service_healthy
+      files-api:
+        condition: service_started
       flyway:
         condition: service_completed_successfully
     healthcheck:
@@ -363,6 +360,71 @@ services:
       - "traefik.http.routers.admin-swagger.entrypoints=swagger"
       - "traefik.http.routers.admin-swagger.middlewares=admin-swagger-strip"
       - "traefik.http.middlewares.admin-swagger-strip.stripprefix.prefixes=/admin"
+
+  # Files API
+  files-api:
+    build:
+      context: ../files-api
+      dockerfile: Dockerfile
+    container_name: files-api
+    restart: unless-stopped
+    environment:
+      - PORT=8085
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      # Use portfolio_admin for files API (needs write access to storage.files)
+      - DB_USER=${DB_USER:-portfolio_admin}
+      - DB_PASSWORD=${DB_PASSWORD:-portfolio_admin_dev_pass}
+      - DB_NAME=${POSTGRES_DB:-portfolio}
+      - S3_ENDPOINT=http://minio:9000
+      - S3_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
+      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - S3_USE_SSL=false
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - MAX_FILE_SIZE=10485760
+      - ALLOWED_FILE_TYPES=image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf
+    ports:
+      - "8085:8085"
+    networks:
+      - network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8085/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    labels:
+      - "traefik.enable=true"
+      # HTTP router - files accessible on both public and admin
+      - "traefik.http.routers.files-api.rule=PathPrefix(`/files/`)"
+      - "traefik.http.routers.files-api.entrypoints=web,admin"
+      - "traefik.http.routers.files-api.priority=110"
+      - "traefik.http.routers.files-api.service=files-api"
+      # HTTPS router
+      - "traefik.http.routers.files-api-secure.rule=PathPrefix(`/files/`)"
+      - "traefik.http.routers.files-api-secure.entrypoints=websecure,adminsecure"
+      - "traefik.http.routers.files-api-secure.priority=110"
+      - "traefik.http.routers.files-api-secure.tls=true"
+      - "traefik.http.routers.files-api-secure.service=files-api"
+      - "traefik.http.services.files-api.loadbalancer.server.port=8085"
+      # Swagger docs
+      - "traefik.http.routers.files-swagger.rule=PathPrefix(`/files/`)"
+      - "traefik.http.routers.files-swagger.entrypoints=swagger"
+      - "traefik.http.routers.files-swagger.middlewares=files-swagger-strip"
+      - "traefik.http.middlewares.files-swagger-strip.stripprefix.prefixes=/files"
 
   # Public Web
   public-web:
