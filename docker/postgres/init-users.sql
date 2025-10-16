@@ -63,3 +63,11 @@ $$;
 
 GRANT CONNECT ON DATABASE portfolio TO portfolio_public;
 COMMENT ON ROLE portfolio_public IS 'Public API user - SELECT only';
+
+-- =============================================================================
+-- EXTENSIONS - Installed as superuser before migrations run
+-- =============================================================================
+
+-- Enable pg_stat_statements for query performance monitoring
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+COMMENT ON EXTENSION pg_stat_statements IS 'Track planning and execution statistics of all SQL statements';
