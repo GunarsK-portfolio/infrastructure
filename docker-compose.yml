@@ -360,6 +360,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: https://localhost/api/v1
+        VITE_USE_MOCK_DATA: true
     container_name: public-web
     restart: unless-stopped
     ports:

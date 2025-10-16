@@ -200,6 +200,22 @@ This file is gitignored and loaded automatically. Use it for:
 
 ## Development
 
+### Mock Data Mode (Public Web)
+
+The public-web service is configured to use **mock data by default** for development, which means it doesn't require the backend API to be running. This is configured in [docker-compose.yml](docker-compose.yml:362-363):
+
+```yaml
+args:
+  VITE_API_URL: https://localhost/api/v1
+  VITE_USE_MOCK_DATA: true
+```
+
+**To disable mock data and use the real API:**
+1. Set `VITE_USE_MOCK_DATA: false` in docker-compose.yml
+2. Rebuild the public-web service: `task rebuild-public-web` or `docker-compose up -d --build public-web`
+
+### Local Development Without Docker
+
 For local development without Docker:
 
 1. Start only infrastructure services:
