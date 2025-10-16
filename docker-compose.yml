@@ -62,16 +62,19 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-portfolio}
-      POSTGRES_USER: ${POSTGRES_USER:-portfolio_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-portfolio_pass}
+      # Default PostgreSQL superuser (creates database and initial users)
+      POSTGRES_USER: ${POSTGRES_SUPERUSER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:-postgres_pass}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Bootstrap users before Flyway runs
+      - ./docker/postgres/init-users.sql:/docker-entrypoint-initdb.d/01-init-users.sql:ro
     networks:
       - network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U portfolio_user -d portfolio"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d portfolio"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -144,8 +147,9 @@ services:
       - ../database/seeds:/flyway/seeds
     environment:
       - FLYWAY_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-portfolio}
-      - FLYWAY_USER=${POSTGRES_USER:-portfolio_user}
-      - FLYWAY_PASSWORD=${POSTGRES_PASSWORD:-portfolio_pass}
+      # Use portfolio_owner for migrations (has DDL rights)
+      - FLYWAY_USER=${FLYWAY_USER:-portfolio_owner}
+      - FLYWAY_PASSWORD=${FLYWAY_PASSWORD:-portfolio_owner_dev_pass}
       - FLYWAY_BASELINE_ON_MIGRATE=true
       - FLYWAY_LOCATIONS=filesystem:/flyway/sql,filesystem:/flyway/seeds
     networks:
@@ -165,8 +169,9 @@ services:
       - PORT=8084
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=${POSTGRES_USER:-portfolio_user}
-      - DB_PASSWORD=${POSTGRES_PASSWORD:-portfolio_pass}
+      # Use portfolio_admin for runtime (CRUD only, no DDL)
+      - DB_USER=${DB_USER:-portfolio_admin}
+      - DB_PASSWORD=${DB_PASSWORD:-portfolio_admin_dev_pass}
       - DB_NAME=${POSTGRES_DB:-portfolio}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -232,8 +237,9 @@ services:
       - PORT=8082
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=${POSTGRES_USER:-portfolio_user}
-      - DB_PASSWORD=${POSTGRES_PASSWORD:-portfolio_pass}
+      # Use portfolio_public for public API (SELECT only for extra security)
+      - DB_USER=${DB_USER_READONLY:-portfolio_public}
+      - DB_PASSWORD=${DB_PASSWORD_READONLY:-portfolio_public_dev_pass}
       - DB_NAME=${POSTGRES_DB:-portfolio}
       - S3_ENDPOINT=http://minio:9000
       - S3_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
@@ -294,8 +300,9 @@ services:
       - PORT=8083
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=${POSTGRES_USER:-portfolio_user}
-      - DB_PASSWORD=${POSTGRES_PASSWORD:-portfolio_pass}
+      # Use portfolio_admin for admin API (CRUD access)
+      - DB_USER=${DB_USER:-portfolio_admin}
+      - DB_PASSWORD=${DB_PASSWORD:-portfolio_admin_dev_pass}
       - DB_NAME=${POSTGRES_DB:-portfolio}
       - AUTH_SERVICE_URL=http://auth-service:8084
       - S3_ENDPOINT=http://minio:9000
