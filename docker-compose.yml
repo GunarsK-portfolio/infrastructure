@@ -37,7 +37,7 @@ services:
       - "9002:8080"  # Traefik dashboard
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ${TRAEFIK_CERT_DIR:-./docker/traefik/certs}:/certs:ro
+      - ${TRAEFIK_CERT_DIR}:/certs:ro
       - ./docker/traefik/dynamic.yml:/config/dynamic.yml:ro
       # - ./docker/traefik/letsencrypt:/letsencrypt  # For Let's Encrypt
     networks:
@@ -66,10 +66,10 @@ services:
       - "-c"
       - "shared_preload_libraries=pg_stat_statements"
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-portfolio}
+      POSTGRES_DB: ${POSTGRES_DB}
       # Default PostgreSQL superuser (creates database and initial users)
-      POSTGRES_USER: ${POSTGRES_SUPERUSER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:-postgres_pass}
+      POSTGRES_USER: ${POSTGRES_SUPERUSER}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -120,8 +120,8 @@ services:
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -151,12 +151,12 @@ services:
       - ../database/migrations:/flyway/sql
       - ../database/seeds:/flyway/seeds
     environment:
-      - FLYWAY_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-portfolio}
+      - FLYWAY_URL=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${POSTGRES_DB}
       # Use portfolio_owner for migrations (has DDL rights)
-      - FLYWAY_USER=${FLYWAY_USER:-portfolio_owner}
-      - FLYWAY_PASSWORD=${FLYWAY_PASSWORD:-portfolio_owner_dev_pass}
-      - FLYWAY_BASELINE_ON_MIGRATE=true
-      - FLYWAY_LOCATIONS=filesystem:/flyway/sql,filesystem:/flyway/seeds
+      - FLYWAY_USER=${FLYWAY_USER}
+      - FLYWAY_PASSWORD=${FLYWAY_PASSWORD}
+      - FLYWAY_BASELINE_ON_MIGRATE=${FLYWAY_BASELINE_ON_MIGRATE}
+      - FLYWAY_LOCATIONS=${FLYWAY_LOCATIONS}
     networks:
       - network
     depends_on:
@@ -171,18 +171,18 @@ services:
     container_name: auth-service
     restart: unless-stopped
     environment:
-      - PORT=8084
-      - DB_HOST=postgres
-      - DB_PORT=5432
+      - PORT=${AUTH_SERVICE_PORT}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
       # Use portfolio_admin for runtime (CRUD only, no DDL)
-      - DB_USER=${DB_USER:-portfolio_admin}
-      - DB_PASSWORD=${DB_PASSWORD:-portfolio_admin_dev_pass}
-      - DB_NAME=${POSTGRES_DB:-portfolio}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
-      - JWT_ACCESS_EXPIRY=15m
-      - JWT_REFRESH_EXPIRY=168h
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${POSTGRES_DB}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ACCESS_EXPIRY=${JWT_ACCESS_EXPIRY}
+      - JWT_REFRESH_EXPIRY=${JWT_REFRESH_EXPIRY}
     ports:
       - "8084:8084"
     networks:
@@ -239,14 +239,14 @@ services:
     container_name: public-api
     restart: unless-stopped
     environment:
-      - PORT=8082
-      - DB_HOST=postgres
-      - DB_PORT=5432
+      - PORT=${PUBLIC_API_PORT}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
       # Use portfolio_public for public API (SELECT only for extra security)
-      - DB_USER=${DB_USER_READONLY:-portfolio_public}
-      - DB_PASSWORD=${DB_PASSWORD_READONLY:-portfolio_public_dev_pass}
-      - DB_NAME=${POSTGRES_DB:-portfolio}
-      - FILES_API_URL=${FILES_API_URL:-http://files-api:8085}
+      - DB_USER=${DB_USER_READONLY}
+      - DB_PASSWORD=${DB_PASSWORD_READONLY}
+      - DB_NAME=${POSTGRES_DB}
+      - FILES_API_URL=${FILES_API_URL}
     ports:
       - "8082:8082"
     networks:
@@ -298,19 +298,19 @@ services:
     container_name: admin-api
     restart: unless-stopped
     environment:
-      - PORT=8083
-      - DB_HOST=postgres
-      - DB_PORT=5432
+      - PORT=${ADMIN_API_PORT}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
       # Use portfolio_admin for admin API (CRUD access)
-      - DB_USER=${DB_USER:-portfolio_admin}
-      - DB_PASSWORD=${DB_PASSWORD:-portfolio_admin_dev_pass}
-      - DB_NAME=${POSTGRES_DB:-portfolio}
-      - AUTH_SERVICE_URL=http://auth-service:8084
-      - S3_ENDPOINT=http://minio:9000
-      - S3_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
-      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
-      - S3_BUCKET=images
-      - S3_USE_SSL=false
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${POSTGRES_DB}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_ACCESS_KEY=${MINIO_ROOT_USER}
+      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - S3_BUCKET=${S3_BUCKET}
+      - S3_USE_SSL=${S3_USE_SSL}
     ports:
       - "8083:8083"
     networks:
@@ -369,20 +369,20 @@ services:
     container_name: files-api
     restart: unless-stopped
     environment:
-      - PORT=8085
-      - DB_HOST=postgres
-      - DB_PORT=5432
+      - PORT=${FILES_API_PORT}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
       # Use portfolio_admin for files API (needs write access to storage.files)
-      - DB_USER=${DB_USER:-portfolio_admin}
-      - DB_PASSWORD=${DB_PASSWORD:-portfolio_admin_dev_pass}
-      - DB_NAME=${POSTGRES_DB:-portfolio}
-      - S3_ENDPOINT=http://minio:9000
-      - S3_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
-      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
-      - S3_USE_SSL=false
-      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
-      - MAX_FILE_SIZE=10485760
-      - ALLOWED_FILE_TYPES=image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${POSTGRES_DB}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_ACCESS_KEY=${MINIO_ROOT_USER}
+      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - S3_USE_SSL=${S3_USE_SSL}
+      - JWT_SECRET=${JWT_SECRET}
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE}
+      - ALLOWED_FILE_TYPES=${ALLOWED_FILE_TYPES}
     ports:
       - "8085:8085"
     networks:
@@ -432,8 +432,8 @@ services:
       context: ../public-web
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: https://localhost/api/v1
-        VITE_USE_MOCK_DATA: true
+        VITE_API_URL: ${VITE_PUBLIC_API_URL}
+        VITE_USE_MOCK_DATA: ${VITE_PUBLIC_USE_MOCK_DATA}
     container_name: public-web
     restart: unless-stopped
     ports:
@@ -468,8 +468,8 @@ services:
       context: ../admin-web
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: https://localhost:8443/admin-api/v1
-        VITE_AUTH_URL: https://localhost:8443/auth/v1
+        VITE_API_URL: ${VITE_ADMIN_API_URL}
+        VITE_AUTH_URL: ${VITE_ADMIN_AUTH_URL}
     container_name: admin-web
     restart: unless-stopped
     ports:
