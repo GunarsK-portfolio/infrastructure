@@ -206,7 +206,7 @@ FILES_API_URL=http://files-api:8085
 
 # File Upload Configuration
 MAX_FILE_SIZE=10485760
-ALLOWED_FILE_TYPES=image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf
+ALLOWED_FILE_TYPES=image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword
 
 # Web Frontend Build Args
 # Public Web

@@ -135,10 +135,10 @@ This document describes the architecture of the portfolio project, a microservic
 - **Database User**: portfolio_admin (write access to storage.files)
 - **Authentication**: JWT validation via Auth Service (upload/delete only)
 - **Endpoints**:
-  - GET /health
-  - GET /files/:fileType/*key (public download)
-  - POST /files (protected upload)
-  - DELETE /files/:id (protected delete)
+  - GET /api/v1/health
+  - GET /api/v1/files/:fileType/*key (public download)
+  - POST /api/v1/files (protected upload)
+  - DELETE /api/v1/files/:id (protected delete)
 - **File Types**: portfolio-image, miniature-image, document
 - **Max Upload**: 10MB (configurable)
 - **Allowed Types**: JPEG, PNG, GIF, WebP, PDF
@@ -454,7 +454,7 @@ Each service generates its own OpenAPI 3.0 specification via Swaggo.
 
 All services implement health endpoints:
 
-- **Endpoint**: `GET /health`
+- **Endpoint**: `GET /api/v1/health`
 - **Response**: `200 OK` if healthy
 
 Docker Compose health checks:
@@ -464,7 +464,7 @@ Docker Compose health checks:
 - Auth Service: HTTP probe to `http://localhost:8084/api/v1/health`
 - Public API: HTTP probe to `http://localhost:8082/api/v1/health`
 - Admin API: HTTP probe to `http://localhost:8083/api/v1/health`
-- Files API: HTTP probe to `http://localhost:8085/health`
+- Files API: HTTP probe to `http://localhost:8085/api/v1/health`
 
 ## License
 
