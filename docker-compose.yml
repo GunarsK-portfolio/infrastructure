@@ -58,13 +58,18 @@ services:
 
   # Database
   postgres:
-    image: postgres:18-alpine
+    build:
+      context: ./docker/postgres
+      dockerfile: Dockerfile
+    image: portfolio-postgres:18-alpine-partman
     container_name: postgres
     restart: unless-stopped
     command:
       - "postgres"
       - "-c"
-      - "shared_preload_libraries=pg_stat_statements"
+      - "shared_preload_libraries=pg_stat_statements,pg_cron"
+      - "-c"
+      - "cron.database_name=portfolio"
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       # Default PostgreSQL superuser (creates database and initial users)
@@ -74,8 +79,9 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Bootstrap users before Flyway runs
+      # Bootstrap users and extensions before Flyway runs
       - ./docker/postgres/init-users.sql:/docker-entrypoint-initdb.d/01-init-users.sql:ro
+      - ./docker/postgres/02-init-extensions.sql:/docker-entrypoint-initdb.d/02-init-extensions.sql:ro
     networks:
       - network
     healthcheck:
