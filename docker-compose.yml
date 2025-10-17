@@ -141,6 +141,30 @@ services:
         reservations:
           memory: 256M
 
+  # MinIO Bucket Setup
+  minio-setup:
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    container_name: minio-setup
+    restart: "no"
+    volumes:
+      - ./docker/minio/files-api-policy.json:/policies/files-api-policy.json:ro
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio ${S3_ENDPOINT} ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+      /usr/bin/mc mb --ignore-existing myminio/images;
+      /usr/bin/mc mb --ignore-existing myminio/miniatures;
+      /usr/bin/mc mb --ignore-existing myminio/documents;
+      /usr/bin/mc admin policy create myminio files-api-policy /policies/files-api-policy.json;
+      /usr/bin/mc admin user add myminio ${S3_ACCESS_KEY} ${S3_SECRET_KEY};
+      /usr/bin/mc admin policy attach myminio files-api-policy --user ${S3_ACCESS_KEY};
+      exit 0;
+      "
+    networks:
+      - network
+    depends_on:
+      minio:
+        condition: service_healthy
+
   # Database Migrations (Flyway)
   flyway:
     image: flyway/flyway:11
@@ -307,8 +331,8 @@ services:
       - DB_NAME=${POSTGRES_DB}
       - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
       - S3_ENDPOINT=${S3_ENDPOINT}
-      - S3_ACCESS_KEY=${MINIO_ROOT_USER}
-      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET=${S3_BUCKET}
       - S3_USE_SSL=${S3_USE_SSL}
     ports:
@@ -377,8 +401,8 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${POSTGRES_DB}
       - S3_ENDPOINT=${S3_ENDPOINT}
-      - S3_ACCESS_KEY=${MINIO_ROOT_USER}
-      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_USE_SSL=${S3_USE_SSL}
       - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
       - MAX_FILE_SIZE=${MAX_FILE_SIZE}

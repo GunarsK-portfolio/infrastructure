@@ -175,8 +175,14 @@ REDIS_HOST=redis
 REDIS_PORT=6379
 
 # MinIO (S3-compatible storage)
+# Root user for MinIO administration
 MINIO_ROOT_USER=minioadmin
 MINIO_ROOT_PASSWORD=minioadmin
+
+# Service account for files-api (limited to bucket operations only)
+S3_ACCESS_KEY=files-api-user
+S3_SECRET_KEY=files-api-secret-change-in-production
+
 S3_ENDPOINT=http://minio:9000
 S3_BUCKET=images
 S3_USE_SSL=false

@@ -37,6 +37,11 @@ tasks:
     cmds:
       - docker-compose logs -f admin-api
 
+  logs-files:
+    desc: View files API logs
+    cmds:
+      - docker-compose logs -f files-api
+
   logs-public-web:
     desc: View public web logs
     cmds:
@@ -83,6 +88,11 @@ tasks:
     cmds:
       - docker-compose stop admin-api
 
+  stop-files-api:
+    desc: Stop files API
+    cmds:
+      - docker-compose stop files-api
+
   stop-public-web:
     desc: Stop public web
     cmds:
@@ -108,6 +118,11 @@ tasks:
     desc: Rebuild and restart admin API
     cmds:
       - docker-compose up -d --build admin-api
+
+  rebuild-files-api:
+    desc: Rebuild and restart files API
+    cmds:
+      - docker-compose up -d --build files-api
 
   rebuild-public-web:
     desc: Rebuild and restart public web
