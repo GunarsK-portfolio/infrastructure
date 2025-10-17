@@ -14,8 +14,9 @@ This repository contains the Docker Compose configuration and Traefik reverse pr
 - **MinIO** - S3-compatible object storage
 - **Flyway** - Database migrations
 - **auth-service** - JWT authentication service
-- **public-api** - Public API service
-- **admin-api** - Admin API service
+- **public-api** - Public API service (read-only)
+- **admin-api** - Admin API service (full CRUD)
+- **files-api** - File upload/download service
 - **public-web** - Public frontend (Vue.js + Naive UI)
 - **admin-web** - Admin frontend (Vue.js + Naive UI)
 
@@ -65,6 +66,7 @@ task up
 | - Public API Docs | http://localhost:82/public/ | - |
 | - Admin API Docs | http://localhost:82/admin/ | - |
 | - Auth API Docs | http://localhost:82/auth/ | - |
+| - Files API Docs | http://localhost:82/files/ | - |
 | Traefik Dashboard | http://localhost:9002 | - |
 | MinIO Console | http://localhost:9001 | minioadmin / minioadmin |
 
@@ -126,6 +128,7 @@ docker-compose up -d --build [service]  # Rebuild service
 | 8082 | Public API |
 | 8083 | Admin API |
 | 8084 | Auth Service |
+| 8085 | Files API |
 | 9000 | MinIO API |
 | 9001 | MinIO Console |
 | 9002 | Traefik Dashboard |
@@ -134,24 +137,54 @@ docker-compose up -d --build [service]  # Rebuild service
 
 ### Environment Variables
 
+**Important**: All environment variables are required. The docker-compose.yml file has **no default values** - you must configure all variables in the `.env` file.
+
 1. Copy the example environment file:
 ```bash
 cp .env.example .env
 ```
 
-2. Update `.env` with your settings (defaults work for local development):
-```env
-# Database
-POSTGRES_DB=portfolio
-POSTGRES_USER=portfolio_user
-POSTGRES_PASSWORD=portfolio_pass
+2. Review and update `.env` with your settings. The example file contains development-safe defaults:
 
-# MinIO
+```env
+# Database Connection
+POSTGRES_DB=portfolio
+DB_HOST=postgres
+DB_PORT=5432
+
+# PostgreSQL Superuser (for database creation)
+POSTGRES_SUPERUSER=postgres
+POSTGRES_SUPERUSER_PASSWORD=postgres_pass
+
+# Flyway Migration User (DDL rights - creates/alters tables)
+FLYWAY_USER=portfolio_owner
+FLYWAY_PASSWORD=portfolio_owner_dev_pass
+FLYWAY_BASELINE_ON_MIGRATE=true
+FLYWAY_LOCATIONS=filesystem:/flyway/sql,filesystem:/flyway/seeds
+
+# Application API User (CRUD rights - used by services)
+DB_USER=portfolio_admin
+DB_PASSWORD=portfolio_admin_dev_pass
+
+# Read-Only User (SELECT only - used by public API)
+DB_USER_READONLY=portfolio_public
+DB_PASSWORD_READONLY=portfolio_public_dev_pass
+
+# Redis
+REDIS_HOST=redis
+REDIS_PORT=6379
+
+# MinIO (S3-compatible storage)
 MINIO_ROOT_USER=minioadmin
 MINIO_ROOT_PASSWORD=minioadmin
+S3_ENDPOINT=http://minio:9000
+S3_BUCKET=images
+S3_USE_SSL=false
 
 # JWT
 JWT_SECRET=your-secret-key-change-in-production
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_EXPIRY=168h
 
 # SSL/TLS Certificates
 TRAEFIK_CERT_DIR=./docker/traefik/certs
@@ -160,9 +193,37 @@ TLS_KEY_FILE=localhost.key
 
 # Environment
 ENVIRONMENT=development
+
+# Service Ports
+AUTH_SERVICE_PORT=8084
+PUBLIC_API_PORT=8082
+ADMIN_API_PORT=8083
+FILES_API_PORT=8085
+
+# Service URLs (internal Docker network)
+AUTH_SERVICE_URL=http://auth-service:8084
+FILES_API_URL=http://files-api:8085
+
+# File Upload Configuration
+MAX_FILE_SIZE=10485760
+ALLOWED_FILE_TYPES=image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf
+
+# Web Frontend Build Args
+# Public Web
+VITE_PUBLIC_API_URL=https://localhost/api/v1
+VITE_PUBLIC_USE_MOCK_DATA=false
+
+# Admin Web
+VITE_ADMIN_API_URL=https://localhost:8443/admin-api/v1
+VITE_ADMIN_AUTH_URL=https://localhost:8443/auth/v1
 ```
 
-**Important**: Change `JWT_SECRET` and passwords for production!
+**Important for Production**:
+- Change all passwords and secrets
+- Use strong random values for `JWT_SECRET`
+- Update service URLs to production hostnames
+- Enable SSL (`S3_USE_SSL=true`) for MinIO if using HTTPS
+- Adjust JWT expiry times based on security requirements
 
 ### SSL/TLS Certificates
 
@@ -202,17 +263,18 @@ This file is gitignored and loaded automatically. Use it for:
 
 ### Mock Data Mode (Public Web)
 
-The public-web service is configured to use **mock data by default** for development, which means it doesn't require the backend API to be running. This is configured in [docker-compose.yml](docker-compose.yml:362-363):
+The public-web service can use mock data for development, controlled via the `VITE_PUBLIC_USE_MOCK_DATA` environment variable in `.env`:
 
-```yaml
-args:
-  VITE_API_URL: https://localhost/api/v1
-  VITE_USE_MOCK_DATA: true
+```env
+VITE_PUBLIC_USE_MOCK_DATA=false  # Use real API
+VITE_PUBLIC_USE_MOCK_DATA=true   # Use mock data (doesn't require backend)
 ```
 
-**To disable mock data and use the real API:**
-1. Set `VITE_USE_MOCK_DATA: false` in docker-compose.yml
+**To toggle between mock and real data:**
+1. Update `VITE_PUBLIC_USE_MOCK_DATA` in `.env`
 2. Rebuild the public-web service: `task rebuild-public-web` or `docker-compose up -d --build public-web`
+
+**Note**: Mock data mode is useful for frontend development without running the backend services.
 
 ### Local Development Without Docker
 
@@ -229,7 +291,14 @@ docker-compose up -d postgres redis minio flyway
 
 ### Access PostgreSQL
 ```bash
-docker exec -it postgres psql -U portfolio_user -d portfolio
+# As superuser
+docker exec -it postgres psql -U postgres -d portfolio
+
+# As admin user
+docker exec -it postgres psql -U portfolio_admin -d portfolio
+
+# As read-only user
+docker exec -it postgres psql -U portfolio_public -d portfolio
 ```
 
 ### Access Redis CLI

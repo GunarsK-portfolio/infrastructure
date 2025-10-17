@@ -19,41 +19,45 @@ This document describes the architecture of the portfolio project, a microservic
          │                          │                           │
 ┌────────▼────────┐      ┌─────────▼──────────┐    ┌──────────▼───────────┐
 │ Public Web      │      │  Admin Web         │    │  API Documentation   │
-│ (Vue.js)        │      │  (Vue.js + Auth)   │    │  (Swagger)           │
+│ (Vue 3)         │      │  (Vue 3 + Auth)    │    │  (Swagger)           │
 │ Port: :8080     │      │  Port: :8081       │    │  Port: :82           │
 └────────┬────────┘      └─────────┬──────────┘    └──────────────────────┘
          │                         │
-         │ /api/v1/*               │ /api/v1/* & /auth/v1/*
+         │ /api/v1/*               │ /api/v1/* & /auth/v1/* & /files/*
          │                         │
-┌────────▼────────────────┬────────▼──────────────────┐
-│  Public API (Go)        │  Admin API (Go)           │
-│  Internal: :8082        │  Internal: :8083          │
-│  + Read-only            │  + Full CRUD + Auth       │
-│  + Swagger Docs         │  + Swagger Docs           │
-└────────┬────────────────┴────────┬──────────────────┘
-         │                         │
-         │              ┌──────────▼───────────────┐
-         │              │  Auth Service (Go)       │
-         │              │  Internal: :8084         │
-         │              │  + JWT Tokens            │
-         │              │  + Refresh Tokens        │
-         │              └──────────┬───────────────┘
+┌────────▼────────────────┬────────▼────────────┬─────────────────────────┐
+│  Public API (Go)        │  Admin API (Go)     │  Files API (Go)         │
+│  Internal: :8082        │  Internal: :8083    │  Internal: :8085        │
+│  + Read-only (SELECT)   │  + Full CRUD        │  + File Upload/Download │
+│  + Swagger Docs         │  + Validates JWT    │  + Validates JWT        │
+└────────┬────────────────┴────────┬────────────┴─────────┬───────────────┘
+         │                         │                       │
+         │              ┌──────────▼───────────────────────▼────┐
+         │              │  Auth Service (Go)                    │
+         │              │  Internal: :8084                      │
+         │              │  + JWT Signing & Validation           │
+         │              │  + Access Tokens (15m)                │
+         │              │  + Refresh Tokens (7d)                │
+         │              └──────────┬────────────────────────────┘
          │                         │
 ┌────────▼─────────────────────────▼───────────────────┐
 │              Data & Cache Layer                      │
 ├──────────────────────────┬───────────────────────────┤
-│  PostgreSQL 18           │  Redis 7.4                │
+│  PostgreSQL 18           │  Redis 8.2                │
 │  Port: :5432             │  Port: :6379              │
 │  + Flyway Migrations     │  + Session Storage        │
-│  + Auto Schema Mgmt      │  + Token Blacklist        │
+│  + Role-based Access:    │  + Token Blacklist        │
+│    - portfolio_owner     │                           │
+│    - portfolio_admin     │                           │
+│    - portfolio_public    │                           │
 └──────────────────────────┴───────────────────────────┘
                            │
 ┌──────────────────────────▼───────────────────────────┐
 │              Storage Layer                           │
 │  MinIO (S3-compatible)                               │
 │  Port: :9000 (API), :9001 (Console)                  │
-│  + Image Storage                                     │
-│  + Project Assets                                    │
+│  + File Storage (images, documents)                  │
+│  + Bucket: images                                    │
 └──────────────────────────────────────────────────────┘
 ```
 
@@ -74,24 +78,25 @@ This document describes the architecture of the portfolio project, a microservic
 ### Frontend Layer
 
 #### Public Web
-- **Technology**: Vue 3, Vite, TailwindCSS, DaisyUI, Pinia, Vue Router, Axios
+- **Technology**: Vue 3, Vite, Naive UI, Pinia, Vue Router, Axios
 - **Port**: 8080 (internal), 80/443 (external via Traefik)
 - **Purpose**: Public-facing portfolio website
 - **Features**:
-  - Browse projects
+  - Browse projects and miniatures
   - View skills, experience, certifications
   - Responsive design
+  - Mock data mode for development
   - Static content display
 
 #### Admin Web
-- **Technology**: Vue 3, Vite, TailwindCSS, DaisyUI, Pinia, Vue Router, Axios
+- **Technology**: Vue 3, Vite, Naive UI, Pinia, Vue Router, Axios
 - **Port**: 8081 (internal), 81/8443 (external via Traefik)
 - **Purpose**: Admin panel for content management
 - **Features**:
   - User authentication (login/logout)
   - Protected routes with navigation guards
   - Full CRUD operations
-  - Image upload
+  - File upload via Files API
   - Token refresh handling
 
 ### Backend Layer
@@ -100,42 +105,63 @@ This document describes the architecture of the portfolio project, a microservic
 - **Technology**: Go 1.25, Gin, GORM
 - **Port**: 8082
 - **Purpose**: Serve public portfolio content (read-only)
+- **Database User**: portfolio_public (SELECT only)
 - **Authentication**: None
 - **Endpoints**:
   - GET /health
+  - GET /api/v1/profile
   - GET /api/v1/projects
-  - GET /api/v1/projects/:id
   - GET /api/v1/skills
   - GET /api/v1/experience
   - GET /api/v1/certifications
-- **Integration**: PostgreSQL for data, MinIO for images
+  - GET /api/v1/miniatures
+- **Integration**: PostgreSQL for data, Files API for file URLs
 
 #### Admin API
 - **Technology**: Go 1.25, Gin, GORM
 - **Port**: 8083
 - **Purpose**: Manage portfolio content (full CRUD)
-- **Authentication**: JWT validation via middleware
+- **Database User**: portfolio_admin (full CRUD)
+- **Authentication**: JWT validation via Auth Service
 - **Endpoints**:
   - GET /health
-  - Full CRUD for projects, skills, experience, certifications
-  - POST /api/v1/images/upload
-- **Integration**: PostgreSQL for data, MinIO for uploads, Auth Service for validation
+  - Full CRUD for projects, skills, experience, certifications, miniatures
+- **Integration**: PostgreSQL for data, MinIO for S3 uploads, Auth Service for JWT validation
+
+#### Files API
+- **Technology**: Go 1.25, Gin, GORM, MinIO SDK
+- **Port**: 8085
+- **Purpose**: File upload/download service
+- **Database User**: portfolio_admin (write access to storage.files)
+- **Authentication**: JWT validation via Auth Service (upload/delete only)
+- **Endpoints**:
+  - GET /health
+  - GET /files/:fileType/*key (public download)
+  - POST /files (protected upload)
+  - DELETE /files/:id (protected delete)
+- **File Types**: portfolio-image, miniature-image, document
+- **Max Upload**: 10MB (configurable)
+- **Allowed Types**: JPEG, PNG, GIF, WebP, PDF
+- **Integration**: PostgreSQL for metadata, MinIO for storage, Auth Service for JWT validation
 
 #### Auth Service
 - **Technology**: Go 1.25, Gin, GORM, JWT, bcrypt
 - **Port**: 8084
 - **Purpose**: User authentication and token management
+- **Database User**: portfolio_admin (access to auth.users)
 - **Endpoints**:
   - POST /api/v1/auth/register
   - POST /api/v1/auth/login
   - POST /api/v1/auth/refresh
   - POST /api/v1/auth/logout
+  - POST /api/v1/auth/validate (for other services)
 - **Features**:
-  - JWT access tokens (15min expiry)
-  - JWT refresh tokens (7 days expiry)
+  - JWT access tokens (15min expiry, configurable)
+  - JWT refresh tokens (168h/7 days expiry, configurable)
   - Bcrypt password hashing
   - Redis session storage
   - Token blacklisting
+  - Centralized JWT validation endpoint
 
 ### Data Layer
 
@@ -143,17 +169,21 @@ This document describes the architecture of the portfolio project, a microservic
 - **Version**: 18-alpine
 - **Port**: 5432
 - **Purpose**: Primary relational database
-- **Tables**:
-  - users (authentication)
-  - profile (portfolio info)
-  - work_experience
-  - certifications
-  - miniature_projects
-  - images (metadata)
-- **Migration**: Flyway (automatic on startup)
+- **Database Users (Role-based Access Control)**:
+  - **postgres** - Superuser (database creation)
+  - **portfolio_owner** - DDL operations (CREATE, ALTER, DROP) - used by Flyway
+  - **portfolio_admin** - CRUD operations (SELECT, INSERT, UPDATE, DELETE) - used by APIs
+  - **portfolio_public** - SELECT only - used by Public API (extra security)
+- **Schemas**:
+  - **auth** - User authentication (users table)
+  - **portfolio** - Portfolio content (profile, work_experience, certifications, portfolio_projects, skills)
+  - **miniatures** - Miniature painting projects (miniature_themes, miniature_projects, miniature_paints, etc.)
+  - **storage** - File metadata (files table)
+  - **audit** - Change tracking (change_log, query_stats)
+- **Migration**: Flyway (automatic on startup, versioned + repeatable)
 
 #### Redis
-- **Version**: 7.4-alpine
+- **Version**: 8.2-alpine
 - **Port**: 6379
 - **Purpose**: Cache and session store
 - **Usage**:
@@ -162,13 +192,15 @@ This document describes the architecture of the portfolio project, a microservic
   - Future: API response caching
 
 #### MinIO
+- **Version**: Latest (S3-compatible)
 - **Port**: 9000 (API), 9001 (Console)
 - **Purpose**: S3-compatible object storage
+- **Bucket**: images (for portfolio and miniature images)
 - **Usage**:
-  - Project images
-  - Avatar images
-  - Static assets
-- **Credentials**: minioadmin / minioadmin (change in production)
+  - Portfolio project images
+  - Miniature painting photos
+  - Document storage (PDFs, CVs)
+- **Credentials**: Configurable via environment variables (change for production)
 
 ## Data Flow Diagrams
 
@@ -176,14 +208,15 @@ This document describes the architecture of the portfolio project, a microservic
 ```
 ┌──────┐      ┌─────────┐      ┌────────┐      ┌──────────┐      ┌──────────┐
 │ User │─────►│ Traefik │─────►│ Public │─────►│ Public   │─────►│PostgreSQL│
-│      │      │         │      │  Web   │      │   API    │      │          │
+│      │      │         │      │  Web   │      │   API    │      │(SELECT)  │
 └──────┘      └─────────┘      └────────┘      └────┬─────┘      └──────────┘
                                                      │
-                                                     │ (images)
+                                                     │ (file URLs)
                                                      ▼
-                                               ┌──────────┐
-                                               │  MinIO   │
-                                               └──────────┘
+                                               ┌──────────┐      ┌──────────┐
+                                               │  Files   │─────►│  MinIO   │
+                                               │   API    │      │(download)│
+                                               └──────────┘      └──────────┘
 ```
 
 ### Admin Content Management Flow
@@ -191,21 +224,35 @@ This document describes the architecture of the portfolio project, a microservic
 ┌──────┐   ┌─────────┐   ┌────────┐   ┌──────────┐   ┌──────────┐
 │Admin │──►│ Traefik │──►│ Admin  │──►│   Auth   │──►│  Redis   │
 │ User │   │         │   │  Web   │   │ Service  │   │(sessions)│
-└──────┘   └─────────┘   └────┬───┘   └──────────┘   └──────────┘
+└──────┘   └─────────┘   └────┬───┘   └────┬─────┘   └──────────┘
                               │            │
-                              │ (JWT)      │ (validates)
+                              │ (JWT)      │ (returns JWT)
                               ▼            │
                          ┌──────────┐      │
-                         │  Admin   │◄─────┘
+                         │  Admin   │◄─────┘ (validates JWT)
                          │   API    │
                          └────┬─────┘
                               │
-                ┌─────────────┴──────────────┐
-                ▼                            ▼
-          ┌──────────┐                 ┌──────────┐
-          │PostgreSQL│                 │  MinIO   │
-          │  (CRUD)  │                 │(uploads) │
-          └──────────┘                 └──────────┘
+                              ▼
+                        ┌──────────┐
+                        │PostgreSQL│
+                        │  (CRUD)  │
+                        └──────────┘
+
+### File Upload/Download Flow
+┌──────┐   ┌─────────┐   ┌────────┐   ┌──────────┐   ┌──────────┐
+│Admin │──►│ Traefik │──►│ Admin  │──►│  Files   │──►│   Auth   │
+│ User │   │         │   │  Web   │   │   API    │   │ Service  │
+└──────┘   └─────────┘   └────────┘   └────┬─────┘   └────┬─────┘
+                                            │              │
+                                            │◄─────────────┘ (validates JWT)
+                                            │
+                              ┌─────────────┴──────────────┐
+                              ▼                            ▼
+                        ┌──────────┐                 ┌──────────┐
+                        │PostgreSQL│                 │  MinIO   │
+                        │(metadata)│                 │(storage) │
+                        └──────────┘                 └──────────┘
 ```
 
 ### Authentication Flow
@@ -213,11 +260,13 @@ This document describes the architecture of the portfolio project, a microservic
 1. Login Request
    Admin Web → Auth Service → PostgreSQL (verify user)
                             → Redis (create session)
-                            → Admin Web (return JWT tokens)
+                            → Admin Web (return JWT access + refresh tokens)
 
-2. API Request with Auth
-   Admin Web → Admin API (with JWT header)
-              → (JWT validation via middleware)
+2. API Request with Auth (Admin API or Files API)
+   Admin Web → Admin/Files API (with JWT header)
+              → Auth Service /api/v1/auth/validate (validate JWT)
+              → Auth Service validates JWT signature
+              → Admin/Files API (if valid, proceed)
               → PostgreSQL (perform operation)
               → Admin Web (response)
 
@@ -228,7 +277,10 @@ This document describes the architecture of the portfolio project, a microservic
 
 4. Logout
    Admin Web → Auth Service → Redis (blacklist token)
+                            → Admin Web (confirmation)
 ```
+
+**Note**: Admin API and Files API validate JWTs by calling Auth Service's `/api/v1/auth/validate` endpoint, ensuring centralized authentication logic.
 
 ## Network Architecture
 
@@ -248,6 +300,7 @@ All services run in a Docker bridge network named `network`.
 | Public API | 8082 | 8082 | Direct (dev) |
 | Admin API | 8083 | 8083 | Direct (dev) |
 | Auth Service | 8084 | 8084 | Direct (dev) |
+| Files API | 8085 | 8085 | Direct (dev) |
 | **Infrastructure** |
 | PostgreSQL | 5432 | 5432 | TCP |
 | Redis | 6379 | 6379 | TCP |
@@ -259,9 +312,10 @@ All services run in a Docker bridge network named `network`.
 
 ### Authentication & Authorization
 - **JWT-based authentication**
-  - Access tokens: 15 minutes expiry
-  - Refresh tokens: 7 days expiry
-  - Signed with configurable secret
+  - Access tokens: 15 minutes expiry (configurable via JWT_ACCESS_EXPIRY)
+  - Refresh tokens: 7 days/168h expiry (configurable via JWT_REFRESH_EXPIRY)
+  - Signed with configurable JWT_SECRET
+  - **Centralized validation**: Admin API and Files API validate tokens via Auth Service
 - **Password security**
   - Bcrypt hashing with automatic salt
   - No plain text storage
@@ -269,9 +323,15 @@ All services run in a Docker bridge network named `network`.
   - Redis-based session store
   - Token blacklist on logout
 - **Route protection**
-  - Admin API middleware validates JWT
+  - Admin API calls Auth Service `/api/v1/auth/validate` endpoint
+  - Files API calls Auth Service `/api/v1/auth/validate` endpoint
   - Admin Web navigation guards
   - 401 responses for unauthorized access
+- **Database security**
+  - Role-based access control with 3 user levels:
+    - portfolio_owner (DDL only)
+    - portfolio_admin (CRUD operations)
+    - portfolio_public (SELECT only)
 
 ### Network Security
 - Internal service communication via Docker network
@@ -298,9 +358,10 @@ Startup order and dependencies:
    └── Flyway (waits for PostgreSQL health check)
 
 3. Backend Services
-   ├── Auth Service (depends on PostgreSQL, Redis)
-   ├── Public API (depends on PostgreSQL, MinIO, Flyway)
-   └── Admin API (depends on PostgreSQL, MinIO, Auth Service, Flyway)
+   ├── Auth Service (depends on PostgreSQL, Redis, Flyway)
+   ├── Public API (depends on PostgreSQL, Flyway)
+   ├── Admin API (depends on PostgreSQL, Auth Service, Flyway)
+   └── Files API (depends on PostgreSQL, MinIO, Auth Service, Flyway)
 
 4. Frontend Services
    ├── Public Web (depends on Public API)
@@ -314,16 +375,16 @@ Startup order and dependencies:
 
 | Layer | Technologies |
 |-------|-------------|
-| **Frontend** | Vue 3, Vite, TailwindCSS, DaisyUI, Axios, Pinia, Vue Router |
-| **Backend** | Go 1.25, Gin, GORM, JWT, bcrypt |
-| **Database** | PostgreSQL 18 |
-| **Cache** | Redis 7.4 |
-| **Storage** | MinIO (S3-compatible) |
-| **Proxy** | Traefik (latest) |
+| **Frontend** | Vue 3.5, Vite 7, Naive UI 2, Axios, Pinia 3, Vue Router 4 |
+| **Backend** | Go 1.25, Gin 1.11, GORM 1.31, JWT v5, bcrypt |
+| **Database** | PostgreSQL 18-alpine |
+| **Cache** | Redis 8.2-alpine |
+| **Storage** | MinIO (S3-compatible, SDK v7) |
+| **Proxy** | Traefik v3.5 |
 | **Migrations** | Flyway 11 |
 | **Container** | Docker, Docker Compose |
 | **Task Runner** | Task (Taskfile) |
-| **Documentation** | Swagger/OpenAPI |
+| **Documentation** | Swagger/OpenAPI 3.0 |
 
 ## Scalability Considerations
 
@@ -385,8 +446,9 @@ Swagger UI available for all backend services:
 - **Public API**: http://localhost:82/public/
 - **Admin API**: http://localhost:82/admin/
 - **Auth Service**: http://localhost:82/auth/
+- **Files API**: http://localhost:82/files/
 
-Each service generates its own OpenAPI 3.0 specification.
+Each service generates its own OpenAPI 3.0 specification via Swaggo.
 
 ## Health Checks
 
@@ -396,9 +458,13 @@ All services implement health endpoints:
 - **Response**: `200 OK` if healthy
 
 Docker Compose health checks:
-- PostgreSQL: `pg_isready -U portfolio_user -d portfolio`
+- PostgreSQL: `pg_isready -U postgres -d portfolio`
 - Redis: `redis-cli ping`
 - MinIO: HTTP probe to `/minio/health/live`
+- Auth Service: HTTP probe to `http://localhost:8084/api/v1/health`
+- Public API: HTTP probe to `http://localhost:8082/api/v1/health`
+- Admin API: HTTP probe to `http://localhost:8083/api/v1/health`
+- Files API: HTTP probe to `http://localhost:8085/health`
 
 ## License
 
