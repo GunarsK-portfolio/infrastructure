@@ -10,6 +10,9 @@ docker/traefik/letsencrypt/
 .env
 .env.local
 
+# Generated secrets (backup file from generate-secrets.py)
+.secrets.txt
+
 # Docker Compose overrides (personal dev settings)
 docker-compose.override.yml
 

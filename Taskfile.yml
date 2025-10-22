@@ -1,6 +1,24 @@
 version: '3'
 
 tasks:
+  generate-secrets:
+    desc: Generate secure passwords and secrets for .env file
+    cmds:
+      - python3 scripts/generate-secrets.py {{.CLI_ARGS}}
+    platforms: [linux, darwin]
+
+  generate-secrets:windows:
+    desc: Generate secure passwords and secrets for .env file (Windows)
+    cmds:
+      - python scripts/generate-secrets.py {{.CLI_ARGS}}
+    platforms: [windows]
+
+  init:
+    desc: Initialize environment (generate secrets and start services)
+    cmds:
+      - task: generate-secrets
+      - task: up
+
   up:
     desc: Start all services with docker-compose
     cmds:

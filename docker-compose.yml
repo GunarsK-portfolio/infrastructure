@@ -75,12 +75,20 @@ services:
       # Default PostgreSQL superuser (creates database and initial users)
       POSTGRES_USER: ${POSTGRES_SUPERUSER}
       POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD}
+      # User credentials for envsubst in init script
+      FLYWAY_USER: ${FLYWAY_USER}
+      FLYWAY_PASSWORD: ${FLYWAY_PASSWORD}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_USER_READONLY: ${DB_USER_READONLY}
+      DB_PASSWORD_READONLY: ${DB_PASSWORD_READONLY}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       # Bootstrap users and extensions before Flyway runs
-      - ./docker/postgres/init-users.sql:/docker-entrypoint-initdb.d/01-init-users.sql:ro
+      - ./docker/postgres/init-users.sh:/docker-entrypoint-initdb.d/01-init-users.sh:ro
+      - ./docker/postgres/init-users.sql.template:/docker-entrypoint-initdb.d/init-users.sql.template:ro
       - ./docker/postgres/02-init-extensions.sql:/docker-entrypoint-initdb.d/02-init-extensions.sql:ro
     networks:
       - network

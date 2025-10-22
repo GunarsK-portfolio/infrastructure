@@ -1,7 +1,8 @@
 FROM postgres:18-alpine
 
-# Update Alpine packages to fix vulnerabilities
-RUN apk upgrade --no-cache
+# Update Alpine packages to fix vulnerabilities and install gettext for envsubst
+RUN apk upgrade --no-cache \
+    && apk add --no-cache gettext
 
 # Install build dependencies and PostgreSQL extensions
 RUN apk add --no-cache --virtual .build-deps \

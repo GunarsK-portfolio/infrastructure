@@ -44,17 +44,29 @@ portfolio/
 
 1. Ensure all service repositories are cloned in the parent directory
 
-2. Start all services:
+2. **Generate secure secrets** (recommended):
 ```bash
-docker-compose up -d
+task generate-secrets
+```
+This creates a `.env` file with cryptographically secure passwords.
+
+Alternatively, manually copy and edit the environment file:
+```bash
+cp .env.example .env
+# Edit .env with your own passwords
 ```
 
-Or using Task:
+3. Start all services:
 ```bash
 task up
 ```
 
-3. Access the applications:
+Or combine steps 2-3 with:
+```bash
+task init  # Generate secrets and start services
+```
+
+4. Access the applications:
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
@@ -75,13 +87,18 @@ task up
 ### Using Task (Recommended)
 
 ```bash
-task up              # Start all services
-task down            # Stop all services
-task build           # Build and start all services
-task logs            # View all logs
-task ps              # List running services
-task restart         # Restart all services
-task clean           # Stop and remove volumes
+# Setup and initialization
+task generate-secrets    # Generate secure passwords and secrets
+task init                # Generate secrets and start all services
+
+# Service management
+task up                  # Start all services
+task down                # Stop all services
+task build               # Build and start all services
+task logs                # View all logs
+task ps                  # List running services
+task restart             # Restart all services
+task clean               # Stop and remove volumes
 ```
 
 View logs for specific services:
@@ -138,6 +155,22 @@ docker-compose up -d --build [service]  # Rebuild service
 ### Environment Variables
 
 **Important**: All environment variables are required. The docker-compose.yml file has **no default values** - you must configure all variables in the `.env` file.
+
+#### Automatic Generation (Recommended)
+
+Use the secret generation script to automatically create secure credentials:
+
+```bash
+task generate-secrets
+```
+
+This will:
+- Read `.env.example` as a template
+- Generate cryptographically secure passwords and secrets
+- Create `.env` with all required variables
+- Create `.secrets.txt` as a backup reference
+
+#### Manual Configuration
 
 1. Copy the example environment file:
 ```bash

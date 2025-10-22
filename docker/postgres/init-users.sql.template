@@ -1,0 +1,74 @@
+-- Bootstrap database users for Flyway and application access
+-- This script runs on PostgreSQL container initialization before Flyway migrations
+-- Note: This script is processed by envsubst in the docker-entrypoint, so env vars work
+
+-- OWNER USER (for Flyway migrations - DDL + CRUD access)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${FLYWAY_USER}') THEN
+        CREATE ROLE ${FLYWAY_USER} WITH LOGIN PASSWORD '${FLYWAY_PASSWORD}';
+        RAISE NOTICE 'Created role ${FLYWAY_USER}';
+    ELSE
+        RAISE NOTICE 'Role ${FLYWAY_USER} already exists';
+    END IF;
+END
+$$;
+
+-- Transfer database ownership to ${FLYWAY_USER} (must be done as superuser)
+ALTER DATABASE ${POSTGRES_DB} OWNER TO ${FLYWAY_USER};
+
+-- Grant database connection and creation rights
+GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO ${FLYWAY_USER};
+GRANT CREATE ON DATABASE ${POSTGRES_DB} TO ${FLYWAY_USER};
+
+-- Grant all privileges on database
+GRANT ALL PRIVILEGES ON DATABASE ${POSTGRES_DB} TO ${FLYWAY_USER};
+
+-- Grant permissions on public schema (PostgreSQL 15+ requires explicit grants)
+GRANT ALL PRIVILEGES ON SCHEMA public TO ${FLYWAY_USER};
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${FLYWAY_USER};
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ${FLYWAY_USER};
+
+-- Set default privileges for future objects
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ${FLYWAY_USER};
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO ${FLYWAY_USER};
+
+COMMENT ON ROLE ${FLYWAY_USER} IS 'Flyway migrations user - DDL and CRUD access';
+
+-- ADMIN USER (for admin services - CRUD access)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${DB_USER}') THEN
+        CREATE ROLE ${DB_USER} WITH LOGIN PASSWORD '${DB_PASSWORD}';
+        RAISE NOTICE 'Created role ${DB_USER}';
+    ELSE
+        RAISE NOTICE 'Role ${DB_USER} already exists';
+    END IF;
+END
+$$;
+
+GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO ${DB_USER};
+COMMENT ON ROLE ${DB_USER} IS 'Admin services user - CRUD only, no DDL';
+
+-- PUBLIC USER (for public API - read-only access)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${DB_USER_READONLY}') THEN
+        CREATE ROLE ${DB_USER_READONLY} WITH LOGIN PASSWORD '${DB_PASSWORD_READONLY}';
+        RAISE NOTICE 'Created role ${DB_USER_READONLY}';
+    ELSE
+        RAISE NOTICE 'Role ${DB_USER_READONLY} already exists';
+    END IF;
+END
+$$;
+
+GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO ${DB_USER_READONLY};
+COMMENT ON ROLE ${DB_USER_READONLY} IS 'Public API user - SELECT only';
+
+-- =============================================================================
+-- EXTENSIONS - Installed as superuser before migrations run
+-- =============================================================================
+
+-- Enable pg_stat_statements for query performance monitoring
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+COMMENT ON EXTENSION pg_stat_statements IS 'Track planning and execution statistics of all SQL statements';
