@@ -6,7 +6,6 @@ This script creates a .env file with randomly generated credentials.
 
 import secrets
 import string
-import os
 import sys
 from pathlib import Path
 
