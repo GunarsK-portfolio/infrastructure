@@ -66,9 +66,21 @@ GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO ${DB_USER_READONLY};
 COMMENT ON ROLE ${DB_USER_READONLY} IS 'Public API user - SELECT only';
 
 -- =============================================================================
--- EXTENSIONS - Installed as superuser before migrations run
+-- EXTENSION PERMISSIONS
 -- =============================================================================
+-- Extensions are automatically created by postgres-image's init-extensions.sql
+-- Here we grant necessary permissions to application users
 
--- Enable pg_stat_statements for query performance monitoring
-CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
-COMMENT ON EXTENSION pg_stat_statements IS 'Track planning and execution statistics of all SQL statements';
+-- Grant pg_cron schema access to portfolio_owner (needed for scheduling jobs)
+GRANT USAGE ON SCHEMA cron TO ${FLYWAY_USER};
+GRANT ALL ON ALL TABLES IN SCHEMA cron TO ${FLYWAY_USER};
+
+-- Grant pg_partman schema access to portfolio_owner (needed for partition management)
+-- Transfer ownership of partman schema and all objects to allow partition management
+ALTER SCHEMA partman OWNER TO ${FLYWAY_USER};
+GRANT ALL ON SCHEMA partman TO ${FLYWAY_USER};
+GRANT ALL ON ALL TABLES IN SCHEMA partman TO ${FLYWAY_USER};
+GRANT ALL ON ALL SEQUENCES IN SCHEMA partman TO ${FLYWAY_USER};
+GRANT ALL ON ALL FUNCTIONS IN SCHEMA partman TO ${FLYWAY_USER};
+ALTER TABLE partman.part_config OWNER TO ${FLYWAY_USER};
+ALTER TABLE partman.part_config_sub OWNER TO ${FLYWAY_USER};
