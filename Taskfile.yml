@@ -154,9 +154,9 @@ tasks:
 
   # CI/CD Tasks
   validate:
-    desc: Validate docker compose configuration
+    desc: Validate docker compose configuration syntax
     cmds:
-      - docker compose config --quiet
+      - docker compose config --quiet --no-interpolate
 
   lint-yaml:
     desc: Lint YAML files

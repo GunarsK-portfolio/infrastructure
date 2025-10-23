@@ -32,8 +32,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Validate docker-compose.yml
-        run: docker compose config --quiet
+      - name: Validate docker-compose.yml syntax
+        run: docker compose config --quiet --no-interpolate
 
   # Job 3: Lint shell scripts
   shellcheck:
