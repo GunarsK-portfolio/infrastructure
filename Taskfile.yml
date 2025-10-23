@@ -20,143 +20,143 @@ tasks:
       - task: up
 
   up:
-    desc: Start all services with docker-compose
+    desc: Start all services with docker compose
     cmds:
-      - docker-compose up -d
+      - docker compose up -d
 
   down:
     desc: Stop all services
     cmds:
-      - docker-compose down
+      - docker compose down
 
   build:
     desc: Build all services
     cmds:
-      - docker-compose build --progress=plain
-      - docker-compose up -d
+      - docker compose build --progress=plain
+      - docker compose up -d
 
   logs:
     desc: View logs from all services
     cmds:
-      - docker-compose logs -f
+      - docker compose logs -f
 
   logs-auth:
     desc: View auth service logs
     cmds:
-      - docker-compose logs -f auth-service
+      - docker compose logs -f auth-service
 
   logs-public:
     desc: View public API logs
     cmds:
-      - docker-compose logs -f public-api
+      - docker compose logs -f public-api
 
   logs-admin:
     desc: View admin API logs
     cmds:
-      - docker-compose logs -f admin-api
+      - docker compose logs -f admin-api
 
   logs-files:
     desc: View files API logs
     cmds:
-      - docker-compose logs -f files-api
+      - docker compose logs -f files-api
 
   logs-public-web:
     desc: View public web logs
     cmds:
-      - docker-compose logs -f public-web
+      - docker compose logs -f public-web
 
   logs-admin-web:
     desc: View admin web logs
     cmds:
-      - docker-compose logs -f admin-web
+      - docker compose logs -f admin-web
 
   logs-db:
     desc: View database logs
     cmds:
-      - docker-compose logs -f postgres
+      - docker compose logs -f postgres
 
   restart:
     desc: Restart all services
     cmds:
-      - docker-compose restart
+      - docker compose restart
 
   ps:
     desc: List running services
     cmds:
-      - docker-compose ps
+      - docker compose ps
 
   clean:
     desc: Stop services and remove volumes
     cmds:
-      - docker-compose down -v
+      - docker compose down -v
 
   # Stop individual services
   stop-auth:
     desc: Stop auth service
     cmds:
-      - docker-compose stop auth-service
+      - docker compose stop auth-service
 
   stop-public-api:
     desc: Stop public API
     cmds:
-      - docker-compose stop public-api
+      - docker compose stop public-api
 
   stop-admin-api:
     desc: Stop admin API
     cmds:
-      - docker-compose stop admin-api
+      - docker compose stop admin-api
 
   stop-files-api:
     desc: Stop files API
     cmds:
-      - docker-compose stop files-api
+      - docker compose stop files-api
 
   stop-public-web:
     desc: Stop public web
     cmds:
-      - docker-compose stop public-web
+      - docker compose stop public-web
 
   stop-admin-web:
     desc: Stop admin web
     cmds:
-      - docker-compose stop admin-web
+      - docker compose stop admin-web
 
   # Rebuild and restart individual services
   rebuild-auth:
     desc: Rebuild and restart auth service
     cmds:
-      - docker-compose up -d --build auth-service
+      - docker compose up -d --build auth-service
 
   rebuild-public-api:
     desc: Rebuild and restart public API
     cmds:
-      - docker-compose up -d --build public-api
+      - docker compose up -d --build public-api
 
   rebuild-admin-api:
     desc: Rebuild and restart admin API
     cmds:
-      - docker-compose up -d --build admin-api
+      - docker compose up -d --build admin-api
 
   rebuild-files-api:
     desc: Rebuild and restart files API
     cmds:
-      - docker-compose up -d --build files-api
+      - docker compose up -d --build files-api
 
   rebuild-public-web:
     desc: Rebuild and restart public web
     cmds:
-      - docker-compose up -d --build public-web
+      - docker compose up -d --build public-web
 
   rebuild-admin-web:
     desc: Rebuild and restart admin web
     cmds:
-      - docker-compose up -d --build admin-web
+      - docker compose up -d --build admin-web
 
   # CI/CD Tasks
   validate:
-    desc: Validate docker-compose configuration
+    desc: Validate docker compose configuration
     cmds:
-      - docker-compose config --quiet
+      - docker compose config --quiet
 
   lint-yaml:
     desc: Lint YAML files
