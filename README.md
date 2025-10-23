@@ -1,5 +1,7 @@
 # Portfolio Infrastructure
 
+![CI](https://github.com/GunarsK-portfolio/infrastructure/workflows/CI/badge.svg)
+
 Docker Compose orchestration for the portfolio project microservices.
 
 ## Overview
@@ -118,6 +120,17 @@ task rebuild-public-api
 task rebuild-admin-api
 task rebuild-public-web
 task rebuild-admin-web
+```
+
+CI/CD tasks:
+```bash
+task validate          # Validate docker-compose configuration
+task lint-yaml         # Lint YAML files
+task lint-shell        # Lint shell scripts
+task lint-python       # Lint Python scripts
+task lint-markdown     # Lint Markdown files
+task ci                # Run all CI checks locally
+task install-tools     # Install CI/CD linting tools
 ```
 
 ### Using Docker Compose Directly

@@ -151,3 +151,57 @@ tasks:
     desc: Rebuild and restart admin web
     cmds:
       - docker-compose up -d --build admin-web
+
+  # CI/CD Tasks
+  validate:
+    desc: Validate docker-compose configuration
+    cmds:
+      - docker-compose config --quiet
+
+  lint-yaml:
+    desc: Lint YAML files
+    cmds:
+      - cmd: python -m yamllint .
+        platforms: [windows]
+      - cmd: yamllint .
+        platforms: [linux, darwin]
+
+  lint-shell:
+    desc: Lint shell scripts
+    cmds:
+      - shellcheck scripts/*.sh
+
+  lint-python:
+    desc: Lint Python scripts
+    cmds:
+      - cmd: python -m flake8 scripts/ --max-line-length=120
+        platforms: [windows]
+      - cmd: flake8 scripts/ --max-line-length=120
+        platforms: [linux, darwin]
+
+  lint-markdown:
+    desc: Lint Markdown files
+    cmds:
+      - markdownlint-cli2 "**/*.md"
+
+  install-tools:
+    desc: Install CI/CD tools (requires pip and npm)
+    cmds:
+      - cmd: pip install yamllint flake8
+        platforms: [linux, darwin]
+      - cmd: python -m pip install yamllint flake8
+        platforms: [windows]
+      - npm install -g markdownlint-cli2
+      - cmd: echo "Note - shellcheck must be installed separately (apt, brew, etc.)"
+        platforms: [linux, darwin]
+      - cmd: echo Note - shellcheck must be installed separately
+        platforms: [windows]
+
+  ci:
+    desc: Run all CI checks locally
+    cmds:
+      - task: validate
+      - task: lint-yaml
+      - task: lint-shell
+      - task: lint-python
+      - echo "✓ All CI checks passed!"
