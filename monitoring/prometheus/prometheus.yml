@@ -1,0 +1,91 @@
+# Prometheus Configuration for Portfolio Microservices
+global:
+  scrape_interval: 15s # Scrape metrics every 15 seconds
+  evaluation_interval: 15s # Evaluate rules every 15 seconds
+  external_labels:
+    cluster: 'portfolio-local'
+    environment: 'development'
+
+# Alertmanager configuration (optional, for future use)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+# rule_files:
+#   - "alerts/*.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+
+  # Auth Service
+  - job_name: 'auth-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['auth-service:8084']
+        labels:
+          service: 'auth-service'
+          team: 'backend'
+
+  # Public API
+  - job_name: 'public-api'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['public-api:8082']
+        labels:
+          service: 'public-api'
+          team: 'backend'
+
+  # Admin API
+  - job_name: 'admin-api'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['admin-api:8083']
+        labels:
+          service: 'admin-api'
+          team: 'backend'
+
+  # Files API
+  - job_name: 'files-api'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['files-api:8085']
+        labels:
+          service: 'files-api'
+          team: 'backend'
+
+# PostgreSQL Exporter (optional, add when needed)
+# - job_name: 'postgres'
+#   static_configs:
+#     - targets: ['postgres-exporter:9187']
+#       labels:
+#         service: 'postgres'
+
+# Redis Exporter (optional, add when needed)
+# - job_name: 'redis'
+#   static_configs:
+#     - targets: ['redis-exporter:9121']
+#       labels:
+#         service: 'redis'
+
+# Node Exporter - Host metrics (CPU, memory, disk)
+# - job_name: 'node'
+#   static_configs:
+#     - targets: ['node-exporter:9100']
+#       labels:
+#         service: 'node-exporter'
+
+# cAdvisor - Container metrics (optional)
+# - job_name: 'cadvisor'
+#   static_configs:
+#     - targets: ['cadvisor:8080']
+#       labels:
+#         service: 'cadvisor'

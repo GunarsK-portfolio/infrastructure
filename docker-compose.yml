@@ -218,6 +218,12 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - JWT_ACCESS_EXPIRY=${JWT_ACCESS_EXPIRY}
       - JWT_REFRESH_EXPIRY=${JWT_REFRESH_EXPIRY}
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_FORMAT=${LOG_FORMAT}
+      - LOG_SOURCE=${LOG_SOURCE}
+      - ENVIRONMENT=${ENVIRONMENT}
+      - GIN_MODE=release
     ports:
       - "8084:8084"
     networks:
@@ -230,7 +236,7 @@ services:
       flyway:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/api/v1/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -242,6 +248,10 @@ services:
         reservations:
           memory: 128M
     labels:
+      # Promtail logging
+      - "logging=promtail"
+      - "environment=${ENVIRONMENT}"
+      # Traefik
       - "traefik.enable=true"
       # HTTP router - rewrite /auth/v1/* to /api/v1/auth/*
       - "traefik.http.routers.auth-api.rule=PathPrefix(`/auth/v1/`)"
@@ -282,6 +292,12 @@ services:
       - DB_PASSWORD=${DB_PASSWORD_READONLY}
       - DB_NAME=${POSTGRES_DB}
       - FILES_API_URL=${FILES_API_URL}
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_FORMAT=${LOG_FORMAT}
+      - LOG_SOURCE=${LOG_SOURCE}
+      - ENVIRONMENT=${ENVIRONMENT}
+      - GIN_MODE=release
     ports:
       - "8082:8082"
     networks:
@@ -294,7 +310,7 @@ services:
       flyway:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/api/v1/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -306,6 +322,10 @@ services:
         reservations:
           memory: 128M
     labels:
+      # Promtail logging
+      - "logging=promtail"
+      - "environment=${ENVIRONMENT}"
+      # Traefik
       - "traefik.enable=true"
       # HTTP router
       - "traefik.http.routers.public-api.rule=PathPrefix(`/api/`)"
@@ -342,6 +362,12 @@ services:
       - DB_NAME=${POSTGRES_DB}
       - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
       - FILES_API_URL=${FILES_API_URL}
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_FORMAT=${LOG_FORMAT}
+      - LOG_SOURCE=${LOG_SOURCE}
+      - ENVIRONMENT=${ENVIRONMENT}
+      - GIN_MODE=release
     ports:
       - "8083:8083"
     networks:
@@ -358,7 +384,7 @@ services:
       flyway:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/api/v1/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -370,6 +396,10 @@ services:
         reservations:
           memory: 128M
     labels:
+      # Promtail logging
+      - "logging=promtail"
+      - "environment=${ENVIRONMENT}"
+      # Traefik
       - "traefik.enable=true"
       # HTTP router - rewrite /admin-api/v1/* to /api/v1/*
       - "traefik.http.routers.admin-api.rule=PathPrefix(`/admin-api/`)"
@@ -416,6 +446,12 @@ services:
       - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
       - MAX_FILE_SIZE=${MAX_FILE_SIZE}
       - ALLOWED_FILE_TYPES=${ALLOWED_FILE_TYPES}
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_FORMAT=${LOG_FORMAT}
+      - LOG_SOURCE=${LOG_SOURCE}
+      - ENVIRONMENT=${ENVIRONMENT}
+      - GIN_MODE=release
     ports:
       - "8085:8085"
     networks:
@@ -428,7 +464,7 @@ services:
       flyway:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8085/api/v1/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8085/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -440,6 +476,10 @@ services:
         reservations:
           memory: 128M
     labels:
+      # Promtail logging
+      - "logging=promtail"
+      - "environment=${ENVIRONMENT}"
+      # Traefik
       - "traefik.enable=true"
       # HTTP router - files accessible on both public and admin
       - "traefik.http.routers.files-api.rule=PathPrefix(`/files/`)"
