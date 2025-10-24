@@ -1,0 +1,151 @@
+version: '3.8'
+
+# Observability Stack for Portfolio Microservices
+# Includes: Prometheus, Loki, Promtail, Grafana
+#
+# Usage:
+#   Local Dev: docker-compose -f docker-compose.monitoring.yml up -d
+#   With services: docker-compose -f docker-compose.monitoring.yml -f ../auth-service/docker-compose.yml up -d
+#
+# Access:
+#   Grafana: http://localhost:3000 (admin/admin)
+#   Prometheus: http://localhost:9090
+#   Loki: http://localhost:3100
+
+networks:
+  monitoring:
+    driver: bridge
+  portfolio:
+    external: true
+    name: infrastructure_network
+
+volumes:
+  prometheus_data:
+  loki_data:
+  grafana_data:
+
+services:
+  # Prometheus - Metrics collection and storage
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - monitoring
+      - portfolio
+    labels:
+      logging: "promtail"
+      environment: "development"
+
+  # Loki - Log aggregation
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/loki.yml
+    volumes:
+      - ./monitoring/loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki_data:/loki
+    networks:
+      - monitoring
+    labels:
+      logging: "promtail"
+      environment: "development"
+
+  # Promtail - Log shipper (ships Docker logs to Loki)
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/promtail.yml
+    volumes:
+      - ./monitoring/promtail/promtail.yml:/etc/promtail/promtail.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    networks:
+      - monitoring
+    depends_on:
+      - loki
+    labels:
+      logging: "promtail"
+      environment: "development"
+
+  # Grafana - Visualization and dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_INSTALL_PLUGINS=
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+    networks:
+      - monitoring
+    depends_on:
+      - prometheus
+      - loki
+    labels:
+      logging: "promtail"
+      environment: "development"
+
+# Optional: Node Exporter - Host metrics (CPU, memory, disk, network)
+# Uncomment to enable host-level monitoring
+# node-exporter:
+#   image: prom/node-exporter:latest
+#   container_name: node-exporter
+#   restart: unless-stopped
+#   command:
+#     - '--path.procfs=/host/proc'
+#     - '--path.sysfs=/host/sys'
+#     - '--path.rootfs=/host'
+#     - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+#   ports:
+#     - "9100:9100"
+#   volumes:
+#     - /proc:/host/proc:ro
+#     - /sys:/host/sys:ro
+#     - /:/host:ro
+#   networks:
+#     - monitoring
+
+# Optional: cAdvisor - Container metrics
+# Uncomment to enable container-level monitoring
+# cadvisor:
+#   image: gcr.io/cadvisor/cadvisor:latest
+#   container_name: cadvisor
+#   restart: unless-stopped
+#   ports:
+#     - "8080:8080"
+#   volumes:
+#     - /:/rootfs:ro
+#     - /var/run:/var/run:ro
+#     - /sys:/sys:ro
+#     - /var/lib/docker/:/var/lib/docker:ro
+#     - /dev/disk/:/dev/disk:ro
+#   networks:
+#     - monitoring
+#   privileged: true
+#   devices:
+#     - /dev/kmsg

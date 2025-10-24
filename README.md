@@ -10,17 +10,28 @@ This repository contains the Docker Compose configuration and Traefik reverse pr
 
 ## Services
 
-- **Traefik** - Reverse proxy and load balancer
-- **PostgreSQL** - Main database
-- **Redis** - Session and cache store
-- **MinIO** - S3-compatible object storage
-- **Flyway** - Database migrations
+### Application Services
 - **auth-service** - JWT authentication service
 - **public-api** - Public API service (read-only)
 - **admin-api** - Admin API service (full CRUD)
 - **files-api** - File upload/download service
 - **public-web** - Public frontend (Vue.js + Naive UI)
 - **admin-web** - Admin frontend (Vue.js + Naive UI)
+
+### Infrastructure Services
+- **Traefik** - Reverse proxy and load balancer
+- **PostgreSQL** - Main database
+- **Redis** - Session and cache store
+- **MinIO** - S3-compatible object storage
+- **Flyway** - Database migrations
+
+### Observability Stack (Optional)
+- **Prometheus** - Metrics collection and storage
+- **Loki** - Log aggregation and indexing
+- **Promtail** - Log shipping from containers
+- **Grafana** - Metrics and logs visualization
+
+> See [monitoring/README.md](monitoring/README.md) for observability stack setup and usage.
 
 ## Prerequisites
 
@@ -68,7 +79,12 @@ Or combine steps 2-3 with:
 task init  # Generate secrets and start services
 ```
 
-4. Access the applications:
+4. **Optional**: Start observability stack:
+```bash
+task monitoring:up
+```
+
+5. Access the applications:
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
@@ -83,6 +99,8 @@ task init  # Generate secrets and start services
 | - Files API Docs | http://localhost:82/files/ | - |
 | Traefik Dashboard | http://localhost:9002 | - |
 | MinIO Console | http://localhost:9001 | minioadmin / minioadmin |
+| **Grafana** | http://localhost:3000 | admin / admin |
+| **Prometheus** | http://localhost:9090 | - |
 
 ## Available Commands
 
@@ -122,6 +140,18 @@ task rebuild-public-web
 task rebuild-admin-web
 ```
 
+Monitoring stack:
+```bash
+task monitoring:up        # Start observability stack
+task monitoring:down      # Stop observability stack
+task monitoring:restart   # Restart monitoring stack
+task monitoring:logs      # View monitoring stack logs
+task monitoring:open      # Open Grafana in browser
+task monitoring:status    # Check health of monitoring services
+task monitoring:targets   # Open Prometheus targets page
+task monitoring:clean     # Stop and remove monitoring volumes
+```
+
 CI/CD tasks:
 ```bash
 task validate          # Validate docker-compose configuration
@@ -146,6 +176,7 @@ docker-compose up -d --build [service]  # Rebuild service
 
 ## Port Mapping
 
+### Application Services
 | Port | Service |
 |------|---------|
 | 80 | Public web (HTTP) |
@@ -153,15 +184,27 @@ docker-compose up -d --build [service]  # Rebuild service
 | 81 | Admin web (HTTP) |
 | 8443 | Admin web (HTTPS) |
 | 82 | Swagger documentation |
-| 5432 | PostgreSQL |
-| 6379 | Redis |
 | 8082 | Public API |
 | 8083 | Admin API |
 | 8084 | Auth Service |
 | 8085 | Files API |
+
+### Infrastructure Services
+| Port | Service |
+|------|---------|
+| 5432 | PostgreSQL |
+| 6379 | Redis |
 | 9000 | MinIO API |
 | 9001 | MinIO Console |
 | 9002 | Traefik Dashboard |
+
+### Observability Stack (Optional)
+| Port | Service |
+|------|---------|
+| 3000 | Grafana |
+| 9090 | Prometheus |
+| 3100 | Loki |
+| 9080 | Promtail |
 
 ## Configuration
 
@@ -245,6 +288,11 @@ TLS_KEY_FILE=localhost.key
 
 # Environment
 ENVIRONMENT=development
+
+# Logging Configuration (for all services)
+LOG_LEVEL=info              # debug, info, warn, error
+LOG_FORMAT=json             # json (for Loki), text (human-readable)
+LOG_SOURCE=false            # true = add file:line (dev only)
 
 # Service Ports
 AUTH_SERVICE_PORT=8084

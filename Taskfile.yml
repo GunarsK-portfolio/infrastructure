@@ -205,3 +205,82 @@ tasks:
       - task: lint-shell
       - task: lint-python
       - echo "✓ All CI checks passed!"
+
+  # Monitoring Stack Tasks
+  monitoring:up:
+    desc: Start observability stack (Prometheus, Loki, Promtail, Grafana)
+    cmds:
+      - docker compose -f docker-compose.monitoring.yml up -d
+      - echo "✓ Monitoring stack started"
+      - echo "  Grafana - http://localhost:3000 - admin/admin"
+      - echo "  Prometheus - http://localhost:9090"
+      - echo "  Loki - http://localhost:3100"
+
+  monitoring:down:
+    desc: Stop observability stack
+    cmds:
+      - docker compose -f docker-compose.monitoring.yml down
+      - echo "✓ Monitoring stack stopped"
+
+  monitoring:restart:
+    desc: Restart observability stack
+    cmds:
+      - docker compose -f docker-compose.monitoring.yml restart
+      - echo "✓ Monitoring stack restarted"
+
+  monitoring:logs:
+    desc: View logs from monitoring stack
+    cmds:
+      - docker compose -f docker-compose.monitoring.yml logs -f
+
+  monitoring:ps:
+    desc: List monitoring stack services
+    cmds:
+      - docker compose -f docker-compose.monitoring.yml ps
+
+  monitoring:clean:
+    desc: Stop monitoring stack and remove volumes
+    cmds:
+      - docker compose -f docker-compose.monitoring.yml down -v
+      - echo "✓ Monitoring stack cleaned (volumes removed)"
+
+  monitoring:open:
+    desc: Open Grafana in browser
+    cmds:
+      - cmd: start http://localhost:3000
+        platforms: [windows]
+      - cmd: open http://localhost:3000
+        platforms: [darwin]
+      - cmd: xdg-open http://localhost:3000
+        platforms: [linux]
+
+  monitoring:status:
+    desc: Check health of monitoring stack
+    cmds:
+      - echo "Checking monitoring stack health..."
+      - cmd: |
+          curl -s http://localhost:9090/-/healthy > nul 2>&1 && \
+            echo "✓ Prometheus: healthy" || echo "✗ Prometheus: down"
+          curl -s http://localhost:3100/ready > nul 2>&1 && \
+            echo "✓ Loki: healthy" || echo "✗ Loki: down"
+          curl -s http://localhost:3000/api/health > nul 2>&1 && \
+            echo "✓ Grafana: healthy" || echo "✗ Grafana: down"
+        platforms: [windows]
+      - cmd: |
+          curl -s http://localhost:9090/-/healthy > /dev/null 2>&1 && \
+            echo "✓ Prometheus: healthy" || echo "✗ Prometheus: down"
+          curl -s http://localhost:3100/ready > /dev/null 2>&1 && \
+            echo "✓ Loki: healthy" || echo "✗ Loki: down"
+          curl -s http://localhost:3000/api/health > /dev/null 2>&1 && \
+            echo "✓ Grafana: healthy" || echo "✗ Grafana: down"
+        platforms: [linux, darwin]
+
+  monitoring:targets:
+    desc: Open Prometheus targets page
+    cmds:
+      - cmd: start http://localhost:9090/targets
+        platforms: [windows]
+      - cmd: open http://localhost:9090/targets
+        platforms: [darwin]
+      - cmd: xdg-open http://localhost:9090/targets
+        platforms: [linux]
