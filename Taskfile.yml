@@ -86,9 +86,10 @@ tasks:
       - docker compose ps
 
   clean:
-    desc: Stop services and remove volumes
+    desc: Stop all services and remove volumes
     cmds:
       - docker compose down -v
+      - docker compose -f docker-compose.monitoring.yml down -v
 
   # Stop individual services
   stop-auth:
