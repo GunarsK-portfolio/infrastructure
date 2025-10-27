@@ -481,17 +481,22 @@ services:
       - "environment=${ENVIRONMENT}"
       # Traefik
       - "traefik.enable=true"
-      # HTTP router - files accessible on both public and admin
-      - "traefik.http.routers.files-api.rule=PathPrefix(`/files/`)"
+      # HTTP router - rewrite /files-api/v1/* to /api/v1/*
+      - "traefik.http.routers.files-api.rule=PathPrefix(`/files-api/`)"
       - "traefik.http.routers.files-api.entrypoints=web,admin"
+      - "traefik.http.routers.files-api.middlewares=files-api-rewrite"
       - "traefik.http.routers.files-api.priority=110"
       - "traefik.http.routers.files-api.service=files-api"
       # HTTPS router
-      - "traefik.http.routers.files-api-secure.rule=PathPrefix(`/files/`)"
+      - "traefik.http.routers.files-api-secure.rule=PathPrefix(`/files-api/`)"
       - "traefik.http.routers.files-api-secure.entrypoints=websecure,adminsecure"
+      - "traefik.http.routers.files-api-secure.middlewares=files-api-rewrite"
       - "traefik.http.routers.files-api-secure.priority=110"
       - "traefik.http.routers.files-api-secure.tls=true"
       - "traefik.http.routers.files-api-secure.service=files-api"
+      # Middleware and service
+      - "traefik.http.middlewares.files-api-rewrite.replacepathregex.regex=^/files-api/(.*)"
+      - "traefik.http.middlewares.files-api-rewrite.replacepathregex.replacement=/api/$$1"
       - "traefik.http.services.files-api.loadbalancer.server.port=8085"
       # Swagger docs
       - "traefik.http.routers.files-swagger.rule=PathPrefix(`/files/`)"
@@ -543,6 +548,7 @@ services:
       args:
         VITE_API_URL: ${VITE_ADMIN_API_URL}
         VITE_AUTH_URL: ${VITE_ADMIN_AUTH_URL}
+        VITE_FILES_API_URL: ${VITE_ADMIN_FILES_API_URL}
     container_name: admin-web
     restart: unless-stopped
     ports:
