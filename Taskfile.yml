@@ -291,7 +291,7 @@ tasks:
   ci:lint-markdown:
     desc: Lint Markdown files
     cmds:
-      - markdownlint-cli2 "**/*.md"
+      - markdownlint-cli2
 
   ci:install-tools:
     desc: Install CI/CD tools (requires pip and npm)
