@@ -1,6 +1,7 @@
 # Portfolio Observability Stack
 
-Monitoring, logging, and observability for Portfolio microservices using Prometheus, Loki, Promtail, and Grafana.
+Monitoring, logging, and observability for Portfolio microservices
+using Prometheus, Loki, Promtail, and Grafana.
 
 ## Components
 
@@ -39,7 +40,7 @@ open http://localhost:3000
 
 ## Architecture
 
-```
+```text
 Go Services → /metrics → Prometheus ┐
              ↓ JSON logs            │
           stdout/stderr             ├→ Grafana Dashboards
@@ -93,7 +94,7 @@ func main() {
 
 ### 3. Update .env
 
-```bash
+```env
 LOG_LEVEL=info
 LOG_FORMAT=json
 LOG_SOURCE=false
@@ -132,6 +133,7 @@ task monitoring:restart
 ## Dashboards
 
 ### Service Overview
+
 **Path**: Dashboards → Portfolio → Service Overview
 
 - Request rate (req/sec)
@@ -140,6 +142,7 @@ task monitoring:restart
 - Requests in flight
 
 ### Logs Explorer
+
 **Path**: Dashboards → Portfolio → Logs Explorer
 
 - Filter by service, level
@@ -161,12 +164,14 @@ task monitoring:restart
 ### Retention
 
 **Prometheus** (metrics): Edit `docker-compose.monitoring.yml`
+
 ```yaml
 command:
   - '--storage.tsdb.retention.time=30d'
 ```
 
 **Loki** (logs): Edit `monitoring/loki/loki.yml`
+
 ```yaml
 limits_config:
   retention_period: 168h  # 7 days
@@ -204,7 +209,7 @@ curl http://localhost:3100/ready
 1. Check datasources: Grafana → Configuration → Data Sources
 2. Test connection (should show "working")
 3. Check time range (top-right)
-4. Verify metrics exist: http://localhost:9090
+4. Verify metrics exist: <http://localhost:9090>
 
 ---
 
@@ -217,7 +222,9 @@ curl http://localhost:3100/ready
 sum(rate(portfolio_auth_http_requests_total[5m])) by (service)
 
 # Latency p95
-histogram_quantile(0.95, sum(rate(portfolio_auth_http_request_duration_seconds_bucket[5m])) by (le))
+histogram_quantile(0.95,
+  sum(rate(portfolio_auth_http_request_duration_seconds_bucket[5m]))
+  by (le))
 
 # Error rate
 sum(rate(portfolio_auth_http_requests_total{status=~"5.."}[5m])) / sum(rate(portfolio_auth_http_requests_total[5m]))

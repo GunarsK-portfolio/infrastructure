@@ -1,165 +1,273 @@
 version: '3'
 
 tasks:
-  generate-secrets:
-    desc: Generate secure passwords and secrets for .env file
-    cmds:
-      - python3 scripts/generate-secrets.py {{.CLI_ARGS}}
-    platforms: [linux, darwin]
-
-  generate-secrets:windows:
-    desc: Generate secure passwords and secrets for .env file (Windows)
-    cmds:
-      - python scripts/generate-secrets.py {{.CLI_ARGS}}
-    platforms: [windows]
-
+  # Top-level tasks
   init:
     desc: Initialize environment (generate secrets and start services)
     cmds:
-      - task: generate-secrets
-      - task: up
+      - task: secrets:generate
+      - task: services:up
 
-  up:
+  # Secrets management
+  secrets:generate:
+    desc: Generate secure passwords and secrets for .env file
+    cmds:
+      - cmd: python scripts/generate-secrets.py {{.CLI_ARGS}}
+        platforms: [windows]
+      - cmd: python3 scripts/generate-secrets.py {{.CLI_ARGS}}
+        platforms: [linux, darwin]
+
+  # Services stack operations (docker-compose)
+  services:up:
     desc: Start all services with docker compose
     cmds:
       - docker compose up -d
 
-  down:
+  services:down:
     desc: Stop all services
     cmds:
       - docker compose down
 
-  build:
+  services:restart:
+    desc: Restart all services
+    cmds:
+      - docker compose restart
+
+  services:ps:
+    desc: List running services
+    cmds:
+      - docker compose ps
+
+  services:build:
     desc: Build all services
     cmds:
       - docker compose build --progress=plain
       - docker compose up -d
 
-  logs:
-    desc: View logs from all services
-    cmds:
-      - docker compose logs -f
-
-  logs-auth:
-    desc: View auth service logs
-    cmds:
-      - docker compose logs -f auth-service
-
-  logs-public:
-    desc: View public API logs
-    cmds:
-      - docker compose logs -f public-api
-
-  logs-admin:
-    desc: View admin API logs
-    cmds:
-      - docker compose logs -f admin-api
-
-  logs-files:
-    desc: View files API logs
-    cmds:
-      - docker compose logs -f files-api
-
-  logs-public-web:
-    desc: View public web logs
-    cmds:
-      - docker compose logs -f public-web
-
-  logs-admin-web:
-    desc: View admin web logs
-    cmds:
-      - docker compose logs -f admin-web
-
-  logs-db:
-    desc: View database logs
-    cmds:
-      - docker compose logs -f postgres
-
-  restart:
-    desc: Restart all services
-    cmds:
-      - docker compose restart
-
-  ps:
-    desc: List running services
-    cmds:
-      - docker compose ps
-
-  clean:
+  services:clean:
     desc: Stop all services and remove volumes
     cmds:
       - docker compose down -v
       - docker compose -f docker-compose.monitoring.yml down -v
 
-  # Stop individual services
-  stop-auth:
+  services:logs:
+    desc: View logs from all services
+    cmds:
+      - docker compose logs -f
+
+  services:ci:
+    desc: Run CI checks for all service repos
+    cmds:
+      - task: admin-api:ci
+      - task: admin-web:ci
+      - task: auth:ci
+      - task: files-api:ci
+      - task: public-api:ci
+      - task: public-web:ci
+      - task: database:ci
+      - echo "All service CI checks passed!"
+
+  # Individual service operations - Auth
+  auth:logs:
+    desc: View auth service logs
+    cmds:
+      - docker compose logs -f auth-service
+
+  auth:stop:
     desc: Stop auth service
     cmds:
       - docker compose stop auth-service
 
-  stop-public-api:
-    desc: Stop public API
+  auth:restart:
+    desc: Restart auth service
     cmds:
-      - docker compose stop public-api
+      - docker compose restart auth-service
 
-  stop-admin-api:
-    desc: Stop admin API
-    cmds:
-      - docker compose stop admin-api
-
-  stop-files-api:
-    desc: Stop files API
-    cmds:
-      - docker compose stop files-api
-
-  stop-public-web:
-    desc: Stop public web
-    cmds:
-      - docker compose stop public-web
-
-  stop-admin-web:
-    desc: Stop admin web
-    cmds:
-      - docker compose stop admin-web
-
-  # Rebuild and restart individual services
-  rebuild-auth:
+  auth:rebuild:
     desc: Rebuild and restart auth service
     cmds:
       - docker compose up -d --build auth-service
 
-  rebuild-public-api:
+  auth:ci:
+    desc: Run CI checks for auth-service repo
+    dir: ../auth-service
+    cmds:
+      - task ci:all
+
+  # Individual service operations - Public API
+  public-api:logs:
+    desc: View public API logs
+    cmds:
+      - docker compose logs -f public-api
+
+  public-api:stop:
+    desc: Stop public API
+    cmds:
+      - docker compose stop public-api
+
+  public-api:restart:
+    desc: Restart public API
+    cmds:
+      - docker compose restart public-api
+
+  public-api:rebuild:
     desc: Rebuild and restart public API
     cmds:
       - docker compose up -d --build public-api
 
-  rebuild-admin-api:
+  public-api:ci:
+    desc: Run CI checks for public-api repo
+    dir: ../public-api
+    cmds:
+      - task ci:all
+
+  # Individual service operations - Admin API
+  admin-api:logs:
+    desc: View admin API logs
+    cmds:
+      - docker compose logs -f admin-api
+
+  admin-api:stop:
+    desc: Stop admin API
+    cmds:
+      - docker compose stop admin-api
+
+  admin-api:restart:
+    desc: Restart admin API
+    cmds:
+      - docker compose restart admin-api
+
+  admin-api:rebuild:
     desc: Rebuild and restart admin API
     cmds:
       - docker compose up -d --build admin-api
 
-  rebuild-files-api:
+  admin-api:ci:
+    desc: Run CI checks for admin-api repo
+    dir: ../admin-api
+    cmds:
+      - task ci:all
+
+  # Individual service operations - Files API
+  files-api:logs:
+    desc: View files API logs
+    cmds:
+      - docker compose logs -f files-api
+
+  files-api:stop:
+    desc: Stop files API
+    cmds:
+      - docker compose stop files-api
+
+  files-api:restart:
+    desc: Restart files API
+    cmds:
+      - docker compose restart files-api
+
+  files-api:rebuild:
     desc: Rebuild and restart files API
     cmds:
       - docker compose up -d --build files-api
 
-  rebuild-public-web:
+  files-api:ci:
+    desc: Run CI checks for files-api repo
+    dir: ../files-api
+    cmds:
+      - task ci:all
+
+  # Individual service operations - Public Web
+  public-web:logs:
+    desc: View public web logs
+    cmds:
+      - docker compose logs -f public-web
+
+  public-web:stop:
+    desc: Stop public web
+    cmds:
+      - docker compose stop public-web
+
+  public-web:restart:
+    desc: Restart public web
+    cmds:
+      - docker compose restart public-web
+
+  public-web:rebuild:
     desc: Rebuild and restart public web
     cmds:
       - docker compose up -d --build public-web
 
-  rebuild-admin-web:
+  public-web:ci:
+    desc: Run CI checks for public-web repo
+    dir: ../public-web
+    cmds:
+      - task ci:all
+
+  # Individual service operations - Admin Web
+  admin-web:logs:
+    desc: View admin web logs
+    cmds:
+      - docker compose logs -f admin-web
+
+  admin-web:stop:
+    desc: Stop admin web
+    cmds:
+      - docker compose stop admin-web
+
+  admin-web:restart:
+    desc: Restart admin web
+    cmds:
+      - docker compose restart admin-web
+
+  admin-web:rebuild:
     desc: Rebuild and restart admin web
     cmds:
       - docker compose up -d --build admin-web
 
-  # CI/CD Tasks
-  validate:
+  admin-web:ci:
+    desc: Run CI checks for admin-web repo
+    dir: ../admin-web
+    cmds:
+      - task ci:all
+
+  # Database operations
+  db:logs:
+    desc: View database logs
+    cmds:
+      - docker compose logs -f postgres
+
+  db:stop:
+    desc: Stop database
+    cmds:
+      - docker compose stop postgres
+
+  db:restart:
+    desc: Restart database
+    cmds:
+      - docker compose restart postgres
+
+  database:ci:
+    desc: Run CI checks for database repo
+    dir: ../database
+    cmds:
+      - task ci:all
+
+  # CI/CD tasks (infrastructure repo only)
+  ci:all:
+    desc: Run all CI checks for infrastructure repo
+    cmds:
+      - task: ci:validate
+      - task: ci:lint-yaml
+      - task: ci:lint-shell
+      - task: ci:lint-python
+      - task: ci:lint-markdown
+      - echo "Infrastructure CI checks passed!"
+
+  ci:validate:
     desc: Validate docker compose configuration syntax
     cmds:
       - docker compose config --quiet --no-interpolate
 
-  lint-yaml:
+  ci:lint-yaml:
     desc: Lint YAML files
     cmds:
       - cmd: python -m yamllint .
@@ -167,12 +275,12 @@ tasks:
       - cmd: yamllint .
         platforms: [linux, darwin]
 
-  lint-shell:
+  ci:lint-shell:
     desc: Lint shell scripts
     cmds:
       - shellcheck scripts/*.sh
 
-  lint-python:
+  ci:lint-python:
     desc: Lint Python scripts
     cmds:
       - cmd: python -m flake8 scripts/ --max-line-length=120
@@ -180,39 +288,27 @@ tasks:
       - cmd: flake8 scripts/ --max-line-length=120
         platforms: [linux, darwin]
 
-  lint-markdown:
+  ci:lint-markdown:
     desc: Lint Markdown files
     cmds:
       - markdownlint-cli2 "**/*.md"
 
-  install-tools:
+  ci:install-tools:
     desc: Install CI/CD tools (requires pip and npm)
     cmds:
-      - cmd: pip install yamllint flake8
-        platforms: [linux, darwin]
-      - cmd: python -m pip install yamllint flake8
-        platforms: [windows]
+      - python -m pip install yamllint flake8
       - npm install -g markdownlint-cli2
-      - cmd: echo "Note - shellcheck must be installed separately (apt, brew, etc.)"
-        platforms: [linux, darwin]
       - cmd: echo Note - shellcheck must be installed separately
         platforms: [windows]
+      - cmd: echo "Note - shellcheck must be installed separately (apt, brew, etc.)"
+        platforms: [linux, darwin]
 
-  ci:
-    desc: Run all CI checks locally
-    cmds:
-      - task: validate
-      - task: lint-yaml
-      - task: lint-shell
-      - task: lint-python
-      - echo "✓ All CI checks passed!"
-
-  # Monitoring Stack Tasks
+  # Monitoring stack operations
   monitoring:up:
     desc: Start observability stack (Prometheus, Loki, Promtail, Grafana)
     cmds:
       - docker compose -f docker-compose.monitoring.yml up -d
-      - echo "✓ Monitoring stack started"
+      - echo "Monitoring stack started"
       - echo "  Grafana - http://localhost:3000 - admin/admin"
       - echo "  Prometheus - http://localhost:9090"
       - echo "  Loki - http://localhost:3100"
@@ -221,29 +317,50 @@ tasks:
     desc: Stop observability stack
     cmds:
       - docker compose -f docker-compose.monitoring.yml down
-      - echo "✓ Monitoring stack stopped"
+      - echo "Monitoring stack stopped"
 
   monitoring:restart:
     desc: Restart observability stack
     cmds:
       - docker compose -f docker-compose.monitoring.yml restart
-      - echo "✓ Monitoring stack restarted"
-
-  monitoring:logs:
-    desc: View logs from monitoring stack
-    cmds:
-      - docker compose -f docker-compose.monitoring.yml logs -f
+      - echo "Monitoring stack restarted"
 
   monitoring:ps:
     desc: List monitoring stack services
     cmds:
       - docker compose -f docker-compose.monitoring.yml ps
 
+  monitoring:logs:
+    desc: View logs from monitoring stack
+    cmds:
+      - docker compose -f docker-compose.monitoring.yml logs -f
+
   monitoring:clean:
     desc: Stop monitoring stack and remove volumes
     cmds:
       - docker compose -f docker-compose.monitoring.yml down -v
-      - echo "✓ Monitoring stack cleaned (volumes removed)"
+      - echo "Monitoring stack cleaned (volumes removed)"
+
+  monitoring:status:
+    desc: Check health of monitoring stack
+    cmds:
+      - echo "Checking monitoring stack health..."
+      - cmd: |
+          curl -s http://localhost:9090/-/healthy > nul 2>&1 && \
+            echo "Prometheus: healthy" || echo "Prometheus: down"
+          curl -s http://localhost:3100/ready > nul 2>&1 && \
+            echo "Loki: healthy" || echo "Loki: down"
+          curl -s http://localhost:3000/api/health > nul 2>&1 && \
+            echo "Grafana: healthy" || echo "Grafana: down"
+        platforms: [windows]
+      - cmd: |
+          curl -s http://localhost:9090/-/healthy > /dev/null 2>&1 && \
+            echo "Prometheus: healthy" || echo "Prometheus: down"
+          curl -s http://localhost:3100/ready > /dev/null 2>&1 && \
+            echo "Loki: healthy" || echo "Loki: down"
+          curl -s http://localhost:3000/api/health > /dev/null 2>&1 && \
+            echo "Grafana: healthy" || echo "Grafana: down"
+        platforms: [linux, darwin]
 
   monitoring:open:
     desc: Open Grafana in browser
@@ -254,27 +371,6 @@ tasks:
         platforms: [darwin]
       - cmd: xdg-open http://localhost:3000
         platforms: [linux]
-
-  monitoring:status:
-    desc: Check health of monitoring stack
-    cmds:
-      - echo "Checking monitoring stack health..."
-      - cmd: |
-          curl -s http://localhost:9090/-/healthy > nul 2>&1 && \
-            echo "✓ Prometheus: healthy" || echo "✗ Prometheus: down"
-          curl -s http://localhost:3100/ready > nul 2>&1 && \
-            echo "✓ Loki: healthy" || echo "✗ Loki: down"
-          curl -s http://localhost:3000/api/health > nul 2>&1 && \
-            echo "✓ Grafana: healthy" || echo "✗ Grafana: down"
-        platforms: [windows]
-      - cmd: |
-          curl -s http://localhost:9090/-/healthy > /dev/null 2>&1 && \
-            echo "✓ Prometheus: healthy" || echo "✗ Prometheus: down"
-          curl -s http://localhost:3100/ready > /dev/null 2>&1 && \
-            echo "✓ Loki: healthy" || echo "✗ Loki: down"
-          curl -s http://localhost:3000/api/health > /dev/null 2>&1 && \
-            echo "✓ Grafana: healthy" || echo "✗ Grafana: down"
-        platforms: [linux, darwin]
 
   monitoring:targets:
     desc: Open Prometheus targets page

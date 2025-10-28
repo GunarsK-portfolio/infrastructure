@@ -10,7 +10,6 @@ rules:
   document-start: disable
   truthy:
     allowed-values: ['true', 'false', 'on', 'off']
-  new-lines:
-    type: unix  # Enforce LF line endings
+  new-lines: disable  # Allow any line endings (LF or CRLF)
   brackets:
     max-spaces-inside: 1

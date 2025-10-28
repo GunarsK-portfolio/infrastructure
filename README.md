@@ -6,11 +6,13 @@ Docker Compose orchestration for the portfolio project microservices.
 
 ## Overview
 
-This repository contains the Docker Compose configuration and Traefik reverse proxy setup for running all portfolio services together.
+This repository contains the Docker Compose configuration and Traefik
+reverse proxy setup for running all portfolio services together.
 
 ## Services
 
 ### Application Services
+
 - **auth-service** - JWT authentication service
 - **public-api** - Public API service (read-only)
 - **admin-api** - Admin API service (full CRUD)
@@ -19,6 +21,7 @@ This repository contains the Docker Compose configuration and Traefik reverse pr
 - **admin-web** - Admin frontend (Vue.js + Naive UI)
 
 ### Infrastructure Services
+
 - **Traefik** - Reverse proxy and load balancer
 - **PostgreSQL** - Main database
 - **Redis** - Session and cache store
@@ -26,12 +29,14 @@ This repository contains the Docker Compose configuration and Traefik reverse pr
 - **Flyway** - Database migrations
 
 ### Observability Stack (Optional)
+
 - **Prometheus** - Metrics collection and storage
 - **Loki** - Log aggregation and indexing
 - **Promtail** - Log shipping from containers
 - **Grafana** - Metrics and logs visualization
 
-> See [monitoring/README.md](monitoring/README.md) for observability stack setup and usage.
+> See [monitoring/README.md](monitoring/README.md) for observability
+> stack setup and usage.
 
 ## Prerequisites
 
@@ -42,7 +47,8 @@ This repository contains the Docker Compose configuration and Traefik reverse pr
 ## Repository Structure
 
 Expected directory layout:
-```
+
+```text
 portfolio/
 ├── infrastructure/     # This repo
 ├── auth-service/       # Auth service repo
@@ -58,49 +64,55 @@ portfolio/
 1. Ensure all service repositories are cloned in the parent directory
 
 2. **Generate secure secrets** (recommended):
+
 ```bash
-task generate-secrets
+task secrets:generate
 ```
+
 This creates a `.env` file with cryptographically secure passwords.
 
 Alternatively, manually copy and edit the environment file:
+
 ```bash
 cp .env.example .env
 # Edit .env with your own passwords
 ```
 
-3. Start all services:
+1. Start all services:
+
 ```bash
-task up
+task services:up
 ```
 
 Or combine steps 2-3 with:
+
 ```bash
 task init  # Generate secrets and start services
 ```
 
-4. **Optional**: Start observability stack:
+1. **Optional**: Start observability stack:
+
 ```bash
 task monitoring:up
 ```
 
-5. Access the applications:
+1. Access the applications:
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| Public Website | http://localhost | - |
-| Public Website (HTTPS) | https://localhost | - |
-| Admin Panel | http://localhost:81 | - |
-| Admin Panel (HTTPS) | https://localhost:8443 | - |
-| Swagger Docs | http://localhost:82 | - |
-| - Public API Docs | http://localhost:82/public/ | - |
-| - Admin API Docs | http://localhost:82/admin/ | - |
-| - Auth API Docs | http://localhost:82/auth/ | - |
-| - Files API Docs | http://localhost:82/files/ | - |
-| Traefik Dashboard | http://localhost:9002 | - |
-| MinIO Console | http://localhost:9001 | minioadmin / minioadmin |
-| **Grafana** | http://localhost:3000 | admin / admin |
-| **Prometheus** | http://localhost:9090 | - |
+| Public Website | <http://localhost> | - |
+| Public Website (HTTPS) | <https://localhost> | - |
+| Admin Panel | <http://localhost:81> | - |
+| Admin Panel (HTTPS) | <https://localhost:8443> | - |
+| Swagger Docs | <http://localhost:82> | - |
+| - Public API Docs | <http://localhost:82/public/> | - |
+| - Admin API Docs | <http://localhost:82/admin/> | - |
+| - Auth API Docs | <http://localhost:82/auth/> | - |
+| - Files API Docs | <http://localhost:82/files/> | - |
+| Traefik Dashboard | <http://localhost:9002> | - |
+| MinIO Console | <http://localhost:9001> | minioadmin / minioadmin |
+| **Grafana** | <http://localhost:3000> | admin / admin |
+| **Prometheus** | <http://localhost:9090> | - |
 
 ## Available Commands
 
@@ -108,59 +120,72 @@ task monitoring:up
 
 ```bash
 # Setup and initialization
-task generate-secrets    # Generate secure passwords and secrets
+task secrets:generate    # Generate secure passwords and secrets
 task init                # Generate secrets and start all services
 
-# Service management
-task up                  # Start all services
-task down                # Stop all services
-task build               # Build and start all services
-task logs                # View all logs
-task ps                  # List running services
-task restart             # Restart all services
-task clean               # Stop and remove volumes
-```
+# Multi-service stack operations
+task services:up         # Start all services with docker compose
+task services:down       # Stop all services
+task services:restart    # Restart all services
+task services:ps         # List running services
+task services:build      # Rebuild and start all services
+task services:clean      # Stop services and remove volumes
+task services:logs       # View logs from all services
+task services:ci         # Run CI checks for all service repos
 
-View logs for specific services:
-```bash
-task logs-auth
-task logs-public-api
-task logs-admin-api
-task logs-public-web
-task logs-admin-web
-task logs-db
-```
+# Individual service operations
+task admin-api:logs      # View admin API logs
+task admin-api:stop      # Stop admin API service
+task admin-api:restart   # Restart admin API service
+task admin-api:rebuild   # Rebuild and restart admin API
+task admin-api:ci        # Run CI checks in admin-api repo
 
-Rebuild individual services:
-```bash
-task rebuild-auth
-task rebuild-public-api
-task rebuild-admin-api
-task rebuild-public-web
-task rebuild-admin-web
-```
+task auth:logs           # View auth service logs
+task auth:stop           # Stop auth service
+task auth:restart        # Restart auth service
+task auth:rebuild        # Rebuild and restart auth service
+task auth:ci             # Run CI checks in auth-service repo
 
-Monitoring stack:
-```bash
-task monitoring:up        # Start observability stack
-task monitoring:down      # Stop observability stack
-task monitoring:restart   # Restart monitoring stack
-task monitoring:logs      # View monitoring stack logs
-task monitoring:open      # Open Grafana in browser
-task monitoring:status    # Check health of monitoring services
-task monitoring:targets   # Open Prometheus targets page
-task monitoring:clean     # Stop and remove monitoring volumes
-```
+task files-api:logs      # View files API logs
+task files-api:stop      # Stop files API service
+task files-api:restart   # Restart files API service
+task files-api:rebuild   # Rebuild and restart files API
+task files-api:ci        # Run CI checks in files-api repo
 
-CI/CD tasks:
-```bash
-task validate          # Validate docker-compose configuration
-task lint-yaml         # Lint YAML files
-task lint-shell        # Lint shell scripts
-task lint-python       # Lint Python scripts
-task lint-markdown     # Lint Markdown files
-task ci                # Run all CI checks locally
-task install-tools     # Install CI/CD linting tools
+task public-api:logs     # View public API logs
+task public-api:stop     # Stop public API service
+task public-api:restart  # Restart public API service
+task public-api:rebuild  # Rebuild and restart public API
+task public-api:ci       # Run CI checks in public-api repo
+
+task admin-web:logs      # View admin web logs
+task admin-web:stop      # Stop admin web service
+task admin-web:restart   # Restart admin web service
+task admin-web:rebuild   # Rebuild and restart admin web
+task admin-web:ci        # Run CI checks in admin-web repo
+
+task public-web:logs     # View public web logs
+task public-web:stop     # Stop public web service
+task public-web:restart  # Restart public web service
+task public-web:rebuild  # Rebuild and restart public web
+task public-web:ci       # Run CI checks in public-web repo
+
+# Monitoring stack (optional)
+task monitoring:up       # Start observability stack (Grafana, Prometheus, Loki)
+task monitoring:down     # Stop observability stack
+task monitoring:restart  # Restart monitoring stack
+task monitoring:logs     # View monitoring stack logs
+task monitoring:status   # Check health of monitoring services
+task monitoring:open     # Open Grafana in browser
+
+# CI/CD tasks
+task ci:all              # Run all CI checks
+task ci:validate         # Validate docker-compose configuration
+task ci:lint-yaml        # Lint YAML files
+task ci:lint-shell       # Lint shell scripts
+task ci:lint-python      # Lint Python scripts
+task ci:lint-markdown    # Lint Markdown files
+task ci:install-tools    # Install CI/CD linting tools
 ```
 
 ### Using Docker Compose Directly
@@ -176,7 +201,8 @@ docker-compose up -d --build [service]  # Rebuild service
 
 ## Port Mapping
 
-### Application Services
+### Application Ports
+
 | Port | Service |
 |------|---------|
 | 80 | Public web (HTTP) |
@@ -189,7 +215,8 @@ docker-compose up -d --build [service]  # Rebuild service
 | 8084 | Auth Service |
 | 8085 | Files API |
 
-### Infrastructure Services
+### Infrastructure Ports
+
 | Port | Service |
 |------|---------|
 | 5432 | PostgreSQL |
@@ -198,7 +225,8 @@ docker-compose up -d --build [service]  # Rebuild service
 | 9001 | MinIO Console |
 | 9002 | Traefik Dashboard |
 
-### Observability Stack (Optional)
+### Observability Ports
+
 | Port | Service |
 |------|---------|
 | 3000 | Grafana |
@@ -210,17 +238,20 @@ docker-compose up -d --build [service]  # Rebuild service
 
 ### Environment Variables
 
-**Important**: All environment variables are required. The docker-compose.yml file has **no default values** - you must configure all variables in the `.env` file.
+**Important**: All environment variables are required. The
+docker-compose.yml file has **no default values** - you must configure
+all variables in the `.env` file.
 
 #### Automatic Generation (Recommended)
 
 Use the secret generation script to automatically create secure credentials:
 
 ```bash
-task generate-secrets
+task secrets:generate
 ```
 
 This will:
+
 - Read `.env.example` as a template
 - Generate cryptographically secure passwords and secrets
 - Create `.env` with all required variables
@@ -229,11 +260,13 @@ This will:
 #### Manual Configuration
 
 1. Copy the example environment file:
+
 ```bash
 cp .env.example .env
 ```
 
-2. Review and update `.env` with your settings. The example file contains development-safe defaults:
+1. Review and update `.env` with your settings. The example file
+   contains development-safe defaults:
 
 ```env
 # Database Connection
@@ -319,6 +352,7 @@ VITE_ADMIN_AUTH_URL=https://localhost:8443/auth/v1
 ```
 
 **Important for Production**:
+
 - Change all passwords and secrets
 - Use strong random values for `JWT_SECRET`
 - Update service URLs to production hostnames
@@ -328,19 +362,31 @@ VITE_ADMIN_AUTH_URL=https://localhost:8443/auth/v1
 ### SSL/TLS Certificates
 
 Certificate paths are configurable via environment variables:
-- `TRAEFIK_CERT_DIR` - Directory containing certificates (default: `./docker/traefik/certs`)
+
+- `TRAEFIK_CERT_DIR` - Directory containing certificates
+  (default: `./docker/traefik/certs`)
 - `TLS_CERT_FILE` - Certificate filename (default: `localhost.crt`)
-- `TLS_KEY_FILE` - Private key filename (default: `localhost.key`)
+- `TLS_KEY_FILE` - Private key filename
+  (default: `localhost.key`)
 
-For local development, self-signed certificates are in `docker/traefik/certs/`. See [docker/traefik/certs/README.md](docker/traefik/certs/README.md) for generation instructions.
+For local development, self-signed certificates are in
+`docker/traefik/certs/`. See
+[docker/traefik/certs/README.md](docker/traefik/certs/README.md)
+for generation instructions.
 
-For production, configure Let's Encrypt in [docker-compose.yml](docker-compose.yml) or point `TRAEFIK_CERT_DIR` to your production certificates.
+For production, configure Let's Encrypt in
+[docker-compose.yml](docker-compose.yml) or point
+`TRAEFIK_CERT_DIR` to your production certificates.
 
 ### Database Migrations
-Migrations run automatically on startup via Flyway from `../database/migrations/` and `../database/seeds/`.
+
+Migrations run automatically on startup via Flyway from
+`../database/migrations/` and `../database/seeds/`.
 
 ### Resource Limits
+
 All services have memory limits configured:
+
 - **Infrastructure** (Traefik, Postgres, Redis, MinIO): 128M-512M
 - **Go services** (APIs): 256M limit, 128M reserved
 - **Web services** (Vue apps): 128M limit, 64M reserved
@@ -348,12 +394,15 @@ All services have memory limits configured:
 Adjust in `docker-compose.yml` if needed for your environment.
 
 ### Docker Compose Override
+
 For personal development settings, create `docker-compose.override.yml`:
+
 ```bash
 cp docker-compose.override.yml.example docker-compose.override.yml
 ```
 
 This file is gitignored and loaded automatically. Use it for:
+
 - Custom port mappings
 - Volume mounts for hot reload
 - Debug settings
@@ -363,33 +412,39 @@ This file is gitignored and loaded automatically. Use it for:
 
 ### Mock Data Mode (Public Web)
 
-The public-web service can use mock data for development, controlled via the `VITE_PUBLIC_USE_MOCK_DATA` environment variable in `.env`:
+The public-web service can use mock data for development, controlled
+via the `VITE_PUBLIC_USE_MOCK_DATA` environment variable in `.env`:
 
 ```env
 VITE_PUBLIC_USE_MOCK_DATA=false  # Use real API
-VITE_PUBLIC_USE_MOCK_DATA=true   # Use mock data (doesn't require backend)
+VITE_PUBLIC_USE_MOCK_DATA=true   # Use mock data (no backend needed)
 ```
 
 **To toggle between mock and real data:**
-1. Update `VITE_PUBLIC_USE_MOCK_DATA` in `.env`
-2. Rebuild the public-web service: `task rebuild-public-web` or `docker-compose up -d --build public-web`
 
-**Note**: Mock data mode is useful for frontend development without running the backend services.
+1. Update `VITE_PUBLIC_USE_MOCK_DATA` in `.env`
+1. Rebuild the public-web service: `task public-web:rebuild` or
+   `docker-compose up -d --build public-web`
+
+**Note**: Mock data mode is useful for frontend development without
+running the backend services.
 
 ### Local Development Without Docker
 
 For local development without Docker:
 
 1. Start only infrastructure services:
+
 ```bash
 docker-compose up -d postgres redis minio flyway
 ```
 
-2. Run each application service locally (see individual service READMEs)
+1. Run each application service locally (see individual service READMEs)
 
 ## Troubleshooting
 
 ### Access PostgreSQL
+
 ```bash
 # As superuser
 docker exec -it postgres psql -U postgres -d portfolio
@@ -402,11 +457,13 @@ docker exec -it postgres psql -U portfolio_public -d portfolio
 ```
 
 ### Access Redis CLI
+
 ```bash
 docker exec -it redis redis-cli
 ```
 
 ### Clean restart
+
 ```bash
 docker-compose down -v  # Remove volumes
 docker-compose up -d
@@ -415,6 +472,7 @@ docker-compose up -d
 ## Persistent Data
 
 Volumes:
+
 - `postgres_data` - Database
 - `redis_data` - Cache
 - `minio_data` - Object storage
