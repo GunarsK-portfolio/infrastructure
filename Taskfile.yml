@@ -65,7 +65,7 @@ tasks:
       - task: public-api:ci
       - task: public-web:ci
       - task: database:ci
-      - echo "✓ All service CI checks passed!"
+      - echo "All service CI checks passed!"
 
   # Individual service operations - Auth
   auth:logs:
@@ -259,7 +259,8 @@ tasks:
       - task: ci:lint-yaml
       - task: ci:lint-shell
       - task: ci:lint-python
-      - echo "✓ Infrastructure CI checks passed!"
+      - task: ci:lint-markdown
+      - echo "Infrastructure CI checks passed!"
 
   ci:validate:
     desc: Validate docker compose configuration syntax
@@ -295,10 +296,7 @@ tasks:
   ci:install-tools:
     desc: Install CI/CD tools (requires pip and npm)
     cmds:
-      - cmd: python -m pip install yamllint flake8
-        platforms: [windows]
-      - cmd: pip install yamllint flake8
-        platforms: [linux, darwin]
+      - python -m pip install yamllint flake8
       - npm install -g markdownlint-cli2
       - cmd: echo Note - shellcheck must be installed separately
         platforms: [windows]
@@ -310,7 +308,7 @@ tasks:
     desc: Start observability stack (Prometheus, Loki, Promtail, Grafana)
     cmds:
       - docker compose -f docker-compose.monitoring.yml up -d
-      - echo "✓ Monitoring stack started"
+      - echo "Monitoring stack started"
       - echo "  Grafana - http://localhost:3000 - admin/admin"
       - echo "  Prometheus - http://localhost:9090"
       - echo "  Loki - http://localhost:3100"
@@ -319,13 +317,13 @@ tasks:
     desc: Stop observability stack
     cmds:
       - docker compose -f docker-compose.monitoring.yml down
-      - echo "✓ Monitoring stack stopped"
+      - echo "Monitoring stack stopped"
 
   monitoring:restart:
     desc: Restart observability stack
     cmds:
       - docker compose -f docker-compose.monitoring.yml restart
-      - echo "✓ Monitoring stack restarted"
+      - echo "Monitoring stack restarted"
 
   monitoring:ps:
     desc: List monitoring stack services
@@ -341,7 +339,7 @@ tasks:
     desc: Stop monitoring stack and remove volumes
     cmds:
       - docker compose -f docker-compose.monitoring.yml down -v
-      - echo "✓ Monitoring stack cleaned (volumes removed)"
+      - echo "Monitoring stack cleaned (volumes removed)"
 
   monitoring:status:
     desc: Check health of monitoring stack
@@ -349,19 +347,19 @@ tasks:
       - echo "Checking monitoring stack health..."
       - cmd: |
           curl -s http://localhost:9090/-/healthy > nul 2>&1 && \
-            echo "✓ Prometheus: healthy" || echo "✗ Prometheus: down"
+            echo "Prometheus: healthy" || echo "Prometheus: down"
           curl -s http://localhost:3100/ready > nul 2>&1 && \
-            echo "✓ Loki: healthy" || echo "✗ Loki: down"
+            echo "Loki: healthy" || echo "Loki: down"
           curl -s http://localhost:3000/api/health > nul 2>&1 && \
-            echo "✓ Grafana: healthy" || echo "✗ Grafana: down"
+            echo "Grafana: healthy" || echo "Grafana: down"
         platforms: [windows]
       - cmd: |
           curl -s http://localhost:9090/-/healthy > /dev/null 2>&1 && \
-            echo "✓ Prometheus: healthy" || echo "✗ Prometheus: down"
+            echo "Prometheus: healthy" || echo "Prometheus: down"
           curl -s http://localhost:3100/ready > /dev/null 2>&1 && \
-            echo "✓ Loki: healthy" || echo "✗ Loki: down"
+            echo "Loki: healthy" || echo "Loki: down"
           curl -s http://localhost:3000/api/health > /dev/null 2>&1 && \
-            echo "✓ Grafana: healthy" || echo "✗ Grafana: down"
+            echo "Grafana: healthy" || echo "Grafana: down"
         platforms: [linux, darwin]
 
   monitoring:open:

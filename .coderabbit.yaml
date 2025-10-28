@@ -21,4 +21,7 @@ reviews:
       enabled: true
 chat:
   auto_reply: true
-tone_instructions: "Focus on Docker best practices, security (no secrets in images), resource limits, health checks, and production readiness. Flag security issues with high priority."
+tone_instructions: >
+  Focus on Docker best practices, security (no secrets in images),
+  resource limits, health checks, and production readiness.
+  Flag security issues with high priority.

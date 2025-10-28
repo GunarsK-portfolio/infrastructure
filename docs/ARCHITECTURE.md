@@ -2,11 +2,13 @@
 
 ## Overview
 
-This document describes the architecture of the portfolio project, a microservices-based application with separate public and admin portals.
+This document describes the architecture of the portfolio project,
+a microservices-based application with separate public and admin
+portals.
 
 ## System Architecture Diagram
 
-```
+```text
                          ┌─────────────────────┐
                          │   Traefik Proxy     │
                          │   :80, :443, :81    │
@@ -66,7 +68,9 @@ This document describes the architecture of the portfolio project, a microservic
 ### Reverse Proxy Layer
 
 #### Traefik
-- **Ports**: 80 (HTTP), 443 (HTTPS), 81 (Admin HTTP), 8443 (Admin HTTPS), 82 (Swagger), 9002 (Dashboard)
+
+- **Ports**: 80 (HTTP), 443 (HTTPS), 81 (Admin HTTP), 8443 (Admin
+  HTTPS), 82 (Swagger), 9002 (Dashboard)
 - **Purpose**: Reverse proxy, load balancer, SSL/TLS termination
 - **Features**:
   - Path-based routing
@@ -78,6 +82,7 @@ This document describes the architecture of the portfolio project, a microservic
 ### Frontend Layer
 
 #### Public Web
+
 - **Technology**: Vue 3, Vite, Naive UI, Pinia, Vue Router, Axios
 - **Port**: 8080 (internal), 80/443 (external via Traefik)
 - **Purpose**: Public-facing portfolio website
@@ -89,6 +94,7 @@ This document describes the architecture of the portfolio project, a microservic
   - Static content display
 
 #### Admin Web
+
 - **Technology**: Vue 3, Vite, Naive UI, Pinia, Vue Router, Axios
 - **Port**: 8081 (internal), 81/8443 (external via Traefik)
 - **Purpose**: Admin panel for content management
@@ -102,6 +108,7 @@ This document describes the architecture of the portfolio project, a microservic
 ### Backend Layer
 
 #### Public API
+
 - **Technology**: Go 1.25, Gin, GORM
 - **Port**: 8082
 - **Purpose**: Serve public portfolio content (read-only)
@@ -118,6 +125,7 @@ This document describes the architecture of the portfolio project, a microservic
 - **Integration**: PostgreSQL for data, Files API for file URLs
 
 #### Admin API
+
 - **Technology**: Go 1.25, Gin, GORM
 - **Port**: 8083
 - **Purpose**: Manage portfolio content (full CRUD)
@@ -125,10 +133,13 @@ This document describes the architecture of the portfolio project, a microservic
 - **Authentication**: JWT validation via Auth Service
 - **Endpoints**:
   - GET /health
-  - Full CRUD for projects, skills, experience, certifications, miniatures
-- **Integration**: PostgreSQL for data, MinIO for S3 uploads, Auth Service for JWT validation
+  - Full CRUD for projects, skills, experience, certifications,
+    miniatures
+- **Integration**: PostgreSQL for data, MinIO for S3 uploads,
+  Auth Service for JWT validation
 
 #### Files API
+
 - **Technology**: Go 1.25, Gin, GORM, MinIO SDK
 - **Port**: 8085
 - **Purpose**: File upload/download service
@@ -139,12 +150,15 @@ This document describes the architecture of the portfolio project, a microservic
   - GET /api/v1/files/:fileType/*key (public download)
   - POST /api/v1/files (protected upload)
   - DELETE /api/v1/files/:id (protected delete)
-- **File Types**: portfolio-image, miniature-image, document
+- **File Types**: portfolio-image, miniature-image,
+  document
 - **Max Upload**: 10MB (configurable)
 - **Allowed Types**: JPEG, PNG, GIF, WebP, PDF
-- **Integration**: PostgreSQL for metadata, MinIO for storage, Auth Service for JWT validation
+- **Integration**: PostgreSQL for metadata, MinIO for storage,
+  Auth Service for JWT validation
 
 #### Auth Service
+
 - **Technology**: Go 1.25, Gin, GORM, JWT, bcrypt
 - **Port**: 8084
 - **Purpose**: User authentication and token management
@@ -166,23 +180,30 @@ This document describes the architecture of the portfolio project, a microservic
 ### Data Layer
 
 #### PostgreSQL
+
 - **Version**: 18-alpine
 - **Port**: 5432
 - **Purpose**: Primary relational database
 - **Database Users (Role-based Access Control)**:
   - **postgres** - Superuser (database creation)
-  - **portfolio_owner** - DDL operations (CREATE, ALTER, DROP) - used by Flyway
-  - **portfolio_admin** - CRUD operations (SELECT, INSERT, UPDATE, DELETE) - used by APIs
-  - **portfolio_public** - SELECT only - used by Public API (extra security)
+  - **portfolio_owner** - DDL operations (CREATE, ALTER, DROP) -
+    used by Flyway
+  - **portfolio_admin** - CRUD operations (SELECT, INSERT, UPDATE,
+    DELETE) - used by APIs
+  - **portfolio_public** - SELECT only - used by Public API
+    (extra security)
 - **Schemas**:
   - **auth** - User authentication (users table)
-  - **portfolio** - Portfolio content (profile, work_experience, certifications, portfolio_projects, skills)
-  - **miniatures** - Miniature painting projects (miniature_themes, miniature_projects, miniature_paints, etc.)
+  - **portfolio** - Portfolio content (profile, work_experience,
+    certifications, portfolio_projects, skills)
+  - **miniatures** - Miniature painting projects (miniature_themes,
+    miniature_projects, miniature_paints, etc.)
   - **storage** - File metadata (files table)
   - **audit** - Change tracking (change_log, query_stats)
 - **Migration**: Flyway (automatic on startup, versioned + repeatable)
 
 #### Redis
+
 - **Version**: 8.2-alpine
 - **Port**: 6379
 - **Purpose**: Cache and session store
@@ -192,6 +213,7 @@ This document describes the architecture of the portfolio project, a microservic
   - Future: API response caching
 
 #### MinIO
+
 - **Version**: Latest (S3-compatible)
 - **Port**: 9000 (API), 9001 (Console)
 - **Purpose**: S3-compatible object storage
@@ -205,7 +227,8 @@ This document describes the architecture of the portfolio project, a microservic
 ## Data Flow Diagrams
 
 ### Public Content Access Flow
-```
+
+```text
 ┌──────┐      ┌─────────┐      ┌────────┐      ┌──────────┐      ┌──────────┐
 │ User │─────►│ Traefik │─────►│ Public │─────►│ Public   │─────►│PostgreSQL│
 │      │      │         │      │  Web   │      │   API    │      │(SELECT)  │
@@ -220,7 +243,8 @@ This document describes the architecture of the portfolio project, a microservic
 ```
 
 ### Admin Content Management Flow
-```
+
+```text
 ┌──────┐   ┌─────────┐   ┌────────┐   ┌──────────┐   ┌──────────┐
 │Admin │──►│ Traefik │──►│ Admin  │──►│   Auth   │──►│  Redis   │
 │ User │   │         │   │  Web   │   │ Service  │   │(sessions)│
@@ -256,7 +280,8 @@ This document describes the architecture of the portfolio project, a microservic
 ```
 
 ### Authentication Flow
-```
+
+```text
 1. Login Request
    Admin Web → Auth Service → PostgreSQL (verify user)
                             → Redis (create session)
@@ -273,14 +298,16 @@ This document describes the architecture of the portfolio project, a microservic
 3. Token Refresh
    Admin Web → Auth Service (refresh token)
               → Redis (verify session)
-              → Admin Web (new access token)
+              → Admin Web (new access token - 15min)
 
 4. Logout
-   Admin Web → Auth Service → Redis (blacklist token)
-                            → Admin Web (confirmation)
+   Admin Web → Auth Service → Redis (blacklist)
+                            → Admin Web (confirm)
 ```
 
-**Note**: Admin API and Files API validate JWTs by calling Auth Service's `/api/v1/auth/validate` endpoint, ensuring centralized authentication logic.
+**Note**: Admin API and Files API validate JWTs by calling Auth
+Service's `/api/v1/auth/validate` endpoint, ensuring centralized
+authentication logic.
 
 ## Network Architecture
 
@@ -290,18 +317,18 @@ All services run in a Docker bridge network named `network`.
 
 | Service | Internal | External | Access |
 |---------|----------|----------|--------|
-| **Public Facing** |
+| **Public Facing** | | | |
 | Public Web | 80 | 80 | HTTP |
 | Public Web | 443 | 443 | HTTPS |
 | Admin Web | 80 | 81 | HTTP |
 | Admin Web | 443 | 8443 | HTTPS |
 | Swagger Docs | - | 82 | HTTP |
-| **Internal Services** |
+| **Internal Services** | | | |
 | Public API | 8082 | 8082 | Direct (dev) |
 | Admin API | 8083 | 8083 | Direct (dev) |
 | Auth Service | 8084 | 8084 | Direct (dev) |
 | Files API | 8085 | 8085 | Direct (dev) |
-| **Infrastructure** |
+| **Infrastructure** | | | |
 | PostgreSQL | 5432 | 5432 | TCP |
 | Redis | 6379 | 6379 | TCP |
 | MinIO API | 9000 | 9000 | HTTP |
@@ -311,11 +338,15 @@ All services run in a Docker bridge network named `network`.
 ## Security Architecture
 
 ### Authentication & Authorization
+
 - **JWT-based authentication**
-  - Access tokens: 15 minutes expiry (configurable via JWT_ACCESS_EXPIRY)
-  - Refresh tokens: 7 days/168h expiry (configurable via JWT_REFRESH_EXPIRY)
+  - Access tokens: 15 minutes expiry
+    (configurable via JWT_ACCESS_EXPIRY)
+  - Refresh tokens: 7 days/168h expiry
+    (configurable via JWT_REFRESH_EXPIRY)
   - Signed with configurable JWT_SECRET
-  - **Centralized validation**: Admin API and Files API validate tokens via Auth Service
+  - **Centralized validation**: Admin API and Files API validate
+    tokens via Auth Service
 - **Password security**
   - Bcrypt hashing with automatic salt
   - No plain text storage
@@ -334,12 +365,14 @@ All services run in a Docker bridge network named `network`.
     - portfolio_public (SELECT only)
 
 ### Network Security
+
 - Internal service communication via Docker network
 - External access only through Traefik
 - SSL/TLS termination at reverse proxy
 - Environment-based secrets
 
 ### Data Security
+
 - Database credentials in environment variables
 - S3/MinIO access keys configurable
 - Secrets must be changed for production
@@ -348,7 +381,7 @@ All services run in a Docker bridge network named `network`.
 
 Startup order and dependencies:
 
-```
+```text
 1. Infrastructure Layer
    ├── PostgreSQL (no dependencies)
    ├── Redis (no dependencies)
@@ -389,23 +422,27 @@ Startup order and dependencies:
 ## Scalability Considerations
 
 ### Current Architecture
+
 - Stateless API services (horizontally scalable)
 - Shared session store (Redis)
 - Centralized object storage (MinIO)
 - Single database instance
 
 ### Horizontal Scaling Options
+
 - Multiple API service instances behind Traefik
 - Load balancing via Traefik
 - Redis cluster for session replication
 - MinIO distributed mode
 
 ### Vertical Scaling Options
+
 - Increase PostgreSQL resources
 - Increase Redis memory
 - Expand MinIO storage
 
 ### Future Improvements
+
 - Database read replicas for read-heavy loads
 - API rate limiting (Traefik middleware)
 - Response caching layer (Redis)
@@ -418,6 +455,7 @@ Startup order and dependencies:
 ## Deployment Environments
 
 ### Development (Current)
+
 - All services in Docker Compose
 - Self-signed SSL certificates
 - Hot reload for frontends
@@ -426,6 +464,7 @@ Startup order and dependencies:
 - Default credentials
 
 ### Production Considerations
+
 - Enable Let's Encrypt for SSL
 - Use managed database (AWS RDS, etc.)
 - Use managed Redis (AWS ElastiCache, etc.)
@@ -443,10 +482,10 @@ Startup order and dependencies:
 
 Swagger UI available for all backend services:
 
-- **Public API**: http://localhost:82/public/
-- **Admin API**: http://localhost:82/admin/
-- **Auth Service**: http://localhost:82/auth/
-- **Files API**: http://localhost:82/files/
+- **Public API**: <http://localhost:82/public/>
+- **Admin API**: <http://localhost:82/admin/>
+- **Auth Service**: <http://localhost:82/auth/>
+- **Files API**: <http://localhost:82/files/>
 
 Each service generates its own OpenAPI 3.0 specification via Swaggo.
 
@@ -458,6 +497,7 @@ All services implement health endpoints:
 - **Response**: `200 OK` if healthy
 
 Docker Compose health checks:
+
 - PostgreSQL: `pg_isready -U postgres -d portfolio`
 - Redis: `redis-cli ping`
 - MinIO: HTTP probe to `/minio/health/live`

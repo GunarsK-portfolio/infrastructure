@@ -5,6 +5,7 @@
 ### CI Pipeline (`ci.yml`)
 
 Comprehensive continuous integration pipeline that runs on:
+
 - Pull requests to `main` or `develop`
 - Pushes to `main` or `develop`
 - Manual workflow dispatch
@@ -19,6 +20,7 @@ Comprehensive continuous integration pipeline that runs on:
 6. **Markdown Lint** - Validate Markdown documentation
 
 **Security Features:**
+
 - Secret scanning to prevent credential leaks
 - Validates all configuration files before deployment
 
@@ -33,6 +35,7 @@ Add these to your README.md:
 ## Local Testing
 
 Using Task:
+
 ```bash
 task validate          # Validate docker-compose.yml
 task lint-yaml         # Lint YAML files
@@ -52,6 +55,7 @@ task install-tools     # Install required linting tools
 ## Notes for Infrastructure Repository
 
 This repository contains configuration files and orchestration:
+
 - No application code to build or test
 - Focus on configuration validation and linting
 - Ensures infrastructure-as-code quality
