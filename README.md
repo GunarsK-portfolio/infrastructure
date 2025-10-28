@@ -59,7 +59,7 @@ portfolio/
 
 2. **Generate secure secrets** (recommended):
 ```bash
-task generate-secrets
+task secrets:generate
 ```
 This creates a `.env` file with cryptographically secure passwords.
 
@@ -71,7 +71,7 @@ cp .env.example .env
 
 3. Start all services:
 ```bash
-task up
+task services:up
 ```
 
 Or combine steps 2-3 with:
@@ -108,59 +108,71 @@ task monitoring:up
 
 ```bash
 # Setup and initialization
-task generate-secrets    # Generate secure passwords and secrets
+task secrets:generate    # Generate secure passwords and secrets
 task init                # Generate secrets and start all services
 
-# Service management
-task up                  # Start all services
-task down                # Stop all services
-task build               # Build and start all services
-task logs                # View all logs
-task ps                  # List running services
-task restart             # Restart all services
-task clean               # Stop and remove volumes
-```
+# Multi-service stack operations
+task services:up         # Start all services with docker compose
+task services:down       # Stop all services
+task services:restart    # Restart all services
+task services:ps         # List running services
+task services:build      # Rebuild and start all services
+task services:clean      # Stop services and remove volumes
+task services:logs       # View logs from all services
+task services:ci         # Run CI checks for all service repos
 
-View logs for specific services:
-```bash
-task logs-auth
-task logs-public-api
-task logs-admin-api
-task logs-public-web
-task logs-admin-web
-task logs-db
-```
+# Individual service operations
+task admin-api:logs      # View admin API logs
+task admin-api:stop      # Stop admin API service
+task admin-api:restart   # Restart admin API service
+task admin-api:rebuild   # Rebuild and restart admin API
+task admin-api:ci        # Run CI checks in admin-api repo
 
-Rebuild individual services:
-```bash
-task rebuild-auth
-task rebuild-public-api
-task rebuild-admin-api
-task rebuild-public-web
-task rebuild-admin-web
-```
+task auth:logs           # View auth service logs
+task auth:stop           # Stop auth service
+task auth:restart        # Restart auth service
+task auth:rebuild        # Rebuild and restart auth service
+task auth:ci             # Run CI checks in auth-service repo
 
-Monitoring stack:
-```bash
-task monitoring:up        # Start observability stack
-task monitoring:down      # Stop observability stack
-task monitoring:restart   # Restart monitoring stack
-task monitoring:logs      # View monitoring stack logs
-task monitoring:open      # Open Grafana in browser
-task monitoring:status    # Check health of monitoring services
-task monitoring:targets   # Open Prometheus targets page
-task monitoring:clean     # Stop and remove monitoring volumes
-```
+task files-api:logs      # View files API logs
+task files-api:stop      # Stop files API service
+task files-api:restart   # Restart files API service
+task files-api:rebuild   # Rebuild and restart files API
+task files-api:ci        # Run CI checks in files-api repo
 
-CI/CD tasks:
-```bash
-task validate          # Validate docker-compose configuration
-task lint-yaml         # Lint YAML files
-task lint-shell        # Lint shell scripts
-task lint-python       # Lint Python scripts
-task lint-markdown     # Lint Markdown files
-task ci                # Run all CI checks locally
-task install-tools     # Install CI/CD linting tools
+task public-api:logs     # View public API logs
+task public-api:stop     # Stop public API service
+task public-api:restart  # Restart public API service
+task public-api:rebuild  # Rebuild and restart public API
+task public-api:ci       # Run CI checks in public-api repo
+
+task admin-web:logs      # View admin web logs
+task admin-web:stop      # Stop admin web service
+task admin-web:restart   # Restart admin web service
+task admin-web:rebuild   # Rebuild and restart admin web
+task admin-web:ci        # Run CI checks in admin-web repo
+
+task public-web:logs     # View public web logs
+task public-web:stop     # Stop public web service
+task public-web:restart  # Restart public web service
+task public-web:rebuild  # Rebuild and restart public web
+task public-web:ci       # Run CI checks in public-web repo
+
+# Monitoring stack (optional)
+task monitoring:up       # Start observability stack (Grafana, Prometheus, Loki)
+task monitoring:down     # Stop observability stack
+task monitoring:restart  # Restart monitoring stack
+task monitoring:logs     # View monitoring stack logs
+task monitoring:status   # Check health of monitoring services
+task monitoring:open     # Open Grafana in browser
+
+# CI/CD tasks
+task ci:all              # Run all CI checks (validate, lint)
+task ci:validate         # Validate docker-compose configuration
+task ci:lint-yaml        # Lint YAML files
+task ci:lint-shell       # Lint shell scripts
+task ci:lint-markdown    # Lint Markdown files
+task dev:install-tools   # Install CI/CD linting tools
 ```
 
 ### Using Docker Compose Directly
@@ -372,7 +384,7 @@ VITE_PUBLIC_USE_MOCK_DATA=true   # Use mock data (doesn't require backend)
 
 **To toggle between mock and real data:**
 1. Update `VITE_PUBLIC_USE_MOCK_DATA` in `.env`
-2. Rebuild the public-web service: `task rebuild-public-web` or `docker-compose up -d --build public-web`
+2. Rebuild the public-web service: `task public-web:rebuild` or `docker-compose up -d --build public-web`
 
 **Note**: Mock data mode is useful for frontend development without running the backend services.
 
