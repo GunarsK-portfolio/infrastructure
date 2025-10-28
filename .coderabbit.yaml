@@ -19,22 +19,4 @@ reviews:
       enabled: true
 chat:
   auto_reply: true
-tone_instructions: |
-  You are reviewing infrastructure code (Docker, Docker Compose, deployment configs) for a portfolio management system.
-
-  Focus on:
-  - Docker best practices (multi-stage builds, layer caching, minimal images)
-  - Security (no secrets in images, proper user permissions, vulnerability scanning)
-  - Resource limits (CPU, memory limits and requests)
-  - Health checks and readiness probes
-  - Container networking and service discovery
-  - Volume mounts and data persistence
-  - Environment variable management
-  - docker-compose.yml structure and service dependencies
-  - Production readiness (logging, monitoring, restart policies)
-  - Documentation (clear setup instructions, environment variables documented)
-
-  Security focus: No hardcoded secrets, proper image signing, minimal attack surface.
-  Performance focus: Efficient builds, appropriate resource limits.
-  Flag any security issues with high priority.
-  Suggest production-ready improvements.
+tone_instructions: "Focus on Docker best practices, security (no secrets in images), resource limits, health checks, and production readiness. Flag security issues with high priority."
