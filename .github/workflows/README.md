@@ -37,13 +37,13 @@ Add these to your README.md:
 Using Task:
 
 ```bash
-task validate          # Validate docker-compose.yml
-task lint-yaml         # Lint YAML files
-task lint-shell        # Lint shell scripts
-task lint-python       # Lint Python scripts
-task lint-markdown     # Lint Markdown files
-task ci                # Run all CI checks locally
-task install-tools     # Install required linting tools
+task ci:validate       # Validate docker-compose.yml
+task ci:lint-yaml      # Lint YAML files
+task ci:lint-shell     # Lint shell scripts
+task ci:lint-python    # Lint Python scripts
+task ci:lint-markdown  # Lint Markdown files
+task ci:all            # Run all CI checks
+task dev:install-tools # Install required linting tools
 ```
 
 ## Configuration Files
