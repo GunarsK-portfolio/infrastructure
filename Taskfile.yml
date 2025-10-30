@@ -251,6 +251,31 @@ tasks:
     cmds:
       - task ci:all
 
+  # E2E Testing operations
+  e2e:test:
+    desc: Run all E2E tests (requires services running)
+    dir: ../e2e-tests
+    cmds:
+      - task test:all
+
+  e2e:test:headless:
+    desc: Run all E2E tests in headless mode
+    dir: ../e2e-tests
+    cmds:
+      - task test:all:headless
+
+  e2e:setup:
+    desc: Setup E2E testing environment
+    dir: ../e2e-tests
+    cmds:
+      - task setup
+
+  e2e:ci:
+    desc: Run E2E tests for CI (headless, with linting)
+    dir: ../e2e-tests
+    cmds:
+      - task ci:all
+
   # CI/CD tasks (infrastructure repo only)
   ci:all:
     desc: Run all CI checks for infrastructure repo
