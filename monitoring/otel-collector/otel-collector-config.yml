@@ -1,0 +1,82 @@
+# OpenTelemetry Collector Configuration
+# Receives telemetry from Claude Code and exports to Prometheus
+
+receivers:
+  # OTLP receiver for Claude Code telemetry
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  # Batch processor for performance
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+
+  # Add resource attributes
+  resource:
+    attributes:
+      - key: service.name
+        value: claude-code
+        action: upsert
+      - key: deployment.environment
+        value: development
+        action: upsert
+
+  # Memory limiter to prevent OOM
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+exporters:
+  # Export metrics to Prometheus
+  prometheus:
+    endpoint: "0.0.0.0:9464"
+    namespace: claude_code
+    const_labels:
+      environment: development
+
+  # Debug logging (optional, can be removed in production)
+  debug:
+    verbosity: normal
+
+# Export to Prometheus via remote write (alternative method)
+# prometheusremotewrite:
+#   endpoint: http://prometheus:9090/api/v1/write
+
+service:
+  pipelines:
+    # Metrics pipeline
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource]
+      exporters: [prometheus, debug]
+
+    # Logs pipeline (for Claude Code logs)
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource]
+      exporters: [debug]
+
+    # Traces pipeline (if needed in future)
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource]
+      exporters: [debug]
+
+  # Telemetry configuration for the collector itself
+  telemetry:
+    logs:
+      level: info
+    metrics:
+      level: detailed
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 8888

@@ -45,10 +45,18 @@ tasks:
       - docker compose up -d
 
   services:clean:
-    desc: Stop all services and remove volumes
+    desc: Stop portfolio services and remove volumes (preserves monitoring data)
+    cmds:
+      - docker compose down -v
+      - echo "Portfolio services cleaned (volumes removed)"
+      - echo "Monitoring stack preserved. To clean monitoring run task monitoring:clean"
+
+  clean:all:
+    desc: Clean everything - portfolio services AND monitoring (removes all data)
     cmds:
       - docker compose down -v
       - docker compose -f docker-compose.monitoring.yml down -v
+      - echo "All services cleaned (all volumes removed)"
 
   services:logs:
     desc: View logs from all services
@@ -332,6 +340,12 @@ tasks:
   monitoring:up:
     desc: Start observability stack (Prometheus, Loki, Promtail, Grafana)
     cmds:
+      - cmd: |
+          docker network inspect infrastructure_network >nul 2>&1 || docker network create infrastructure_network
+        platforms: [windows]
+      - cmd: |
+          docker network inspect infrastructure_network >/dev/null 2>&1 || docker network create infrastructure_network
+        platforms: [linux, darwin]
       - docker compose -f docker-compose.monitoring.yml up -d
       - echo "Monitoring stack started"
       - echo "  Grafana - http://localhost:3000 - admin/admin"
