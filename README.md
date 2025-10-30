@@ -30,6 +30,7 @@ reverse proxy setup for running all portfolio services together.
 
 ### Observability Stack (Optional)
 
+- **OpenTelemetry Collector** - Receives telemetry from Claude Code
 - **Prometheus** - Metrics collection and storage
 - **Loki** - Log aggregation and indexing
 - **Promtail** - Log shipping from containers
@@ -37,6 +38,10 @@ reverse proxy setup for running all portfolio services together.
 
 > See [monitoring/README.md](monitoring/README.md) for observability
 > stack setup and usage.
+>
+> **Claude Code telemetry** is automatically enabled via
+> `.claude/settings.json`. View metrics at <http://localhost:3000>
+> (Grafana dashboard: "Claude Code - Usage Dashboard")
 
 ## Prerequisites
 
@@ -132,7 +137,10 @@ task services:down       # Stop all services
 task services:restart    # Restart all services
 task services:ps         # List running services
 task services:build      # Rebuild and start all services
-task services:clean      # Stop services and remove volumes
+task services:clean      # Stop portfolio services and remove volumes
+                         # (preserves monitoring data)
+task clean:all           # Clean everything - portfolio AND monitoring
+                         # (removes all data)
 task services:logs       # View logs from all services
 task services:ci         # Run CI checks for all service repos
 
@@ -174,12 +182,16 @@ task public-web:rebuild  # Rebuild and restart public web
 task public-web:ci       # Run CI checks in public-web repo
 
 # Monitoring stack (optional)
-task monitoring:up       # Start observability stack (Grafana, Prometheus, Loki)
+task monitoring:up       # Start observability stack
+                         # (Grafana, Prometheus, Loki, OTEL)
 task monitoring:down     # Stop observability stack
 task monitoring:restart  # Restart monitoring stack
+task monitoring:ps       # List monitoring stack services
 task monitoring:logs     # View monitoring stack logs
+task monitoring:clean    # Stop monitoring and remove volumes (deletes metrics/logs)
 task monitoring:status   # Check health of monitoring services
 task monitoring:open     # Open Grafana in browser
+task monitoring:targets  # Open Prometheus targets page
 
 # E2E Testing
 task e2e:setup           # Setup E2E testing environment (install dependencies)
@@ -241,7 +253,10 @@ docker-compose up -d --build [service]  # Rebuild service
 | 3000 | Grafana |
 | 9090 | Prometheus |
 | 3100 | Loki |
-| 9080 | Promtail |
+| 4317 | OTEL Collector (gRPC) |
+| 4318 | OTEL Collector (HTTP) |
+| 8888 | OTEL Collector Metrics |
+| 9464 | OTEL Collector Prometheus Exporter |
 
 ## Configuration
 
@@ -514,17 +529,33 @@ docker exec -it redis redis-cli
 ### Clean restart
 
 ```bash
-docker-compose down -v  # Remove volumes
-docker-compose up -d
+# Clean portfolio services only (preserves monitoring data)
+task services:clean
+task services:up
+
+# Or clean everything including monitoring
+task clean:all
+task services:up
+task monitoring:up
 ```
 
 ## Persistent Data
 
-Volumes:
+### Portfolio Service Volumes
 
 - `postgres_data` - Database
 - `redis_data` - Cache
 - `minio_data` - Object storage
+
+### Monitoring Volumes
+
+- `prometheus_data` - Metrics history
+- `grafana_data` - Dashboards and settings
+- `loki_data` - Log aggregation data
+
+**Note**: Use `task services:clean` to clean portfolio volumes while
+preserving monitoring data. Use `task monitoring:clean` to clean monitoring
+volumes separately.
 
 ## License
 
