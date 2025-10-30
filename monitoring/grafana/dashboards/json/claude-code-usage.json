@@ -32,7 +32,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "Prometheus"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -84,7 +84,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "Prometheus"
+            "uid": "prometheus"
           },
           "expr": "count(count by (session_id) (claude_code_cost_usage_USD_total{job=\"claude-code\"}))",
           "interval": "",
@@ -98,7 +98,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "Prometheus"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -150,7 +150,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "Prometheus"
+            "uid": "prometheus"
           },
           "expr": "sum(increase(claude_code_cost_usage_USD_total{job=\"claude-code\"}[1h]))",
           "interval": "",
@@ -164,7 +164,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "Prometheus"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -216,7 +216,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "Prometheus"
+            "uid": "prometheus"
           },
           "expr": "sum(increase(claude_code_token_usage_tokens_total{job=\"claude-code\"}[1h]))",
           "interval": "",
@@ -230,7 +230,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "Prometheus"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -282,7 +282,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "Prometheus"
+            "uid": "prometheus"
           },
           "expr": "sum(increase(claude_code_lines_of_code_count_total{job=\"claude-code\"}[1h]))",
           "interval": "",
@@ -302,7 +302,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "Prometheus"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -377,7 +377,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "Prometheus"
+            "uid": "prometheus"
           },
           "expr": "sum by (model) (increase(claude_code_cost_usage_USD_total{job=\"claude-code\"}[1h]))",
           "interval": "",
@@ -391,7 +391,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "Prometheus"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -544,7 +544,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "Prometheus"
+            "uid": "prometheus"
           },
           "expr": "sum by (type) (rate(claude_code_token_usage_tokens_total{job=\"claude-code\"}[5m]) * 60)",
           "interval": "",
@@ -558,7 +558,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "Prometheus"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -672,7 +672,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "Prometheus"
+            "uid": "prometheus"
           },
           "expr": "sum by (model) (changes(claude_code_cost_usage_USD_total{job=\"claude-code\"}[5m]))",
           "interval": "",
@@ -692,7 +692,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "Loki"
+        "uid": "loki"
       },
       "fieldConfig": {
         "defaults": {
@@ -838,7 +838,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "Loki"
+            "uid": "loki"
           },
           "expr": "sum by (tool_name) (count_over_time({service_name=\"claude-code\"} |= \"claude_code.tool_result\" [5m]))",
           "interval": "",
@@ -852,7 +852,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "Loki"
+        "uid": "loki"
       },
       "fieldConfig": {
         "defaults": {
@@ -990,7 +990,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "Loki"
+            "uid": "loki"
           },
           "expr": "sum by (tool_name) (count_over_time({service_name=\"claude-code\"} |= \"claude_code.tool_result\" [$__range]))",
           "interval": "",
@@ -1004,7 +1004,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "Loki"
+        "uid": "loki"
       },
       "fieldConfig": {
         "defaults": {
@@ -1085,7 +1085,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "Loki"
+            "uid": "loki"
           },
           "expr": "100 * (sum by (tool_name) (count_over_time({service_name=\"claude-code\"} |= \"claude_code.tool_result\" | json | success=\"true\" [15m]))) / (sum by (tool_name) (count_over_time({service_name=\"claude-code\"} |= \"claude_code.tool_result\" [15m])))",
           "interval": "",
@@ -1105,7 +1105,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "Loki"
+        "uid": "loki"
       },
       "fieldConfig": {
         "defaults": {
@@ -1180,7 +1180,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "Loki"
+            "uid": "loki"
           },
           "expr": "avg by (model) (avg_over_time({service_name=\"claude-code\"} |= \"claude_code.api_request\" | unwrap duration_ms [$__interval]))",
           "interval": "",
@@ -1194,7 +1194,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "Loki"
+        "uid": "loki"
       },
       "fieldConfig": {
         "defaults": {
@@ -1269,7 +1269,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "Loki"
+            "uid": "loki"
           },
           "expr": "sum by (status_code) (rate({service_name=\"claude-code\"} |= \"claude_code.api_error\" | json | __error__ = \"\" [$__interval]))",
           "interval": "",
@@ -1289,7 +1289,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "Prometheus"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1364,7 +1364,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "Prometheus"
+            "uid": "prometheus"
           },
           "expr": "sum by (type) (rate(claude_code_lines_of_code_count_total{job=\"claude-code\"}[5m]) * 60)",
           "interval": "",
@@ -1378,7 +1378,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "Prometheus"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1453,7 +1453,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "Prometheus"
+            "uid": "prometheus"
           },
           "expr": "sum(increase(claude_code_commit_count_total{job=\"claude-code\"}[1h])) or vector(0)",
           "interval": "",
@@ -1463,7 +1463,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "Prometheus"
+            "uid": "prometheus"
           },
           "expr": "sum(increase(claude_code_pull_request_count_total{job=\"claude-code\"}[1h])) or vector(0)",
           "interval": "",
@@ -1483,7 +1483,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "Loki"
+        "uid": "loki"
       },
       "gridPos": {
         "h": 8,
@@ -1506,7 +1506,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "Loki"
+            "uid": "loki"
           },
           "expr": "{service_name=\"claude-code\"} |= \"claude_code.tool_result\" | line_format \"{{.event_timestamp}} [{{.tool_name}}] {{if eq .success \\\"true\\\"}}✅{{else}}❌{{end}} {{.duration_ms}}ms {{if .error}}ERROR: {{.error}}{{end}}\"",
           "refId": "A"
@@ -1518,7 +1518,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "Loki"
+        "uid": "loki"
       },
       "gridPos": {
         "h": 8,
@@ -1541,7 +1541,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "Loki"
+            "uid": "loki"
           },
           "expr": "{service_name=\"claude-code\"} |= \"claude_code.api_error\" | line_format \"{{.event_timestamp}} [{{.model}}] ❌ HTTP {{.status_code}} {{.duration_ms}}ms ERROR: {{.error}}\"",
           "refId": "A"
