@@ -54,9 +54,12 @@ portfolio/
 ├── auth-service/       # Auth service repo
 ├── public-api/         # Public API repo
 ├── admin-api/          # Admin API repo
+├── files-api/          # Files API repo
 ├── public-web/         # Public web repo
 ├── admin-web/          # Admin web repo
-└── database/           # Database repo
+├── database/           # Database repo
+├── e2e-tests/          # E2E tests repo
+└── portfolio-common/   # Shared models repo
 ```
 
 ## Quick Start
@@ -177,6 +180,12 @@ task monitoring:restart  # Restart monitoring stack
 task monitoring:logs     # View monitoring stack logs
 task monitoring:status   # Check health of monitoring services
 task monitoring:open     # Open Grafana in browser
+
+# E2E Testing
+task e2e:setup           # Setup E2E testing environment (install dependencies)
+task e2e:test            # Run all E2E tests (browser visible)
+task e2e:test:headless   # Run all E2E tests in headless mode
+task e2e:ci              # Run E2E tests for CI (headless + linting)
 
 # CI/CD tasks
 task ci:all              # Run all CI checks
@@ -440,6 +449,46 @@ docker-compose up -d postgres redis minio flyway
 ```
 
 1. Run each application service locally (see individual service READMEs)
+
+## E2E Testing
+
+End-to-end tests are available in the `../e2e-tests/` directory using
+Playwright with Python.
+
+### Running E2E Tests
+
+```bash
+# First-time setup
+task e2e:setup
+
+# Start all services (if not already running)
+task services:up
+
+# Run tests (browser visible)
+task e2e:test
+
+# Run tests in headless mode (faster)
+task e2e:test:headless
+```
+
+### Available Test Suites
+
+- **Profile Management** - Profile CRUD operations
+- **Skills CRUD** - Skills management
+- **Work Experience CRUD** - Experience management
+- **Certifications CRUD** - Certifications/education management
+- **Miniatures CRUD** - Projects, themes, and paints management
+
+### E2E Test Requirements
+
+E2E tests require:
+
+- Python 3.12+
+- Running services (admin-web on port 81, admin-api on 8083)
+- Valid admin credentials in `../e2e-tests/.env`
+
+See [../e2e-tests/README.md](../e2e-tests/README.md) for detailed
+documentation.
 
 ## Troubleshooting
 
