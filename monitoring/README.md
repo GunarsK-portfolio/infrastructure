@@ -11,6 +11,7 @@ using Prometheus, Loki, Promtail, and Grafana.
 | **Loki** | 3100 | Log aggregation (7d retention) |
 | **Promtail** | 9080 | Log shipper (Docker → Loki) |
 | **Grafana** | 3000 | Dashboards & visualization |
+| **OTel Collector** | 4317/4318 | OTLP receiver (Claude Code telemetry) |
 
 **Grafana Credentials**: admin / admin
 

@@ -1,6 +1,11 @@
 # OpenTelemetry Collector Configuration
 # Receives telemetry from Claude Code and exports to Prometheus
 
+extensions:
+  # Health check extension for Docker healthcheck
+  health_check:
+    endpoint: 0.0.0.0:13133
+
 receivers:
   # OTLP receiver for Claude Code telemetry
   otlp:
@@ -27,6 +32,7 @@ processors:
         action: upsert
 
   # Memory limiter to prevent OOM
+  # Note: Monitor actual usage via http://localhost:8888/metrics and adjust if needed
   memory_limiter:
     check_interval: 1s
     limit_mib: 512
@@ -36,37 +42,34 @@ exporters:
   # Export metrics to Prometheus
   prometheus:
     endpoint: "0.0.0.0:9464"
-    namespace: claude_code
+    # namespace: claude_code  # Removed - Claude Code already prefixes metrics
     const_labels:
       environment: development
 
-  # Debug logging (optional, can be removed in production)
-  debug:
-    verbosity: normal
+  # Export logs to Loki via OTLP HTTP
+  otlphttp:
+    endpoint: http://loki:3100/otlp
+    tls:
+      insecure: true
 
 # Export to Prometheus via remote write (alternative method)
 # prometheusremotewrite:
 #   endpoint: http://prometheus:9090/api/v1/write
 
 service:
+  extensions: [health_check]
   pipelines:
     # Metrics pipeline
     metrics:
       receivers: [otlp]
       processors: [memory_limiter, batch, resource]
-      exporters: [prometheus, debug]
+      exporters: [prometheus]
 
-    # Logs pipeline (for Claude Code logs)
+    # Logs pipeline
     logs:
       receivers: [otlp]
       processors: [memory_limiter, batch, resource]
-      exporters: [debug]
-
-    # Traces pipeline (if needed in future)
-    traces:
-      receivers: [otlp]
-      processors: [memory_limiter, batch, resource]
-      exporters: [debug]
+      exporters: [otlphttp]
 
   # Telemetry configuration for the collector itself
   telemetry:
