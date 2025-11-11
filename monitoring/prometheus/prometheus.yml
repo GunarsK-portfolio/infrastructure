@@ -71,30 +71,26 @@ scrape_configs:
           service: 'claude-code'
           team: 'development'
 
-# PostgreSQL Exporter (optional, add when needed)
-# - job_name: 'postgres'
-#   static_configs:
-#     - targets: ['postgres-exporter:9187']
-#       labels:
-#         service: 'postgres'
+  # PostgreSQL Exporter - Database metrics
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          service: 'postgres'
+          team: 'infrastructure'
 
-# Redis Exporter (optional, add when needed)
-# - job_name: 'redis'
-#   static_configs:
-#     - targets: ['redis-exporter:9121']
-#       labels:
-#         service: 'redis'
+  # Redis Exporter - Cache metrics
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          service: 'redis'
+          team: 'infrastructure'
 
-# Node Exporter - Host metrics (CPU, memory, disk)
-# - job_name: 'node'
-#   static_configs:
-#     - targets: ['node-exporter:9100']
-#       labels:
-#         service: 'node-exporter'
-
-# cAdvisor - Container metrics (optional)
-# - job_name: 'cadvisor'
-#   static_configs:
-#     - targets: ['cadvisor:8080']
-#       labels:
-#         service: 'cadvisor'
+  # Traefik - Reverse proxy metrics
+  - job_name: 'traefik'
+    static_configs:
+      - targets: ['traefik:8080']
+        labels:
+          service: 'traefik'
+          team: 'infrastructure'

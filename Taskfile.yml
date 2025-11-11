@@ -348,7 +348,7 @@ tasks:
         platforms: [linux, darwin]
       - docker compose -f docker-compose.monitoring.yml up -d
       - echo "Monitoring stack started"
-      - echo "  Grafana - http://localhost:3000 - admin/admin"
+      - echo "  Grafana - http://localhost:3000"
       - echo "  Prometheus - http://localhost:9090"
       - echo "  Loki - http://localhost:3100"
 

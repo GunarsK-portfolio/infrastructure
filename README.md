@@ -319,6 +319,7 @@ DB_PASSWORD_READONLY=portfolio_public_dev_pass
 # Redis
 REDIS_HOST=redis
 REDIS_PORT=6379
+REDIS_PASSWORD=redis_dev_pass
 
 # MinIO (S3-compatible storage)
 # Root user for MinIO administration

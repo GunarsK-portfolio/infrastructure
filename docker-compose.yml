@@ -13,6 +13,11 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--providers.file.directory=/config"
       - "--providers.file.watch=true"
+      # Metrics
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.addEntryPointsLabels=true"
+      - "--metrics.prometheus.addRoutersLabels=true"
+      - "--metrics.prometheus.addServicesLabels=true"
       # Entrypoints
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
@@ -42,6 +47,7 @@ services:
       # - ./docker/traefik/letsencrypt:/letsencrypt  # For Let's Encrypt
     networks:
       - network
+      - monitoring
     depends_on:
       - public-web
       - admin-web
@@ -106,14 +112,19 @@ services:
     image: redis:8.2-alpine
     container_name: redis
     restart: unless-stopped
+    command: >
+      sh -c "redis-server /usr/local/etc/redis/redis.conf --requirepass '${REDIS_PASSWORD}'"
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
     networks:
       - network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -215,6 +226,7 @@ services:
       - DB_NAME=${POSTGRES_DB}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_ACCESS_EXPIRY=${JWT_ACCESS_EXPIRY}
       - JWT_REFRESH_EXPIRY=${JWT_REFRESH_EXPIRY}
@@ -581,6 +593,9 @@ services:
 networks:
   network:
     driver: bridge
+  monitoring:
+    external: true
+    name: infrastructure_monitoring
 
 volumes:
   postgres_data:
