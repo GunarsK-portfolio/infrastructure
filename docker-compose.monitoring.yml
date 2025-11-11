@@ -225,9 +225,6 @@ services:
     image: prometheuscommunity/postgres-exporter:latest
     container_name: postgres-exporter
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
       DATA_SOURCE_NAME: >-
         postgresql://${POSTGRES_SUPERUSER}:${POSTGRES_SUPERUSER_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
@@ -259,9 +256,6 @@ services:
     image: oliver006/redis_exporter:latest
     container_name: redis-exporter
     restart: unless-stopped
-    depends_on:
-      redis:
-        condition: service_healthy
     environment:
       REDIS_ADDR: "redis:6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
