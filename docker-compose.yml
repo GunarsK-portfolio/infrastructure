@@ -13,6 +13,11 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--providers.file.directory=/config"
       - "--providers.file.watch=true"
+      # Metrics
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.addEntryPointsLabels=true"
+      - "--metrics.prometheus.addRoutersLabels=true"
+      - "--metrics.prometheus.addServicesLabels=true"
       # Entrypoints
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
@@ -42,6 +47,7 @@ services:
       # - ./docker/traefik/letsencrypt:/letsencrypt  # For Let's Encrypt
     networks:
       - network
+      - monitoring
     depends_on:
       - public-web
       - admin-web
@@ -106,10 +112,12 @@ services:
     image: redis:8.2-alpine
     container_name: redis
     restart: unless-stopped
+    command: redis-server /usr/local/etc/redis/redis.conf
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
     networks:
       - network
     healthcheck:
@@ -581,6 +589,9 @@ services:
 networks:
   network:
     driver: bridge
+  monitoring:
+    external: true
+    name: infrastructure_monitoring
 
 volumes:
   postgres_data:

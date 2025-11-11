@@ -6,7 +6,7 @@
 #   With services: docker-compose -f docker-compose.monitoring.yml -f ../auth-service/docker-compose.yml up -d
 #
 # Access:
-#   Grafana: http://localhost:3000 (admin/admin)
+#   Grafana: http://localhost:3000
 #   Prometheus: http://localhost:9090
 #   Loki: http://localhost:3100
 #   OTEL Collector: http://localhost:4317 (gRPC), http://localhost:4318 (HTTP)
@@ -219,22 +219,45 @@ services:
 #   networks:
 #     - monitoring
 
-# Optional: cAdvisor - Container metrics
-# Uncomment to enable container-level monitoring
-# cadvisor:
-#   image: gcr.io/cadvisor/cadvisor:latest
-#   container_name: cadvisor
-#   restart: unless-stopped
-#   ports:
-#     - "8080:8080"
-#   volumes:
-#     - /:/rootfs:ro
-#     - /var/run:/var/run:ro
-#     - /sys:/sys:ro
-#     - /var/lib/docker/:/var/lib/docker:ro
-#     - /dev/disk/:/dev/disk:ro
-#   networks:
-#     - monitoring
-#   privileged: true
-#   devices:
-#     - /dev/kmsg
+  # cAdvisor - Container metrics
+  # PostgreSQL Exporter - Database metrics
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: postgres-exporter
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_SUPERUSER}:${POSTGRES_SUPERUSER_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
+    ports:
+      - "9187:9187"
+    networks:
+      - monitoring
+      - portfolio
+    labels:
+      logging: "promtail"
+      environment: "development"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 128M
+
+  # Redis Exporter - Cache metrics
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: redis-exporter
+    restart: unless-stopped
+    environment:
+      REDIS_ADDR: "redis:6379"
+    ports:
+      - "9121:9121"
+    networks:
+      - monitoring
+      - portfolio
+    labels:
+      logging: "promtail"
+      environment: "development"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 128M
