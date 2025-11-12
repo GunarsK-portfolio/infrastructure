@@ -236,6 +236,8 @@ services:
       - LOG_SOURCE=${LOG_SOURCE}
       - ENVIRONMENT=${ENVIRONMENT}
       - GIN_MODE=release
+      # CORS
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS_AUTH}
     ports:
       - "8084:8084"
     networks:
@@ -310,6 +312,8 @@ services:
       - LOG_SOURCE=${LOG_SOURCE}
       - ENVIRONMENT=${ENVIRONMENT}
       - GIN_MODE=release
+      # CORS
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS_PUBLIC}
     ports:
       - "8082:8082"
     networks:
@@ -380,6 +384,8 @@ services:
       - LOG_SOURCE=${LOG_SOURCE}
       - ENVIRONMENT=${ENVIRONMENT}
       - GIN_MODE=release
+      # CORS
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS_ADMIN}
     ports:
       - "8083:8083"
     networks:
@@ -464,6 +470,8 @@ services:
       - LOG_SOURCE=${LOG_SOURCE}
       - ENVIRONMENT=${ENVIRONMENT}
       - GIN_MODE=release
+      # CORS
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS_FILES}
     ports:
       - "8085:8085"
     networks:
