@@ -1,16 +1,22 @@
+# Dynamic Traefik configuration for local development
+# This file contains development-specific settings with hardcoded localhost URLs
+# Production deployments should use environment-specific configuration files
 http:
   middlewares:
     # Security headers middleware
     security-headers:
       headers:
         # Content Security Policy
+        # NOTE: style-src 'unsafe-inline' required for Vite HMR in development
+        # Production should use nonce-based CSP without 'unsafe-inline'
         contentSecurityPolicy: >-
           default-src 'self';
-          script-src 'self' 'unsafe-inline' 'unsafe-eval';
+          script-src 'self';
           style-src 'self' 'unsafe-inline';
           img-src 'self' data: blob: http://localhost:9000;
           font-src 'self' data:;
-          connect-src 'self' http://localhost:80 http://localhost:81 http://localhost:8080 http://localhost:8081 http://localhost:9000;
+          connect-src 'self' http://localhost:80 http://localhost:81 http://localhost:8080 http://localhost:8081
+          http://localhost:9000;
           frame-ancestors 'none';
           base-uri 'self';
           form-action 'self';
@@ -18,8 +24,8 @@ http:
         frameDeny: true
         contentTypeNosniff: true
         browserXssFilter: true
-        referrerPolicy: "strict-origin-when-cross-origin"
-        permissionsPolicy: "geolocation=(), microphone=(), camera=()"
+        referrerPolicy: 'strict-origin-when-cross-origin'
+        permissionsPolicy: 'geolocation=(), microphone=(), camera=()'
 
 tls:
   certificates:
