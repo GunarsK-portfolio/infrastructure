@@ -267,16 +267,20 @@ services:
       - "environment=${ENVIRONMENT}"
       # Traefik
       - "traefik.enable=true"
+      # Rate limiting middleware (5 req/min per IP)
+      - "traefik.http.middlewares.auth-ratelimit.ratelimit.average=5"
+      - "traefik.http.middlewares.auth-ratelimit.ratelimit.period=1m"
+      - "traefik.http.middlewares.auth-ratelimit.ratelimit.burst=10"
       # HTTP router - rewrite /auth/v1/* to /api/v1/auth/*
       - "traefik.http.routers.auth-api.rule=PathPrefix(`/auth/v1/`)"
       - "traefik.http.routers.auth-api.entrypoints=admin"
-      - "traefik.http.routers.auth-api.middlewares=auth-rewrite"
+      - "traefik.http.routers.auth-api.middlewares=auth-ratelimit,auth-rewrite"
       - "traefik.http.routers.auth-api.priority=100"
       - "traefik.http.routers.auth-api.service=auth-api"
       # HTTPS router
       - "traefik.http.routers.auth-api-secure.rule=PathPrefix(`/auth/v1/`)"
       - "traefik.http.routers.auth-api-secure.entrypoints=adminsecure"
-      - "traefik.http.routers.auth-api-secure.middlewares=auth-rewrite"
+      - "traefik.http.routers.auth-api-secure.middlewares=auth-ratelimit,auth-rewrite"
       - "traefik.http.routers.auth-api-secure.priority=100"
       - "traefik.http.routers.auth-api-secure.tls=true"
       - "traefik.http.routers.auth-api-secure.service=auth-api"
@@ -343,14 +347,20 @@ services:
       - "environment=${ENVIRONMENT}"
       # Traefik
       - "traefik.enable=true"
+      # Rate limiting middleware (60 req/min per IP)
+      - "traefik.http.middlewares.public-ratelimit.ratelimit.average=60"
+      - "traefik.http.middlewares.public-ratelimit.ratelimit.period=1m"
+      - "traefik.http.middlewares.public-ratelimit.ratelimit.burst=100"
       # HTTP router
       - "traefik.http.routers.public-api.rule=PathPrefix(`/api/`)"
       - "traefik.http.routers.public-api.entrypoints=web"
+      - "traefik.http.routers.public-api.middlewares=public-ratelimit"
       - "traefik.http.routers.public-api.priority=100"
       - "traefik.http.routers.public-api.service=public-api"
       # HTTPS router
       - "traefik.http.routers.public-api-secure.rule=PathPrefix(`/api/`)"
       - "traefik.http.routers.public-api-secure.entrypoints=websecure"
+      - "traefik.http.routers.public-api-secure.middlewares=public-ratelimit"
       - "traefik.http.routers.public-api-secure.priority=100"
       - "traefik.http.routers.public-api-secure.tls=true"
       - "traefik.http.routers.public-api-secure.service=public-api"
@@ -501,16 +511,20 @@ services:
       - "environment=${ENVIRONMENT}"
       # Traefik
       - "traefik.enable=true"
+      # Rate limiting middleware (10 req/min per IP)
+      - "traefik.http.middlewares.files-ratelimit.ratelimit.average=10"
+      - "traefik.http.middlewares.files-ratelimit.ratelimit.period=1m"
+      - "traefik.http.middlewares.files-ratelimit.ratelimit.burst=20"
       # HTTP router - rewrite /files-api/v1/* to /api/v1/*
       - "traefik.http.routers.files-api.rule=PathPrefix(`/files-api/`)"
       - "traefik.http.routers.files-api.entrypoints=web,admin"
-      - "traefik.http.routers.files-api.middlewares=files-api-rewrite"
+      - "traefik.http.routers.files-api.middlewares=files-ratelimit,files-api-rewrite"
       - "traefik.http.routers.files-api.priority=110"
       - "traefik.http.routers.files-api.service=files-api"
       # HTTPS router
       - "traefik.http.routers.files-api-secure.rule=PathPrefix(`/files-api/`)"
       - "traefik.http.routers.files-api-secure.entrypoints=websecure,adminsecure"
-      - "traefik.http.routers.files-api-secure.middlewares=files-api-rewrite"
+      - "traefik.http.routers.files-api-secure.middlewares=files-ratelimit,files-api-rewrite"
       - "traefik.http.routers.files-api-secure.priority=110"
       - "traefik.http.routers.files-api-secure.tls=true"
       - "traefik.http.routers.files-api-secure.service=files-api"
