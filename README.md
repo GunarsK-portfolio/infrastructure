@@ -383,6 +383,7 @@ VITE_ADMIN_AUTH_URL=https://localhost:8443/auth/v1
 - Update service URLs to production hostnames
 - Enable SSL (`S3_USE_SSL=true`) for MinIO if using HTTPS
 - Adjust JWT expiry times based on security requirements
+- HTTP→HTTPS redirect is enabled by default (permanent 301 redirects)
 
 ### SSL/TLS Certificates
 
@@ -402,6 +403,10 @@ for generation instructions.
 For production, configure Let's Encrypt in
 [docker-compose.yml](docker-compose.yml) or point
 `TRAEFIK_CERT_DIR` to your production certificates.
+
+**HTTP to HTTPS Redirect**: Enabled by default. All HTTP traffic
+(ports 80 and 81) is automatically redirected to HTTPS (ports 443
+and 8443) with a permanent 301 redirect.
 
 ### Database Migrations
 
