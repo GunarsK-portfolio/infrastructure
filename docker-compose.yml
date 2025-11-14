@@ -24,9 +24,13 @@ services:
       - "--entrypoints.admin.address=:81"
       - "--entrypoints.adminsecure.address=:8443"
       - "--entrypoints.swagger.address=:82"
-      # HTTP to HTTPS redirect (uncomment for production)
-      # - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-      # - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      # HTTP to HTTPS redirect
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+      - "--entrypoints.admin.http.redirections.entrypoint.to=adminsecure"
+      - "--entrypoints.admin.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.admin.http.redirections.entrypoint.permanent=true"
       # Let's Encrypt (uncomment and configure for production)
       # - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
       # - "--certificatesresolvers.letsencrypt.acme.email=your-email@example.com"
