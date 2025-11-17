@@ -49,12 +49,12 @@ output "jwt_secret_arn" {
 output "secret_arns" {
   description = "Map of all secret ARNs"
   value = {
-    aurora_master  = aws_secretsmanager_secret.aurora_master_password.arn
-    aurora_owner   = aws_secretsmanager_secret.aurora_owner_password.arn
-    aurora_admin   = aws_secretsmanager_secret.aurora_admin_password.arn
-    aurora_public  = aws_secretsmanager_secret.aurora_public_password.arn
-    redis_auth     = aws_secretsmanager_secret.redis_auth_token.arn
-    jwt_secret     = aws_secretsmanager_secret.jwt_secret.arn
+    aurora_master = aws_secretsmanager_secret.aurora_master_password.arn
+    aurora_owner  = aws_secretsmanager_secret.aurora_owner_password.arn
+    aurora_admin  = aws_secretsmanager_secret.aurora_admin_password.arn
+    aurora_public = aws_secretsmanager_secret.aurora_public_password.arn
+    redis_auth    = aws_secretsmanager_secret.redis_auth_token.arn
+    jwt_secret    = aws_secretsmanager_secret.jwt_secret.arn
   }
   sensitive = true
 }

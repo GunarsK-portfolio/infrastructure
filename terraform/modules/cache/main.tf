@@ -1,9 +1,20 @@
 # Cache Module
 # ElastiCache Serverless for Redis
 
+terraform {
+  required_version = ">= 1.13.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.21"
+    }
+  }
+}
+
 # Subnet Group
 resource "aws_elasticache_subnet_group" "main" {
-  name_prefix = "${var.project_name}-${var.environment}-redis-"
+  name        = "${var.project_name}-${var.environment}-redis-subnet-group"
   subnet_ids  = var.private_subnet_ids
   description = "Subnet group for ElastiCache Serverless Redis"
 
@@ -21,7 +32,11 @@ data "aws_secretsmanager_secret_version" "auth_token" {
 }
 
 locals {
-  auth_token_data = jsondecode(data.aws_secretsmanager_secret_version.auth_token.secret_string)
+  # Try to parse JSON, fallback to treating as plain string
+  auth_token_data = try(
+    jsondecode(data.aws_secretsmanager_secret_version.auth_token.secret_string),
+    { password = data.aws_secretsmanager_secret_version.auth_token.secret_string }
+  )
 }
 
 # ElastiCache Serverless Cache
@@ -71,7 +86,7 @@ resource "aws_elasticache_user" "main" {
   user_id       = "${var.project_name}-${var.environment}-redis-user"
   user_name     = "default"
   access_string = "on ~* &* +@all"
-  engine        = "REDIS"
+  engine        = "redis"
 
   authentication_mode {
     type      = "password"
@@ -88,7 +103,7 @@ resource "aws_elasticache_user" "main" {
 # Redis User Group
 resource "aws_elasticache_user_group" "main" {
   user_group_id = "${var.project_name}-${var.environment}-redis-ug"
-  engine        = "REDIS"
+  engine        = "redis"
   user_ids      = [aws_elasticache_user.main.user_id]
 
   tags = var.tags

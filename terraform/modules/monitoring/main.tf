@@ -1,9 +1,21 @@
 # Monitoring Module
 # CloudWatch logs, alarms, and dashboards
 
+terraform {
+  required_version = ">= 1.13.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.21"
+    }
+  }
+}
+
 # SNS Topic for alarms
 resource "aws_sns_topic" "alarms" {
-  name_prefix = "${var.project_name}-${var.environment}-alarms-"
+  name_prefix       = "${var.project_name}-${var.environment}-alarms-"
+  kms_master_key_id = "alias/aws/sns"
 
   tags = merge(
     var.tags,
@@ -37,7 +49,7 @@ resource "aws_cloudwatch_dashboard" "main" {
             ["AWS/RDS", "CPUUtilization", { stat = "Average" }]
           ]
           period = 300
-          region = data.aws_region.current.name
+          region = data.aws_region.current.id
           title  = "Aurora CPU Utilization"
         }
       },
@@ -49,7 +61,7 @@ resource "aws_cloudwatch_dashboard" "main" {
             ["AWS/RDS", "ACUUtilization", { stat = "Average" }]
           ]
           period = 300
-          region = data.aws_region.current.name
+          region = data.aws_region.current.id
           title  = "Aurora ACU Utilization"
         }
       },
@@ -61,7 +73,7 @@ resource "aws_cloudwatch_dashboard" "main" {
             ["AWS/ElastiCache", "EngineCPUUtilization", { stat = "Average" }]
           ]
           period = 300
-          region = data.aws_region.current.name
+          region = data.aws_region.current.id
           title  = "ElastiCache CPU"
         }
       },

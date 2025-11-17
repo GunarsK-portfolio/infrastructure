@@ -1,6 +1,17 @@
 # Networking Module
 # Creates VPC, subnets, security groups for the portfolio infrastructure
 
+terraform {
+  required_version = ">= 1.13.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.21"
+    }
+  }
+}
+
 # VPC
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
@@ -153,9 +164,9 @@ resource "aws_route_table_association" "private" {
 
 # Security Group for Aurora Database
 resource "aws_security_group" "database" {
-  name_description = "${var.project_name}-${var.environment}-aurora-sg"
-  description      = "Security group for Aurora Serverless v2 PostgreSQL"
-  vpc_id           = aws_vpc.main.id
+  name        = "${var.project_name}-${var.environment}-aurora-sg"
+  description = "Security group for Aurora Serverless v2 PostgreSQL"
+  vpc_id      = aws_vpc.main.id
 
   # Allow PostgreSQL from App Runner security group only
   ingress {
@@ -313,7 +324,7 @@ resource "aws_iam_role_policy" "flow_logs" {
           "logs:DescribeLogGroups",
           "logs:DescribeLogStreams"
         ]
-        Effect = "Allow"
+        Effect   = "Allow"
         Resource = "*"
       }
     ]

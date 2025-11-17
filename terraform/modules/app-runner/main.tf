@@ -1,6 +1,17 @@
 # App Runner Module
 # AWS App Runner services with VPC connector
 
+terraform {
+  required_version = ">= 1.13.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.21"
+    }
+  }
+}
+
 locals {
   # Service-specific environment variables
   service_env_vars = {
@@ -20,17 +31,17 @@ locals {
       ALLOWED_ORIGINS    = "https://admin.gk.codes"
     }
     "admin-api" = {
-      ENVIRONMENT      = var.environment
-      SERVICE_NAME     = "admin-api"
-      LOG_LEVEL        = "info"
-      LOG_FORMAT       = "json"
-      DB_HOST          = var.aurora_endpoint
-      DB_PORT          = "5432"
-      DB_NAME          = "portfolio"
-      DB_USER          = "portfolio_admin"
-      AUTH_SERVICE_URL = "https://${aws_apprunner_service.main["auth-service"].service_url}/api/v1"
-      FILES_API_URL    = "https://${aws_apprunner_service.main["files-api"].service_url}/api/v1"
-      ALLOWED_ORIGINS  = "https://admin.gk.codes"
+      ENVIRONMENT     = var.environment
+      SERVICE_NAME    = "admin-api"
+      LOG_LEVEL       = "info"
+      LOG_FORMAT      = "json"
+      DB_HOST         = var.aurora_endpoint
+      DB_PORT         = "5432"
+      DB_NAME         = "portfolio"
+      DB_USER         = "portfolio_admin"
+      ALLOWED_ORIGINS = "https://admin.gk.codes"
+      # Note: AUTH_SERVICE_URL and FILES_API_URL must be set via AWS Secrets Manager after deployment
+      # These cannot be known at service creation time due to circular dependency
     }
     "public-api" = {
       ENVIRONMENT     = var.environment
@@ -41,8 +52,9 @@ locals {
       DB_PORT         = "5432"
       DB_NAME         = "portfolio"
       DB_USER         = "portfolio_public"
-      FILES_API_URL   = "https://${aws_apprunner_service.main["files-api"].service_url}/api/v1"
       ALLOWED_ORIGINS = "https://gk.codes"
+      # Note: FILES_API_URL must be set via AWS Secrets Manager after deployment
+      # This cannot be known at service creation time due to circular dependency
     }
     "files-api" = {
       ENVIRONMENT        = var.environment
@@ -53,11 +65,12 @@ locals {
       DB_PORT            = "5432"
       DB_NAME            = "portfolio"
       DB_USER            = "portfolio_admin"
-      AUTH_SERVICE_URL   = "https://${aws_apprunner_service.main["auth-service"].service_url}/api/v1"
       S3_USE_SSL         = "true"
       MAX_FILE_SIZE      = "10485760"
       ALLOWED_FILE_TYPES = "image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
       ALLOWED_ORIGINS    = "https://gk.codes,https://admin.gk.codes"
+      # Note: AUTH_SERVICE_URL must be set via AWS Secrets Manager after deployment
+      # This cannot be known at service creation time due to circular dependency
     }
     "admin-web" = {
       ENVIRONMENT  = var.environment
@@ -89,7 +102,7 @@ locals {
     "files-api" = {
       DB_PASSWORD = var.secrets_arns["aurora_admin"]
     }
-    "admin-web" = {}
+    "admin-web"  = {}
     "public-web" = {}
   }
 }

@@ -5,11 +5,6 @@ variable "project_name" {
   type        = string
 }
 
-variable "environment" {
-  description = "Environment name"
-  type        = string
-}
-
 variable "service_names" {
   description = "List of service names for ECR repositories"
   type        = list(string)

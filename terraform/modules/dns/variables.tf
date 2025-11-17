@@ -10,11 +10,6 @@ variable "admin_domain_name" {
   type        = string
 }
 
-variable "cloudfront_distribution_id" {
-  description = "CloudFront distribution ID"
-  type        = string
-}
-
 variable "cloudfront_domain_name" {
   description = "CloudFront distribution domain name"
   type        = string

@@ -1,6 +1,17 @@
 # Storage Module
 # S3 Buckets for file storage
 
+terraform {
+  required_version = ">= 1.13.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.21"
+    }
+  }
+}
+
 # S3 Buckets
 resource "aws_s3_bucket" "main" {
   for_each = toset(var.bucket_names)
@@ -47,7 +58,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "main" {
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+      sse_algorithm = "aws:kms"
     }
     bucket_key_enabled = true
   }
@@ -63,6 +74,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "main" {
     id     = "transition-to-ia"
     status = "Enabled"
 
+    filter {}
+
     transition {
       days          = 30
       storage_class = "STANDARD_IA"
@@ -72,6 +85,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "main" {
   rule {
     id     = "transition-to-glacier"
     status = "Enabled"
+
+    filter {}
 
     transition {
       days          = 90
@@ -83,6 +98,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "main" {
     id     = "expire-old-versions"
     status = "Enabled"
 
+    filter {}
+
     noncurrent_version_expiration {
       noncurrent_days = 90
     }
@@ -91,6 +108,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "main" {
   rule {
     id     = "delete-incomplete-uploads"
     status = "Enabled"
+
+    filter {}
 
     abort_incomplete_multipart_upload {
       days_after_initiation = 7
@@ -123,10 +142,10 @@ resource "aws_s3_bucket_policy" "main" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "DenyNonHTTPS"
-        Effect = "Deny"
+        Sid       = "DenyNonHTTPS"
+        Effect    = "Deny"
         Principal = "*"
-        Action = "s3:*"
+        Action    = "s3:*"
         Resource = [
           each.value.arn,
           "${each.value.arn}/*"

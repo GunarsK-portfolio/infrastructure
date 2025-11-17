@@ -53,6 +53,16 @@ variable "availability_zones" {
   description = "Availability zones for multi-AZ deployment"
   type        = list(string)
   default     = ["eu-west-1a", "eu-west-1b"]
+
+  validation {
+    condition     = length(var.availability_zones) >= 2
+    error_message = "At least 2 availability zones required for high availability."
+  }
+
+  validation {
+    condition     = alltrue([for az in var.availability_zones : can(regex("^${var.aws_region}[a-z]$", az))])
+    error_message = "Availability zones must match the AWS region. Example: if aws_region is 'eu-west-1', AZs must be 'eu-west-1a', 'eu-west-1b', etc."
+  }
 }
 
 # Aurora Serverless v2 Configuration
@@ -93,13 +103,6 @@ variable "aurora_backup_retention_days" {
     condition     = var.aurora_backup_retention_days >= 1 && var.aurora_backup_retention_days <= 35
     error_message = "Backup retention must be between 1 and 35 days."
   }
-}
-
-# ElastiCache Serverless Configuration
-variable "elasticache_engine_version" {
-  description = "Redis engine version for ElastiCache"
-  type        = string
-  default     = "7.1"
 }
 
 # App Runner Configuration
@@ -182,13 +185,18 @@ variable "app_runner_services" {
 
 # S3 Bucket Configuration
 variable "s3_buckets" {
-  description = "List of S3 bucket names"
+  description = "List of S3 bucket types (final names: {project}-{type}-{env}-{account})"
   type        = list(string)
   default = [
     "images",
     "documents",
     "miniatures"
   ]
+
+  validation {
+    condition     = alltrue([for name in var.s3_buckets : can(regex("^[a-z0-9-]+$", name))])
+    error_message = "Bucket types must contain only lowercase letters, numbers, and hyphens."
+  }
 }
 
 # CloudWatch Configuration

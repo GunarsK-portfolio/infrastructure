@@ -1,6 +1,17 @@
 # CDN Module
 # CloudFront distribution with multiple origins
 
+terraform {
+  required_version = ">= 1.13.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.21"
+    }
+  }
+}
+
 # CloudFront Origin Access Control for S3 (if needed)
 resource "aws_cloudfront_origin_access_control" "main" {
   name                              = "${var.project_name}-${var.environment}-oac"

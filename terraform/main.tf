@@ -19,9 +19,6 @@ locals {
 # Data source to get AWS account ID
 data "aws_caller_identity" "current" {}
 
-# Data source to get AWS region
-data "aws_region" "current" {}
-
 # Networking Module
 module "networking" {
   source = "./modules/networking"
@@ -47,16 +44,15 @@ module "secrets" {
 module "database" {
   source = "./modules/database"
 
-  project_name            = var.project_name
-  environment             = var.environment
-  vpc_id                  = module.networking.vpc_id
-  private_subnet_ids      = module.networking.private_subnet_ids
+  project_name               = var.project_name
+  environment                = var.environment
+  private_subnet_ids         = module.networking.private_subnet_ids
   database_security_group_id = module.networking.database_security_group_id
 
-  min_capacity            = var.aurora_min_capacity
-  max_capacity            = var.aurora_max_capacity
-  engine_version          = var.aurora_engine_version
-  backup_retention_days   = var.aurora_backup_retention_days
+  min_capacity          = var.aurora_min_capacity
+  max_capacity          = var.aurora_max_capacity
+  engine_version        = var.aurora_engine_version
+  backup_retention_days = var.aurora_backup_retention_days
 
   # Reference secrets from Secrets Manager (no hardcoded passwords)
   master_password_secret_arn = module.secrets.aurora_master_password_arn
@@ -71,13 +67,10 @@ module "database" {
 module "cache" {
   source = "./modules/cache"
 
-  project_name           = var.project_name
-  environment            = var.environment
-  vpc_id                 = module.networking.vpc_id
-  private_subnet_ids     = module.networking.private_subnet_ids
+  project_name            = var.project_name
+  environment             = var.environment
+  private_subnet_ids      = module.networking.private_subnet_ids
   cache_security_group_id = module.networking.cache_security_group_id
-
-  engine_version = var.elasticache_engine_version
 
   # Reference auth token from Secrets Manager
   auth_token_secret_arn = module.secrets.redis_auth_token_arn
@@ -101,10 +94,9 @@ module "storage" {
 module "ecr" {
   source = "./modules/ecr"
 
-  project_name              = var.project_name
-  environment               = var.environment
-  service_names             = keys(var.app_runner_services)
-  enable_enhanced_scanning  = var.enable_ecr_enhanced_scanning
+  project_name             = var.project_name
+  service_names            = keys(var.app_runner_services)
+  enable_enhanced_scanning = var.enable_ecr_enhanced_scanning
 
   tags = local.common_tags
 }
@@ -117,9 +109,8 @@ module "certificates" {
     aws = aws.us_east_1
   }
 
-  domain_name       = var.domain_name
-  admin_domain_name = var.admin_domain_name
-  zone_id           = module.dns.zone_id
+  domain_name = var.domain_name
+  zone_id     = module.dns.zone_id
 
   tags = local.common_tags
 }
@@ -128,11 +119,10 @@ module "certificates" {
 module "dns" {
   source = "./modules/dns"
 
-  domain_name              = var.domain_name
-  admin_domain_name        = var.admin_domain_name
-  cloudfront_distribution_id     = module.cdn.distribution_id
-  cloudfront_domain_name   = module.cdn.distribution_domain_name
-  cloudfront_zone_id       = module.cdn.distribution_zone_id
+  domain_name            = var.domain_name
+  admin_domain_name      = var.admin_domain_name
+  cloudfront_domain_name = module.cdn.distribution_domain_name
+  cloudfront_zone_id     = module.cdn.distribution_zone_id
 
   tags = local.common_tags
 }
@@ -142,7 +132,7 @@ module "waf" {
   source = "./modules/waf"
 
   providers = {
-    aws = aws.us_east_1  # WAF for CloudFront must be in us-east-1
+    aws = aws.us_east_1 # WAF for CloudFront must be in us-east-1
   }
 
   project_name = var.project_name
@@ -156,12 +146,12 @@ module "waf" {
 module "cdn" {
   source = "./modules/cdn"
 
-  project_name          = var.project_name
-  environment           = var.environment
-  domain_name           = var.domain_name
-  admin_domain_name     = var.admin_domain_name
-  certificate_arn       = module.certificates.certificate_arn
-  waf_web_acl_id        = module.waf.web_acl_id
+  project_name      = var.project_name
+  environment       = var.environment
+  domain_name       = var.domain_name
+  admin_domain_name = var.admin_domain_name
+  certificate_arn   = module.certificates.certificate_arn
+  waf_web_acl_id    = module.waf.web_acl_id
 
   # App Runner service URLs as origins
   app_runner_service_urls = module.app_runner.service_urls
@@ -173,20 +163,19 @@ module "cdn" {
 module "app_runner" {
   source = "./modules/app-runner"
 
-  project_name       = var.project_name
-  environment        = var.environment
-  services           = var.app_runner_services
+  project_name = var.project_name
+  environment  = var.environment
+  services     = var.app_runner_services
 
   # VPC connector for private resource access
-  vpc_id             = module.networking.vpc_id
-  private_subnet_ids = module.networking.private_subnet_ids
+  private_subnet_ids           = module.networking.private_subnet_ids
   app_runner_security_group_id = module.networking.app_runner_security_group_id
 
   # ECR repository URLs
   ecr_repository_urls = module.ecr.repository_urls
 
   # Database and cache endpoints (injected via Secrets Manager)
-  aurora_endpoint     = module.database.cluster_endpoint
+  aurora_endpoint      = module.database.cluster_endpoint
   elasticache_endpoint = module.cache.primary_endpoint
 
   # S3 bucket names
@@ -202,14 +191,12 @@ module "app_runner" {
 module "monitoring" {
   source = "./modules/monitoring"
 
-  project_name         = var.project_name
-  environment          = var.environment
-  log_retention_days   = var.log_retention_days
+  project_name       = var.project_name
+  environment        = var.environment
+  log_retention_days = var.log_retention_days
 
   # Resources to monitor
-  aurora_cluster_id    = module.database.cluster_id
-  elasticache_cache_id = module.cache.cache_id
-  app_runner_service_arns = module.app_runner.service_arns
+  app_runner_service_arns    = module.app_runner.service_arns
   cloudfront_distribution_id = module.cdn.distribution_id
 
   tags = local.common_tags

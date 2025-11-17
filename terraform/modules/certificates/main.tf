@@ -1,6 +1,17 @@
 # Certificates Module
 # ACM SSL certificates for CloudFront (must be in us-east-1)
 
+terraform {
+  required_version = ">= 1.13.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.21"
+    }
+  }
+}
+
 # Wildcard certificate for *.gk.codes
 resource "aws_acm_certificate" "main" {
   domain_name       = var.domain_name

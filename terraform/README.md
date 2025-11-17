@@ -5,12 +5,14 @@ AWS serverless infrastructure deployed in eu-west-1 (Ireland).
 ## Architecture
 
 ### Compute
-- AWS App Runner: 6 services (auth-service, admin-api, public-api, files-api, admin-web, public-web)
+
+- AWS App Runner: 6 services (auth, admin-api, public-api, files-api, webs)
 - Auto-scaling: 1-10 instances per service
 - Instance config: 1 vCPU, 2 GB RAM
 - VPC connector for private resource access
 
 ### Database
+
 - Aurora Serverless v2 PostgreSQL 15+
 - Scaling: 1-16 ACU (configurable)
 - Multi-AZ deployment
@@ -18,30 +20,35 @@ AWS serverless infrastructure deployed in eu-west-1 (Ireland).
 - Backups: 7-day retention, automated snapshots
 
 ### Cache
+
 - ElastiCache Serverless Redis 7.x
 - Dual endpoints: write (6379), read (6380)
 - Cluster mode enabled
 - Encryption at rest and in transit
 
 ### Storage
+
 - S3 buckets: images, documents, miniatures
 - Versioning enabled
 - Lifecycle policies: transition to Standard-IA (30d), Glacier (90d)
 - Block public access enforced
 
 ### CDN & Security
+
 - CloudFront distribution with path-based routing
 - WAF: rate limiting, AWS Managed Rules (Core, Known Bad Inputs)
 - ACM certificates: *.gk.codes (us-east-1)
 - Route53: DNS hosting, CAA records
 
 ### Monitoring
+
 - CloudWatch: log groups per service, 7-day retention
 - Alarms: error rates, latency, resource utilization
 - SNS notifications for critical events
 - Dashboard: unified metrics view
 
 ### Secrets & Registry
+
 - Secrets Manager: database passwords, Redis auth, JWT secret
 - KMS encryption for secrets
 - ECR: 6 repositories with enhanced scanning
@@ -49,7 +56,7 @@ AWS serverless infrastructure deployed in eu-west-1 (Ireland).
 
 ## Module Structure
 
-```
+```text
 modules/
 ├── networking/     VPC, subnets (2 public, 2 private), security groups
 ├── secrets/        Secrets Manager with KMS encryption
@@ -127,10 +134,12 @@ terraform apply
 ### CI/CD
 
 GitHub Actions workflows in infrastructure repo:
-- `terraform-plan.yml`: runs on PR, validates configuration
-- `terraform-apply.yml`: runs on tags (v*), applies infrastructure changes
 
-Application deployments handled in separate repos (public-web, admin-web, auth-service, etc.) with their own workflows that build images, push to ECR, and trigger App Runner deployments.
+- `terraform-plan.yml`: runs on PR, validates configuration
+- `terraform-apply.yml`: runs on tags (v*), applies changes
+
+Application deployments handled in separate repos with their own workflows
+that build images, push to ECR, and trigger App Runner deployments.
 
 Uses OIDC authentication (no long-lived credentials).
 
@@ -142,6 +151,7 @@ terraform output -json        # JSON format
 ```
 
 Key outputs:
+
 - Aurora endpoints (sensitive)
 - ElastiCache endpoints (sensitive)
 - CloudFront distribution domain
@@ -152,15 +162,18 @@ Key outputs:
 ## Security Notes
 
 ### Secrets
+
 - Stored in Secrets Manager, never in code
 - Referenced via data sources in Terraform
 - Accessed by services via IAM roles
 - State file contains sensitive data, never commit to git
 
 ### ACM Certificates
-CloudFront requires certificates in us-east-1, handled by `aws.us_east_1` provider alias in certificates module.
+
+CloudFront requires certs in us-east-1, handled by aws.us_east_1 alias.
 
 ### IAM
+
 - Least privilege roles for App Runner services
 - OIDC for GitHub Actions
 - No long-lived access keys
@@ -168,6 +181,7 @@ CloudFront requires certificates in us-east-1, handled by `aws.us_east_1` provid
 ## Maintenance
 
 ### State Lock
+
 If operation fails with lock error:
 
 ```bash
@@ -176,16 +190,20 @@ terraform force-unlock <LOCK_ID>
 ```
 
 ### Resource Import
+
 ```bash
 terraform import <resource_type>.<resource_name> <resource_id>
 ```
 
 ### Secrets Rotation
-Database credentials rotate automatically every 90 days via Lambda. JWT secret rotates manually.
+
+Database credentials rotate automatically every 90 days via Lambda.
+JWT secret rotates manually.
 
 ## Dependencies
 
 Module dependencies (applied in order):
+
 1. networking (VPC, subnets, security groups)
 2. secrets (Secrets Manager)
 3. database (requires: networking, secrets)
@@ -211,4 +229,4 @@ Module dependencies (applied in order):
 
 ## References
 
-- AWS Prescriptive Guidance: https://docs.aws.amazon.com/prescriptive-guidance/latest/terraform-aws-provider-best-practices/
+- [AWS Prescriptive Guidance](https://docs.aws.amazon.com/prescriptive-guidance/latest/terraform-aws-provider-best-practices/)

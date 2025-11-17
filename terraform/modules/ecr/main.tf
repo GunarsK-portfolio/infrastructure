@@ -1,6 +1,17 @@
 # ECR Module
 # Elastic Container Registry for Docker images
 
+terraform {
+  required_version = ">= 1.13.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.21"
+    }
+  }
+}
+
 resource "aws_ecr_repository" "main" {
   for_each = toset(var.service_names)
 
@@ -12,7 +23,7 @@ resource "aws_ecr_repository" "main" {
   }
 
   encryption_configuration {
-    encryption_type = "AES256"
+    encryption_type = "KMS"
   }
 
   tags = merge(

@@ -293,6 +293,9 @@ tasks:
       - task: ci:lint-shell
       - task: ci:lint-python
       - task: ci:lint-markdown
+      - task: ci:terraform-fmt
+      - task: ci:terraform-validate
+      - task: ci:tflint
       - echo "Infrastructure CI checks passed!"
 
   ci:validate:
@@ -326,14 +329,34 @@ tasks:
     cmds:
       - markdownlint-cli2
 
+  ci:terraform-fmt:
+    desc: Check Terraform formatting
+    dir: terraform
+    cmds:
+      - terraform fmt -check -recursive
+
+  ci:terraform-validate:
+    desc: Validate Terraform configuration
+    dir: terraform
+    cmds:
+      - terraform init -backend=false
+      - terraform validate
+
+  ci:tflint:
+    desc: Run TFLint on Terraform code
+    dir: terraform
+    cmds:
+      - tflint --init
+      - tflint --recursive --format compact
+
   ci:install-tools:
     desc: Install CI/CD tools (requires pip and npm)
     cmds:
       - python -m pip install yamllint flake8
       - npm install -g markdownlint-cli2
-      - cmd: echo Note - shellcheck must be installed separately
+      - cmd: echo Note - shellcheck and terraform/tflint must be installed separately
         platforms: [windows]
-      - cmd: echo "Note - shellcheck must be installed separately (apt, brew, etc.)"
+      - cmd: echo "Note - shellcheck, terraform, and tflint must be installed separately (apt, brew, etc.)"
         platforms: [linux, darwin]
 
   # Monitoring stack operations

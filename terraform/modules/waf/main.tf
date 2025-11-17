@@ -1,6 +1,17 @@
 # WAF Module
 # AWS WAF for CloudFront (must be in us-east-1)
 
+terraform {
+  required_version = ">= 1.13.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.21"
+    }
+  }
+}
+
 # WAF Web ACL
 resource "aws_wafv2_web_acl" "main" {
   count = var.enable_waf ? 1 : 0
@@ -176,4 +187,22 @@ resource "aws_wafv2_web_acl" "main" {
   }
 
   tags = var.tags
+}
+
+# CloudWatch Log Group for WAF logs
+resource "aws_cloudwatch_log_group" "waf" {
+  count = var.enable_waf ? 1 : 0
+
+  name              = "/aws/wafv2/${var.project_name}-${var.environment}"
+  retention_in_days = 7
+
+  tags = var.tags
+}
+
+# WAF Logging Configuration
+resource "aws_wafv2_web_acl_logging_configuration" "main" {
+  count = var.enable_waf ? 1 : 0
+
+  resource_arn            = aws_wafv2_web_acl.main[0].arn
+  log_destination_configs = [aws_cloudwatch_log_group.waf[0].arn]
 }

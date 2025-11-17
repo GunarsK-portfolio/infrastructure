@@ -5,11 +5,6 @@ variable "domain_name" {
   type        = string
 }
 
-variable "admin_domain_name" {
-  description = "Admin domain name"
-  type        = string
-}
-
 variable "zone_id" {
   description = "Route53 hosted zone ID for DNS validation"
   type        = string

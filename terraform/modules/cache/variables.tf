@@ -10,11 +10,6 @@ variable "environment" {
   type        = string
 }
 
-variable "vpc_id" {
-  description = "VPC ID"
-  type        = string
-}
-
 variable "private_subnet_ids" {
   description = "List of private subnet IDs for ElastiCache"
   type        = list(string)
@@ -23,12 +18,6 @@ variable "private_subnet_ids" {
 variable "cache_security_group_id" {
   description = "Security group ID for ElastiCache"
   type        = string
-}
-
-variable "engine_version" {
-  description = "Redis engine version"
-  type        = string
-  default     = "7.1"
 }
 
 variable "max_data_storage_gb" {

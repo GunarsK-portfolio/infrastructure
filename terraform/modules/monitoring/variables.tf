@@ -16,16 +16,6 @@ variable "log_retention_days" {
   default     = 7
 }
 
-variable "aurora_cluster_id" {
-  description = "Aurora cluster ID"
-  type        = string
-}
-
-variable "elasticache_cache_id" {
-  description = "ElastiCache cache ID"
-  type        = string
-}
-
 variable "app_runner_service_arns" {
   description = "List of App Runner service ARNs"
   type        = list(string)

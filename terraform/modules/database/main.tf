@@ -1,6 +1,17 @@
 # Database Module
 # Aurora Serverless v2 PostgreSQL cluster
 
+terraform {
+  required_version = ">= 1.13.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.21"
+    }
+  }
+}
+
 # DB Subnet Group
 resource "aws_db_subnet_group" "main" {
   name_prefix = "${var.project_name}-${var.environment}-aurora-"
@@ -26,13 +37,13 @@ locals {
 
 # Aurora Serverless v2 Cluster
 resource "aws_rds_cluster" "main" {
-  cluster_identifier     = "${var.project_name}-${var.environment}-aurora"
-  engine                 = "aurora-postgresql"
-  engine_mode            = "provisioned"
-  engine_version         = var.engine_version
-  database_name          = var.database_name
-  master_username        = local.master_credentials.username
-  master_password        = local.master_credentials.password
+  cluster_identifier = "${var.project_name}-${var.environment}-aurora"
+  engine             = "aurora-postgresql"
+  engine_mode        = "provisioned"
+  engine_version     = var.engine_version
+  database_name      = var.database_name
+  master_username    = local.master_credentials.username
+  master_password    = local.master_credentials.password
 
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [var.database_security_group_id]
@@ -56,13 +67,13 @@ resource "aws_rds_cluster" "main" {
   enabled_cloudwatch_logs_exports = ["postgresql"]
 
   # Deletion protection for production
-  deletion_protection = var.environment == "prod" ? true : false
-  skip_final_snapshot = var.environment != "prod"
+  deletion_protection       = var.environment == "prod" ? true : false
+  skip_final_snapshot       = var.environment != "prod"
   final_snapshot_identifier = var.environment == "prod" ? "${var.project_name}-${var.environment}-final-snapshot-${formatdate("YYYY-MM-DD-hhmm", timestamp())}" : null
 
   # Performance Insights
-  performance_insights_enabled    = var.enable_performance_insights
-  performance_insights_kms_key_id = var.enable_performance_insights ? var.kms_key_id : null
+  performance_insights_enabled          = var.enable_performance_insights
+  performance_insights_kms_key_id       = var.enable_performance_insights ? var.kms_key_id : null
   performance_insights_retention_period = var.enable_performance_insights ? 7 : null
 
   # Point-in-time recovery
@@ -191,7 +202,7 @@ resource "aws_cloudwatch_metric_alarm" "aurora_connections" {
   namespace           = "AWS/RDS"
   period              = 300
   statistic           = "Average"
-  threshold           = 400  # Adjust based on ACU capacity
+  threshold           = 400 # Adjust based on ACU capacity
   alarm_description   = "Aurora database connections above threshold"
   alarm_actions       = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
 

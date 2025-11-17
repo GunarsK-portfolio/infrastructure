@@ -72,6 +72,11 @@ output "app_runner_service_urls" {
   sensitive   = true
 }
 
+output "app_runner_vpc_connector_arn" {
+  description = "ARN of App Runner VPC connector"
+  value       = module.app_runner.vpc_connector_arn
+}
+
 # CloudFront Outputs
 output "cloudfront_distribution_id" {
   description = "CloudFront distribution ID"

@@ -22,7 +22,7 @@ Infrastructure and applications are separated into independent repositories:
 
 1. Tag the infrastructure repo: `git tag v1.0.0 && git push origin v1.0.0`
 2. GitHub Actions runs Terraform apply
-3. Creates/updates AWS resources (VPC, Aurora, ElastiCache, App Runner services, etc.)
+3. Creates/updates AWS resources (VPC, Aurora, ElastiCache, App Runner etc.)
 4. Outputs saved as artifacts
 
 ### Application Deployments
@@ -45,9 +45,11 @@ Infrastructure and applications are separated into independent repositories:
 ### 1. Infrastructure Repository Setup
 
 Configure GitHub secrets in infrastructure repo:
+
 - `AWS_ROLE_ARN`: IAM role for Terraform (OIDC)
 
 Workflows:
+
 - `terraform-plan.yml`: Validates on PR
 - `terraform-apply.yml`: Deploys on version tags
 
@@ -56,16 +58,20 @@ Workflows:
 For each application repo (public-web, admin-web, auth-service, etc.):
 
 **Step 1**: Copy deployment workflow
+
 ```bash
 mkdir -p .github/workflows
 cp ../infrastructure/.github/workflows/app-deploy-template.yml .github/workflows/deploy.yml
 ```
 
 **Step 2**: Configure GitHub secrets
+
 - `AWS_ROLE_ARN`: IAM role for ECR push and App Runner deployment (OIDC)
 
 **Step 3**: Verify service naming
+
 Ensure `APP_RUNNER_SERVICE` environment variable matches Terraform:
+
 - Format: `portfolio-prod-{repo-name}`
 - Examples: `portfolio-prod-public-web`, `portfolio-prod-auth-service`
 
@@ -74,6 +80,7 @@ Ensure `APP_RUNNER_SERVICE` environment variable matches Terraform:
 Create IAM OIDC provider and roles:
 
 **GitHub OIDC Provider** (one-time):
+
 ```bash
 aws iam create-open-id-connect-provider \
   --url https://token.actions.githubusercontent.com \
@@ -82,6 +89,7 @@ aws iam create-open-id-connect-provider \
 ```
 
 **Terraform Role** (infrastructure repo):
+
 ```json
 {
   "Version": "2012-10-17",
@@ -103,9 +111,47 @@ aws iam create-open-id-connect-provider \
 }
 ```
 
-Attach policy: `AdministratorAccess` (or custom policy with Terraform permissions)
+Attach custom policy with least-privilege permissions:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:*",
+        "rds:*",
+        "elasticache:*",
+        "s3:*",
+        "cloudfront:*",
+        "route53:*",
+        "acm:*",
+        "wafv2:*",
+        "kms:*",
+        "secretsmanager:*",
+        "apprunner:*",
+        "ecr:*",
+        "logs:*",
+        "cloudwatch:*",
+        "sns:*",
+        "iam:GetRole",
+        "iam:PassRole",
+        "iam:CreateRole",
+        "iam:AttachRolePolicy",
+        "iam:PutRolePolicy",
+        "iam:GetRolePolicy",
+        "iam:ListRolePolicies",
+        "iam:ListAttachedRolePolicies"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
 
 **Application Role** (application repos):
+
 ```json
 {
   "Version": "2012-10-17",
@@ -128,6 +174,7 @@ Attach policy: `AdministratorAccess` (or custom policy with Terraform permission
 ```
 
 Attach custom policy:
+
 ```json
 {
   "Version": "2012-10-17",
@@ -161,6 +208,7 @@ Attach custom policy:
 ## Deployment Examples
 
 ### Deploy Infrastructure Changes
+
 ```bash
 cd infrastructure
 git add .
@@ -171,6 +219,7 @@ git push origin v1.1.0  # Triggers terraform-apply.yml
 ```
 
 ### Deploy Application Update
+
 ```bash
 cd public-web
 git add .
@@ -183,7 +232,9 @@ git push origin v2.3.1  # Triggers deploy.yml
 ## Rollback Procedure
 
 ### Rollback Application
+
 Deploy previous version by retagging:
+
 ```bash
 # Find previous working version
 git tag --sort=-v:refname
@@ -194,18 +245,21 @@ git push -f origin v2.3.0  # Triggers deployment
 ```
 
 Or manually via AWS CLI:
+
 ```bash
 # Get previous image SHA
 IMAGE_SHA=sha256:...
 
-# Update App Runner service
+# Update App Runner service with shorter line
 aws apprunner update-service \
-  --service-arn arn:aws:apprunner:eu-west-1:{account}:service/portfolio-prod-public-web \
-  --source-configuration ImageRepository={ImageIdentifier={account}.dkr.ecr.eu-west-1.amazonaws.com/portfolio/public-web@$IMAGE_SHA}
+  --service-arn arn:aws:apprunner:eu-west-1:{account}:service/name \
+  --source-configuration ImageRepository={ImageIdentifier=...@$IMAGE_SHA}
 ```
 
 ### Rollback Infrastructure
+
 Use Terraform state management:
+
 ```bash
 cd infrastructure
 git checkout v1.0.0  # Previous working version
@@ -216,9 +270,11 @@ terraform apply
 ## Monitoring Deployments
 
 ### GitHub Actions
+
 Monitor workflow runs in each repository's Actions tab.
 
 ### App Runner Deployments
+
 ```bash
 # List services
 aws apprunner list-services
@@ -231,6 +287,7 @@ aws logs tail /aws/apprunner/portfolio-prod-{service} --follow
 ```
 
 ### CloudWatch
+
 - Dashboard: `portfolio-prod-dashboard`
 - Alarms: SNS notifications for failures
 - Logs: `/aws/apprunner/portfolio-prod-*`
@@ -247,6 +304,7 @@ aws logs tail /aws/apprunner/portfolio-prod-{service} --follow
 ## Troubleshooting
 
 ### Deployment Fails - ECR Push Error
+
 ```bash
 # Verify ECR repository exists
 aws ecr describe-repositories --repository-names portfolio/{service}
@@ -256,10 +314,12 @@ aws sts get-caller-identity
 ```
 
 ### Deployment Fails - App Runner Not Found
+
 ```bash
 # Verify service name matches Terraform output
 aws apprunner list-services --query "ServiceSummaryList[*].ServiceName"
 ```
 
 ### Image Fails Security Scan
+
 Review Trivy output in GitHub Actions, update dependencies, rebuild.
