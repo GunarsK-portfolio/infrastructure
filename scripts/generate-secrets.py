@@ -83,7 +83,7 @@ def generate_env_file(infrastructure_dir, force=False):
         'portfolio_admin_dev_pass': secrets_map['DB_PASSWORD'],
         'portfolio_public_dev_pass': secrets_map['DB_PASSWORD_READONLY'],
         'redis_dev_pass': secrets_map['REDIS_PASSWORD'],
-        'minioadmin': secrets_map['MINIO_ROOT_PASSWORD'],
+        'minioadmin_dev_pass': secrets_map['MINIO_ROOT_PASSWORD'],
         'files-api-secret-change-in-production': secrets_map['S3_SECRET_KEY'],
         'your-secret-key-change-in-production': secrets_map['JWT_SECRET'],
     }
@@ -104,8 +104,8 @@ def generate_env_file(infrastructure_dir, force=False):
         for key, value in secrets_map.items():
             f.write(f"{key}={value}\n")
 
-    print(f"\n✓ Successfully generated {env_path}")
-    print(f"✓ Secrets backup saved to {secrets_backup_path}")
+    print(f"\n[SUCCESS] Generated {env_path}")
+    print(f"[SUCCESS] Secrets backup saved to {secrets_backup_path}")
     print("\nGenerated secrets:")
     print("-" * 80)
     for key in secrets_map.keys():
@@ -127,11 +127,11 @@ def generate_env_file(infrastructure_dir, force=False):
             missing_entries.append('.secrets.txt')
 
         if missing_entries:
-            print(f"\n⚠ WARNING: Add these entries to {gitignore_path}:")
+            print(f"\n[WARNING] Add these entries to {gitignore_path}:")
             for entry in missing_entries:
                 print(f"  {entry}")
     else:
-        print(f"\n⚠ WARNING: No .gitignore found in {infrastructure_dir}")
+        print(f"\n[WARNING] No .gitignore found in {infrastructure_dir}")
         print("  Create one and add: .env and .secrets.txt")
 
 
