@@ -64,27 +64,14 @@ jobs:
       - name: Comment PR with results
         uses: actions/github-script@v7
         if: github.event_name == 'pull_request'
-        env:
-          PLAN: ${{ steps.plan.outputs.stdout }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const plan = process.env.PLAN;
-            const maxLength = 60000; // GitHub comment size limit is ~65k
-            const truncated = plan.length > maxLength;
-            const planOutput = truncated ? plan.substring(0, maxLength) + '\n\n... (output truncated)' : plan;
-
             const output = `#### Terraform Plan \`${{ steps.plan.outcome }}\`
 
-            ${truncated ? '⚠️ Plan output was too large and has been truncated. [View full output in workflow logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\n' : ''}
+            Plan completed successfully. The plan is too large to display inline.
 
-            <details><summary>Show Plan</summary>
-
-            \`\`\`terraform
-            ${planOutput}
-            \`\`\`
-
-            </details>
+            📊 **[View full plan output in workflow logs →](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})**
 
             *Note: Format and validation checks run in the CI workflow*
 
