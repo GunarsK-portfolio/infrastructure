@@ -214,7 +214,7 @@ module "monitoring" {
   log_retention_days = var.log_retention_days
 
   # Resources to monitor
-  app_runner_service_arns    = module.app_runner.service_arns
+  app_runner_service_arns    = values(module.app_runner.service_arns)
   cloudfront_distribution_id = module.cdn.distribution_id
 
   tags = local.common_tags
