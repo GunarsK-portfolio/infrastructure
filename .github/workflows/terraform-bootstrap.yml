@@ -59,14 +59,14 @@ jobs:
 
             # Enable encryption
             aws s3api put-bucket-encryption --bucket "$BUCKET_NAME" \
-              --server-side-encryption-configuration '{
-                "Rules": [{
-                  "ApplyServerSideEncryptionByDefault": {
-                    "SSEAlgorithm": "AES256"
+              --server-side-encryption-configuration "{
+                \"Rules\": [{
+                  \"ApplyServerSideEncryptionByDefault\": {
+                    \"SSEAlgorithm\": \"AES256\"
                   },
-                  "BucketKeyEnabled": true
+                  \"BucketKeyEnabled\": true
                 }]
-              }'
+              }"
 
             # Block public access
             aws s3api put-public-access-block --bucket "$BUCKET_NAME" \
@@ -75,15 +75,18 @@ jobs:
 
             # Add lifecycle policy to clean up old versions
             aws s3api put-bucket-lifecycle-configuration --bucket "$BUCKET_NAME" \
-              --lifecycle-configuration '{
-                "Rules": [{
-                  "Id": "DeleteOldVersions",
-                  "Status": "Enabled",
-                  "NoncurrentVersionExpiration": {
-                    "NoncurrentDays": 90
+              --lifecycle-configuration "{
+                \"Rules\": [{
+                  \"Id\": \"DeleteOldVersions\",
+                  \"Status\": \"Enabled\",
+                  \"NoncurrentVersionExpiration\": {
+                    \"NoncurrentDays\": 90
+                  },
+                  \"Filter\": {
+                    \"Prefix\": \"\"
                   }
                 }]
-              }'
+              }"
 
             echo "S3 bucket created and configured successfully"
           fi
