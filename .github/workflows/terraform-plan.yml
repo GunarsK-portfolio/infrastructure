@@ -61,10 +61,11 @@ jobs:
           TF_VAR_monthly_budget_limit: ${{ secrets.TF_VAR_monthly_budget_limit || '100' }}
           TF_VAR_enable_vpc_flow_logs: ${{ secrets.TF_VAR_enable_vpc_flow_logs || 'true' }}
 
-      - name: Save plan output
+      - name: Save plan output to file
         if: github.event_name == 'pull_request'
-        run: |
-          echo "${{ steps.plan.outputs.stdout }}" > plan-output.txt
+        run: cat > plan-output.txt << 'PLAN_EOF'
+          ${{ steps.plan.outputs.stdout }}
+          PLAN_EOF
 
       - name: Upload plan output as artifact
         if: github.event_name == 'pull_request'
