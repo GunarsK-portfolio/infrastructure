@@ -63,9 +63,9 @@ jobs:
 
       - name: Save plan output to file
         if: github.event_name == 'pull_request'
-        run: cat > plan-output.txt << 'PLAN_EOF'
-          ${{ steps.plan.outputs.stdout }}
-          PLAN_EOF
+        env:
+          PLAN_OUTPUT: ${{ steps.plan.outputs.stdout }}
+        run: echo "$PLAN_OUTPUT" > plan-output.txt
 
       - name: Upload plan output as artifact
         if: github.event_name == 'pull_request'

@@ -27,7 +27,7 @@ resource "aws_sns_topic" "alarms" {
 
 # CloudWatch Log Groups for App Runner services
 resource "aws_cloudwatch_log_group" "app_runner" {
-  for_each = toset(var.app_runner_service_arns)
+  for_each = var.app_runner_service_arns
 
   name              = "/aws/apprunner/${var.project_name}-${var.environment}-${each.key}"
   retention_in_days = var.log_retention_days

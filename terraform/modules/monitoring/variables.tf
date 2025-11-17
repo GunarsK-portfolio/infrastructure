@@ -17,8 +17,8 @@ variable "log_retention_days" {
 }
 
 variable "app_runner_service_arns" {
-  description = "List of App Runner service ARNs"
-  type        = list(string)
+  description = "Map of App Runner service ARNs (service_name => ARN)"
+  type        = map(string)
 }
 
 variable "cloudfront_distribution_id" {
