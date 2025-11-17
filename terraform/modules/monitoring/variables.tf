@@ -1,0 +1,43 @@
+# Monitoring Module Variables
+
+variable "project_name" {
+  description = "Project name"
+  type        = string
+}
+
+variable "environment" {
+  description = "Environment name"
+  type        = string
+}
+
+variable "log_retention_days" {
+  description = "CloudWatch log retention in days"
+  type        = number
+  default     = 7
+}
+
+variable "aurora_cluster_id" {
+  description = "Aurora cluster ID"
+  type        = string
+}
+
+variable "elasticache_cache_id" {
+  description = "ElastiCache cache ID"
+  type        = string
+}
+
+variable "app_runner_service_arns" {
+  description = "List of App Runner service ARNs"
+  type        = list(string)
+}
+
+variable "cloudfront_distribution_id" {
+  description = "CloudFront distribution ID"
+  type        = string
+}
+
+variable "tags" {
+  description = "Tags to apply to all resources"
+  type        = map(string)
+  default     = {}
+}

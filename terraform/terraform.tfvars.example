@@ -1,0 +1,50 @@
+# Terraform Variables Example
+# Copy this file to terraform.tfvars and fill in your values
+# terraform.tfvars is gitignored and will not be committed
+
+# AWS Configuration
+aws_region  = "eu-west-1"
+environment = "prod"
+
+# Project Information
+project_name = "portfolio"
+owner        = "DevOps"
+
+# Domain Configuration
+domain_name       = "gk.codes"
+admin_domain_name = "admin.gk.codes"
+
+# Network Configuration
+vpc_cidr           = "10.0.0.0/16"
+availability_zones = ["eu-west-1a", "eu-west-1b"]
+
+# Aurora Serverless v2 Configuration
+aurora_min_capacity         = 1
+aurora_max_capacity         = 16
+aurora_engine_version       = "15.4"
+aurora_backup_retention_days = 7
+
+# ElastiCache Serverless Configuration
+elasticache_engine_version = "7.1"
+
+# S3 Buckets
+s3_buckets = [
+  "images",
+  "documents",
+  "miniatures"
+]
+
+# CloudWatch Configuration
+log_retention_days = 7
+
+# Feature Flags
+enable_enhanced_monitoring     = true
+enable_performance_insights    = true
+enable_ecr_enhanced_scanning   = true
+enable_waf                     = true
+
+# Additional Tags (optional)
+additional_tags = {
+  CostCenter = "Engineering"
+  Compliance = "GDPR"
+}
