@@ -37,7 +37,7 @@ jobs:
 
       - name: Create S3 bucket for Terraform state
         run: |
-          BUCKET_NAME="portfolio-terraform-state-prod"
+          BUCKET_NAME="gunarsk-portfolio-terraform-state-prod"
           REGION="${{ secrets.AWS_REGION }}"
 
           # Check if bucket exists
@@ -119,7 +119,7 @@ jobs:
           echo "✅ Terraform backend bootstrap complete!"
           echo ""
           echo "Resources created:"
-          echo "  - S3 Bucket: portfolio-terraform-state-prod"
+          echo "  - S3 Bucket: gunarsk-portfolio-terraform-state-prod"
           echo "  - DynamoDB Table: portfolio-terraform-locks"
           echo ""
           echo "Next steps:"

@@ -79,14 +79,14 @@ modules/
 State stored in S3 with DynamoDB locking:
 
 ```bash
-aws s3 mb s3://portfolio-terraform-state-prod --region eu-west-1
+aws s3 mb s3://gunarsk-portfolio-terraform-state-prod --region eu-west-1
 
 aws s3api put-bucket-versioning \
-  --bucket portfolio-terraform-state-prod \
+  --bucket gunarsk-portfolio-terraform-state-prod \
   --versioning-configuration Status=Enabled
 
 aws s3api put-bucket-encryption \
-  --bucket portfolio-terraform-state-prod \
+  --bucket gunarsk-portfolio-terraform-state-prod \
   --server-side-encryption-configuration '{
     "Rules": [{
       "ApplyServerSideEncryptionByDefault": {
