@@ -14,6 +14,8 @@ terraform {
 
 locals {
   # Service-specific environment variables
+  # Note: DB_USER values are application-level PostgreSQL users created via Flyway migrations
+  # These are NOT the RDS master user, but application-specific roles with limited privileges
   service_env_vars = {
     "auth-service" = {
       ENVIRONMENT        = var.environment

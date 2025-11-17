@@ -14,10 +14,19 @@ locals {
 
   # Account ID will be fetched dynamically
   account_id = data.aws_caller_identity.current.account_id
+
+  # Use first 2 available AZs when using default value
+  # If custom AZs provided, validation ensures they match the region
+  availability_zones = var.availability_zones == ["eu-west-1a", "eu-west-1b"] ? slice(data.aws_availability_zones.available.names, 0, 2) : var.availability_zones
 }
 
 # Data source to get AWS account ID
 data "aws_caller_identity" "current" {}
+
+# Data source to get available AZs in the region
+data "aws_availability_zones" "available" {
+  state = "available"
+}
 
 # Networking Module
 module "networking" {
@@ -26,7 +35,7 @@ module "networking" {
   project_name       = var.project_name
   environment        = var.environment
   vpc_cidr           = var.vpc_cidr
-  availability_zones = var.availability_zones
+  availability_zones = local.availability_zones
   tags               = local.common_tags
 }
 

@@ -109,10 +109,11 @@ resource "aws_cloudfront_distribution" "main" {
   }
 
   # Default cache behavior (public-web)
+  # Only allow read operations for public website - no mutations
   default_cache_behavior {
     target_origin_id       = "public-web"
     viewer_protocol_policy = "redirect-to-https"
-    allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD", "OPTIONS"]
     compress               = true
 

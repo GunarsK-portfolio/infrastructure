@@ -221,11 +221,22 @@ Module dependencies (applied in order):
 
 1. Update domain nameservers to Route53 values from output
 2. Verify ACM certificate validation (DNS propagation: 24-48h)
-3. Connect to Aurora and run Flyway migrations
-4. Update Secrets Manager with production values (generated with placeholders)
-5. Build and push Docker images to ECR
-6. Verify App Runner deployments and health checks
-7. Test application via CloudFront URLs
+3. Configure DNSSEC signing for Route53 hosted zone:
+   - Create KMS key for DNSSEC signing in us-east-1
+   - Enable DNSSEC signing on the hosted zone
+   - Add DS records to parent domain registrar
+4. Configure WAF logging:
+   - Create Kinesis Data Firehose delivery stream or S3 bucket
+   - Associate logging configuration with WAF Web ACL
+   - Set up log retention and analysis tools
+5. Connect to Aurora and run Flyway migrations
+6. Update Secrets Manager with production values (generated with placeholders)
+7. Build and push Docker images to ECR
+8. Update App Runner services with inter-service URLs via Secrets Manager:
+   - AUTH_SERVICE_URL for admin-api and files-api
+   - FILES_API_URL for admin-api and public-api
+9. Verify App Runner deployments and health checks
+10. Test application via CloudFront URLs
 
 ## References
 
