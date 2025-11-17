@@ -1,7 +1,7 @@
 # Backend Configuration for Production Environment
 # Usage: terraform init -backend-config=backend-prod.hcl
 
-bucket         = "portfolio-terraform-state-prod"
+bucket         = "gunarsk-portfolio-terraform-state-prod"
 key            = "infrastructure/terraform.tfstate"
 region         = "eu-west-1"
 encrypt        = true

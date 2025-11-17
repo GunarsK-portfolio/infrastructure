@@ -21,7 +21,7 @@
 
 terraform {
   backend "s3" {
-    bucket         = "portfolio-terraform-state-prod"
+    bucket         = "gunarsk-portfolio-terraform-state-prod"
     key            = "infrastructure/terraform.tfstate"
     region         = "eu-west-1"
     encrypt        = true
