@@ -1,0 +1,77 @@
+# Terraform Apply Workflow
+# Runs on version tags to deploy infrastructure
+
+name: Terraform Apply
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform-apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    environment: production
+
+    defaults:
+      run:
+        working-directory: terraform
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.13.0
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan -input=false
+        env:
+          TF_VAR_domain_name: ${{ secrets.TF_VAR_domain_name }}
+          TF_VAR_admin_domain_name: ${{ secrets.TF_VAR_admin_domain_name }}
+          TF_VAR_budget_alert_emails: ${{ secrets.TF_VAR_budget_alert_emails }}
+          TF_VAR_enable_guardduty: ${{ secrets.TF_VAR_enable_guardduty || 'true' }}
+          TF_VAR_enable_budgets: ${{ secrets.TF_VAR_enable_budgets || 'true' }}
+          TF_VAR_monthly_budget_limit: ${{ secrets.TF_VAR_monthly_budget_limit || '100' }}
+          TF_VAR_enable_vpc_flow_logs: ${{ secrets.TF_VAR_enable_vpc_flow_logs || 'true' }}
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -input=false
+        env:
+          TF_VAR_domain_name: ${{ secrets.TF_VAR_domain_name }}
+          TF_VAR_admin_domain_name: ${{ secrets.TF_VAR_admin_domain_name }}
+          TF_VAR_budget_alert_emails: ${{ secrets.TF_VAR_budget_alert_emails }}
+          TF_VAR_enable_guardduty: ${{ secrets.TF_VAR_enable_guardduty || 'true' }}
+          TF_VAR_enable_budgets: ${{ secrets.TF_VAR_enable_budgets || 'true' }}
+          TF_VAR_monthly_budget_limit: ${{ secrets.TF_VAR_monthly_budget_limit || '100' }}
+          TF_VAR_enable_vpc_flow_logs: ${{ secrets.TF_VAR_enable_vpc_flow_logs || 'true' }}
+
+      - name: Save Terraform Outputs
+        id: outputs
+        run: |
+          terraform output -json > terraform-outputs.json
+          echo "Outputs saved to terraform-outputs.json"
+
+      - name: Upload Terraform Outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-outputs
+          path: terraform/terraform-outputs.json
+          retention-days: 90

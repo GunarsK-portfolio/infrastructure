@@ -23,7 +23,7 @@ resource "aws_wafv2_web_acl" "main" {
     allow {}
   }
 
-  # Rate limiting for login endpoint
+  # Rate limiting for login endpoint (strict to prevent brute-force)
   rule {
     name     = "rate-limit-login"
     priority = 1
@@ -34,7 +34,7 @@ resource "aws_wafv2_web_acl" "main" {
 
     statement {
       rate_based_statement {
-        limit              = 100
+        limit              = 20
         aggregate_key_type = "IP"
 
         scope_down_statement {
@@ -189,12 +189,12 @@ resource "aws_wafv2_web_acl" "main" {
   tags = var.tags
 }
 
-# CloudWatch Log Group for WAF logs
+# CloudWatch Log Group for WAF logs (30 days for security forensics)
 resource "aws_cloudwatch_log_group" "waf" {
   count = var.enable_waf ? 1 : 0
 
   name              = "/aws/wafv2/${var.project_name}-${var.environment}"
-  retention_in_days = 7
+  retention_in_days = 30
 
   tags = var.tags
 }

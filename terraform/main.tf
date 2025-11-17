@@ -36,7 +36,10 @@ module "networking" {
   environment        = var.environment
   vpc_cidr           = var.vpc_cidr
   availability_zones = local.availability_zones
-  tags               = local.common_tags
+
+  enable_vpc_flow_logs = var.enable_vpc_flow_logs
+
+  tags = local.common_tags
 }
 
 # Secrets Manager Module
@@ -65,6 +68,9 @@ module "database" {
 
   # Reference secrets from Secrets Manager (no hardcoded passwords)
   master_password_secret_arn = module.secrets.aurora_master_password_arn
+
+  # Use customer-managed KMS key for encryption
+  kms_key_id = module.secrets.kms_key_id
 
   enable_enhanced_monitoring  = var.enable_enhanced_monitoring
   enable_performance_insights = var.enable_performance_insights
@@ -95,6 +101,9 @@ module "storage" {
   environment  = var.environment
   account_id   = local.account_id
   bucket_names = var.s3_buckets
+
+  # Use customer-managed KMS key for encryption
+  kms_key_id = module.secrets.kms_key_id
 
   tags = local.common_tags
 }
@@ -207,6 +216,32 @@ module "monitoring" {
   # Resources to monitor
   app_runner_service_arns    = module.app_runner.service_arns
   cloudfront_distribution_id = module.cdn.distribution_id
+
+  tags = local.common_tags
+}
+
+# GuardDuty Module - Threat Detection
+module "guardduty" {
+  source = "./modules/guardduty"
+
+  project_name = var.project_name
+  environment  = var.environment
+
+  enable_guardduty = var.enable_guardduty
+
+  tags = local.common_tags
+}
+
+# Budgets Module - Cost Control
+module "budgets" {
+  count  = var.enable_budgets && length(var.budget_alert_emails) > 0 ? 1 : 0
+  source = "./modules/budgets"
+
+  project_name         = var.project_name
+  environment          = var.environment
+  enable_budgets       = var.enable_budgets
+  monthly_budget_limit = var.monthly_budget_limit
+  alert_emails         = var.budget_alert_emails
 
   tags = local.common_tags
 }

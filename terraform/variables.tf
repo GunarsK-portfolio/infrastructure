@@ -236,6 +236,36 @@ variable "enable_waf" {
   default     = true
 }
 
+variable "enable_vpc_flow_logs" {
+  description = "Enable VPC Flow Logs for network monitoring"
+  type        = bool
+  default     = true
+}
+
+variable "enable_guardduty" {
+  description = "Enable GuardDuty threat detection"
+  type        = bool
+  default     = true
+}
+
+variable "enable_budgets" {
+  description = "Enable AWS Budgets for cost control"
+  type        = bool
+  default     = false
+}
+
+variable "monthly_budget_limit" {
+  description = "Monthly budget limit in USD (only used if enable_budgets = true)"
+  type        = number
+  default     = 100
+}
+
+variable "budget_alert_emails" {
+  description = "Email addresses for budget alerts (only used if enable_budgets = true)"
+  type        = list(string)
+  default     = []
+}
+
 # Tags
 variable "additional_tags" {
   description = "Additional tags to apply to all resources"

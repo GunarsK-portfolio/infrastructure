@@ -274,12 +274,12 @@ resource "aws_flow_log" "main" {
   )
 }
 
-# CloudWatch Log Group for VPC Flow Logs
+# CloudWatch Log Group for VPC Flow Logs (30 days for security forensics)
 resource "aws_cloudwatch_log_group" "flow_logs" {
   count = var.enable_vpc_flow_logs ? 1 : 0
 
   name              = "/aws/vpc/${var.project_name}-${var.environment}-flow-logs"
-  retention_in_days = 7
+  retention_in_days = 30
 
   tags = var.tags
 }

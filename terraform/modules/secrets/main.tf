@@ -234,7 +234,7 @@ resource "aws_cloudwatch_log_group" "rotation" {
   count = var.enable_rotation ? 1 : 0
 
   name              = "/aws/lambda/${var.project_name}-${var.environment}-secret-rotation"
-  retention_in_days = 7
+  retention_in_days = 30
 
   tags = var.tags
 }

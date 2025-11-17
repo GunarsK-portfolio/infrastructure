@@ -47,6 +47,11 @@ enable_enhanced_monitoring     = true  # [OPTIONAL] RDS detailed metrics
 enable_performance_insights    = true  # [OPTIONAL] RDS query analysis
 enable_ecr_enhanced_scanning   = true  # [OPTIONAL] Deep image scanning
 enable_waf                     = true  # [OPTIONAL] Web Application Firewall
+enable_vpc_flow_logs           = true  # [OPTIONAL] VPC network traffic logging
+enable_guardduty               = true  # [OPTIONAL] Threat detection service
+enable_budgets                 = false # [OPTIONAL] Cost control and budget alerts
+monthly_budget_limit           = 100   # [OPTIONAL] Monthly budget in USD
+budget_alert_emails            = []    # [REQUIRED IF enable_budgets=true] Email addresses for alerts
 
 # Additional Tags
 additional_tags = {  # [OPTIONAL] Custom resource tags

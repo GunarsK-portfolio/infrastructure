@@ -26,6 +26,11 @@ variable "allowed_origins" {
   default     = ["https://gk.codes", "https://admin.gk.codes"]
 }
 
+variable "kms_key_id" {
+  description = "KMS key ID for S3 bucket encryption"
+  type        = string
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)

@@ -21,6 +21,61 @@ resource "aws_cloudfront_origin_access_control" "main" {
   signing_protocol                  = "sigv4"
 }
 
+# Security Headers Response Policy
+resource "aws_cloudfront_response_headers_policy" "security_headers" {
+  name    = "${var.project_name}-${var.environment}-security-headers"
+  comment = "Security headers for ${var.project_name}"
+
+  security_headers_config {
+    # HSTS: Force HTTPS for 1 year
+    strict_transport_security {
+      access_control_max_age_sec = 31536000
+      include_subdomains         = true
+      preload                    = true
+      override                   = true
+    }
+
+    # Prevent MIME type sniffing
+    content_type_options {
+      override = true
+    }
+
+    # Clickjacking protection
+    frame_options {
+      frame_option = "DENY"
+      override     = true
+    }
+
+    # XSS protection
+    xss_protection {
+      mode_block = true
+      protection = true
+      override   = true
+    }
+
+    # Referrer policy
+    referrer_policy {
+      referrer_policy = "strict-origin-when-cross-origin"
+      override        = true
+    }
+  }
+
+  # Content Security Policy
+  custom_headers_config {
+    items {
+      header   = "Content-Security-Policy"
+      value    = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://gk.codes https://admin.gk.codes; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+      override = true
+    }
+
+    items {
+      header   = "Permissions-Policy"
+      value    = "geolocation=(), microphone=(), camera=(), payment=()"
+      override = true
+    }
+  }
+}
+
 # CloudFront Distribution
 resource "aws_cloudfront_distribution" "main" {
   enabled             = true
@@ -117,6 +172,9 @@ resource "aws_cloudfront_distribution" "main" {
     cached_methods         = ["GET", "HEAD", "OPTIONS"]
     compress               = true
 
+    # Apply security headers
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.security_headers.id
+
     forwarded_values {
       query_string = true
       headers      = ["Host", "Origin", "Authorization"]
@@ -177,12 +235,12 @@ resource "aws_cloudfront_distribution" "main" {
     max_ttl     = 0
   }
 
-  # Cache behavior: /api/*
+  # Cache behavior: /api/* (read-only public API)
   ordered_cache_behavior {
     path_pattern           = "/api/*"
     target_origin_id       = "public-api"
     viewer_protocol_policy = "redirect-to-https"
-    allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD"]
     compress               = true
 

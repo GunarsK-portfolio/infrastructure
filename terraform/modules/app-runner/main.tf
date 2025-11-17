@@ -167,9 +167,13 @@ resource "aws_iam_role_policy" "secrets_access" {
   })
 }
 
-# IAM Policy for S3 access
+# IAM Policy for S3 access (least privilege - only files-api handles files)
 resource "aws_iam_role_policy" "s3_access" {
-  for_each = var.services
+  # Only grant S3 access to files-api service
+  for_each = {
+    for k, v in var.services : k => v
+    if k == "files-api"
+  }
 
   name_prefix = "s3-access-"
   role        = aws_iam_role.app_runner[each.key].id
@@ -182,8 +186,7 @@ resource "aws_iam_role_policy" "s3_access" {
         Action = [
           "s3:GetObject",
           "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket"
+          "s3:DeleteObject"
         ]
         Resource = [
           for bucket in var.s3_bucket_names : "arn:aws:s3:::${bucket}/*"
@@ -269,9 +272,9 @@ resource "aws_apprunner_service" "main" {
   health_check_configuration {
     protocol            = "HTTP"
     path                = each.value.health_check_path
-    interval            = 5
-    timeout             = 2
-    healthy_threshold   = 1
+    interval            = 10
+    timeout             = 5
+    healthy_threshold   = 2
     unhealthy_threshold = 3
   }
 

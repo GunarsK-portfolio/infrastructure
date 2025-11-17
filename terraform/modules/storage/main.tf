@@ -58,18 +58,20 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "main" {
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "aws:kms"
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = var.kms_key_id
     }
     bucket_key_enabled = true
   }
 }
 
-# Lifecycle policies
+# Lifecycle policies (optimized for different bucket types)
 resource "aws_s3_bucket_lifecycle_configuration" "main" {
   for_each = aws_s3_bucket.main
 
   bucket = each.value.id
 
+  # Transition to IA after 30 days (all buckets)
   rule {
     id     = "transition-to-ia"
     status = "Enabled"
@@ -82,18 +84,23 @@ resource "aws_s3_bucket_lifecycle_configuration" "main" {
     }
   }
 
+  # Transition to Glacier - different policies per bucket type
+  # Images: 365 days (frequently accessed)
+  # Documents: 180 days (moderately accessed)
+  # Miniatures: 365 days (frequently accessed)
   rule {
     id     = "transition-to-glacier"
-    status = "Enabled"
+    status = contains(["images", "miniatures"], each.key) ? "Disabled" : "Enabled"
 
     filter {}
 
     transition {
-      days          = 90
+      days          = each.key == "documents" ? 180 : 365
       storage_class = "GLACIER"
     }
   }
 
+  # Expire old versions after 90 days
   rule {
     id     = "expire-old-versions"
     status = "Enabled"
@@ -105,6 +112,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "main" {
     }
   }
 
+  # Clean up incomplete multipart uploads
   rule {
     id     = "delete-incomplete-uploads"
     status = "Enabled"

@@ -66,10 +66,10 @@ resource "aws_rds_cluster" "main" {
   # Enhanced monitoring
   enabled_cloudwatch_logs_exports = ["postgresql"]
 
-  # Deletion protection for production
-  deletion_protection       = var.environment == "prod" ? true : false
-  skip_final_snapshot       = var.environment != "prod"
-  final_snapshot_identifier = var.environment == "prod" ? "${var.project_name}-${var.environment}-final-snapshot-${formatdate("YYYY-MM-DD-hhmm", timestamp())}" : null
+  # Deletion protection for production and staging (dev only allows easier teardown)
+  deletion_protection       = var.environment != "dev"
+  skip_final_snapshot       = var.environment == "dev"
+  final_snapshot_identifier = var.environment != "dev" ? "${var.project_name}-${var.environment}-final-snapshot-${formatdate("YYYY-MM-DD-hhmm", timestamp())}" : null
 
   # Performance Insights
   performance_insights_enabled          = var.enable_performance_insights
