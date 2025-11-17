@@ -1,0 +1,60 @@
+# Terraform Variables Example
+# Copy this file to terraform.tfvars and fill in your values
+# terraform.tfvars is gitignored and will not be committed
+#
+# LEGEND:
+# [REQUIRED] - Must be customized for your deployment
+# [RECOMMENDED] - Should be customized for production
+# [OPTIONAL] - Can use defaults, customize if needed
+
+# AWS Configuration
+aws_region  = "eu-west-1"  # [RECOMMENDED] Choose your preferred region
+environment = "prod"        # [REQUIRED] Environment name (prod/staging/dev)
+
+# Project Information
+project_name = "portfolio"  # [RECOMMENDED] Customize for resource naming
+owner        = "DevOps"     # [OPTIONAL] Team or individual owner
+
+# Domain Configuration
+domain_name       = "gk.codes"        # [REQUIRED] Your primary domain
+admin_domain_name = "admin.gk.codes"  # [REQUIRED] Admin interface domain
+
+# Network Configuration
+vpc_cidr           = "10.0.0.0/16"                  # [OPTIONAL] VPC CIDR block
+availability_zones = ["eu-west-1a", "eu-west-1b"]  # [OPTIONAL] Auto-detected if using defaults
+
+# Aurora Serverless v2 Configuration
+aurora_min_capacity         = 1      # [OPTIONAL] Minimum ACUs (0.5-128)
+aurora_max_capacity         = 16     # [OPTIONAL] Maximum ACUs
+aurora_engine_version       = "15.4" # [OPTIONAL] PostgreSQL version
+aurora_backup_retention_days = 7      # [OPTIONAL] Backup retention period
+
+# ElastiCache Serverless Configuration
+elasticache_engine_version = "7.1"  # [OPTIONAL] Redis version
+
+# S3 Buckets
+s3_buckets = [  # [RECOMMENDED] Customize bucket types for your needs
+  "images",
+  "documents",
+  "miniatures"
+]
+
+# CloudWatch Configuration
+log_retention_days = 7  # [OPTIONAL] Log retention in days
+
+# Feature Flags
+enable_enhanced_monitoring     = true  # [OPTIONAL] RDS detailed metrics
+enable_performance_insights    = true  # [OPTIONAL] RDS query analysis
+enable_ecr_enhanced_scanning   = true  # [OPTIONAL] Deep image scanning
+enable_waf                     = true  # [OPTIONAL] Web Application Firewall
+enable_vpc_flow_logs           = true  # [OPTIONAL] VPC network traffic logging
+enable_guardduty               = true  # [OPTIONAL] Threat detection service
+enable_budgets                 = false # [OPTIONAL] Cost control and budget alerts
+monthly_budget_limit           = 100   # [OPTIONAL] Monthly budget in USD
+budget_alert_emails            = []    # [REQUIRED IF enable_budgets=true] Email addresses for alerts
+
+# Additional Tags
+additional_tags = {  # [OPTIONAL] Custom resource tags
+  CostCenter = "Engineering"
+  Compliance = "GDPR"
+}

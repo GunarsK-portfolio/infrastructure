@@ -1,0 +1,240 @@
+# Secrets Module
+# Manages AWS Secrets Manager secrets for the portfolio application
+# IMPORTANT: No hardcoded secrets - secrets are created with placeholder values
+# Actual secret values must be populated manually or via external process
+
+terraform {
+  required_version = ">= 1.13.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.21"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.7"
+    }
+  }
+}
+
+# KMS Key for Secrets Encryption (optional, enhances audit trail)
+resource "aws_kms_key" "secrets" {
+  description             = "${var.project_name}-${var.environment}-secrets-key"
+  deletion_window_in_days = 30
+  enable_key_rotation     = true
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-secrets-kms"
+    }
+  )
+}
+
+resource "aws_kms_alias" "secrets" {
+  name          = "alias/${var.project_name}-${var.environment}-secrets"
+  target_key_id = aws_kms_key.secrets.key_id
+}
+
+# Aurora Master Password Secret
+resource "aws_secretsmanager_secret" "aurora_master_password" {
+  name_prefix             = "${var.project_name}-${var.environment}-aurora-master-"
+  description             = "Aurora Serverless v2 master password"
+  kms_key_id              = aws_kms_key.secrets.id
+  recovery_window_in_days = 30
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-aurora-master-password"
+    }
+  )
+}
+
+# Placeholder secret version (must be updated with actual password)
+resource "aws_secretsmanager_secret_version" "aurora_master_password" {
+  secret_id = aws_secretsmanager_secret.aurora_master_password.id
+  secret_string = jsonencode({
+    username = "portfolio_master"
+    password = "CHANGE_ME_${random_password.aurora_master.result}"
+  })
+
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
+}
+
+# Aurora Owner User Password
+resource "aws_secretsmanager_secret" "aurora_owner_password" {
+  name_prefix             = "${var.project_name}-${var.environment}-aurora-owner-"
+  description             = "Aurora owner user password (DDL rights)"
+  kms_key_id              = aws_kms_key.secrets.id
+  recovery_window_in_days = 30
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-aurora-owner-password"
+    }
+  )
+}
+
+resource "aws_secretsmanager_secret_version" "aurora_owner_password" {
+  secret_id = aws_secretsmanager_secret.aurora_owner_password.id
+  secret_string = jsonencode({
+    username = "portfolio_owner"
+    password = "CHANGE_ME_${random_password.aurora_owner.result}"
+  })
+
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
+}
+
+# Aurora Admin User Password
+resource "aws_secretsmanager_secret" "aurora_admin_password" {
+  name_prefix             = "${var.project_name}-${var.environment}-aurora-admin-"
+  description             = "Aurora admin user password (DML rights)"
+  kms_key_id              = aws_kms_key.secrets.id
+  recovery_window_in_days = 30
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-aurora-admin-password"
+    }
+  )
+}
+
+resource "aws_secretsmanager_secret_version" "aurora_admin_password" {
+  secret_id = aws_secretsmanager_secret.aurora_admin_password.id
+  secret_string = jsonencode({
+    username = "portfolio_admin"
+    password = "CHANGE_ME_${random_password.aurora_admin.result}"
+  })
+
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
+}
+
+# Aurora Public User Password
+resource "aws_secretsmanager_secret" "aurora_public_password" {
+  name_prefix             = "${var.project_name}-${var.environment}-aurora-public-"
+  description             = "Aurora public user password (SELECT only)"
+  kms_key_id              = aws_kms_key.secrets.id
+  recovery_window_in_days = 30
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-aurora-public-password"
+    }
+  )
+}
+
+resource "aws_secretsmanager_secret_version" "aurora_public_password" {
+  secret_id = aws_secretsmanager_secret.aurora_public_password.id
+  secret_string = jsonencode({
+    username = "portfolio_public"
+    password = "CHANGE_ME_${random_password.aurora_public.result}"
+  })
+
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
+}
+
+# Redis AUTH Token
+resource "aws_secretsmanager_secret" "redis_auth_token" {
+  name_prefix             = "${var.project_name}-${var.environment}-redis-auth-"
+  description             = "ElastiCache Redis AUTH token"
+  kms_key_id              = aws_kms_key.secrets.id
+  recovery_window_in_days = 30
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-redis-auth-token"
+    }
+  )
+}
+
+resource "aws_secretsmanager_secret_version" "redis_auth_token" {
+  secret_id = aws_secretsmanager_secret.redis_auth_token.id
+  secret_string = jsonencode({
+    token = "CHANGE_ME_${random_password.redis_auth.result}"
+  })
+
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
+}
+
+# JWT Secret
+resource "aws_secretsmanager_secret" "jwt_secret" {
+  name_prefix             = "${var.project_name}-${var.environment}-jwt-secret-"
+  description             = "JWT signing secret for authentication"
+  kms_key_id              = aws_kms_key.secrets.id
+  recovery_window_in_days = 30
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-jwt-secret"
+    }
+  )
+}
+
+resource "aws_secretsmanager_secret_version" "jwt_secret" {
+  secret_id = aws_secretsmanager_secret.jwt_secret.id
+  secret_string = jsonencode({
+    secret = "CHANGE_ME_${random_password.jwt_secret.result}"
+  })
+
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
+}
+
+# Random passwords (temporary, must be replaced)
+resource "random_password" "aurora_master" {
+  length  = 32
+  special = true
+}
+
+resource "random_password" "aurora_owner" {
+  length  = 32
+  special = true
+}
+
+resource "random_password" "aurora_admin" {
+  length  = 32
+  special = true
+}
+
+resource "random_password" "aurora_public" {
+  length  = 32
+  special = true
+}
+
+resource "random_password" "redis_auth" {
+  length  = 32
+  special = true
+}
+
+resource "random_password" "jwt_secret" {
+  length  = 64
+  special = false
+}
+
+# CloudWatch Log Group for secret rotation Lambda (if rotation enabled)
+resource "aws_cloudwatch_log_group" "rotation" {
+  count = var.enable_rotation ? 1 : 0
+
+  name              = "/aws/lambda/${var.project_name}-${var.environment}-secret-rotation"
+  retention_in_days = 30
+
+  tags = var.tags
+}

@@ -79,7 +79,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: TruffleHog Secret Scan
-        uses: trufflesecurity/trufflehog@main
+        uses: trufflesecurity/trufflehog@v3.91.0
         with:
           extra_args: --only-verified
 
@@ -97,11 +97,48 @@ jobs:
           globs: '**/*.md'
         continue-on-error: true
 
+  # Job 7: Terraform validation and linting
+  terraform-lint:
+    name: Terraform Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./terraform
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.13.5
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        continue-on-error: false
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: TFLint Init
+        run: tflint --init
+
+      - name: Run TFLint
+        run: tflint --recursive --format compact
+
   # Summary job - require all to pass
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
-    needs: [yaml-lint, docker-compose-validate, shellcheck, python-lint, secret-scan, markdown-lint]
+    needs: [yaml-lint, docker-compose-validate, shellcheck, python-lint, secret-scan, markdown-lint, terraform-lint]
     if: always()
     steps:
       - name: Check all jobs status
