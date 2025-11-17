@@ -1,50 +1,55 @@
 # Terraform Variables Example
 # Copy this file to terraform.tfvars and fill in your values
 # terraform.tfvars is gitignored and will not be committed
+#
+# LEGEND:
+# [REQUIRED] - Must be customized for your deployment
+# [RECOMMENDED] - Should be customized for production
+# [OPTIONAL] - Can use defaults, customize if needed
 
 # AWS Configuration
-aws_region  = "eu-west-1"
-environment = "prod"
+aws_region  = "eu-west-1"  # [RECOMMENDED] Choose your preferred region
+environment = "prod"        # [REQUIRED] Environment name (prod/staging/dev)
 
 # Project Information
-project_name = "portfolio"
-owner        = "DevOps"
+project_name = "portfolio"  # [RECOMMENDED] Customize for resource naming
+owner        = "DevOps"     # [OPTIONAL] Team or individual owner
 
 # Domain Configuration
-domain_name       = "gk.codes"
-admin_domain_name = "admin.gk.codes"
+domain_name       = "gk.codes"        # [REQUIRED] Your primary domain
+admin_domain_name = "admin.gk.codes"  # [REQUIRED] Admin interface domain
 
 # Network Configuration
-vpc_cidr           = "10.0.0.0/16"
-availability_zones = ["eu-west-1a", "eu-west-1b"]
+vpc_cidr           = "10.0.0.0/16"                  # [OPTIONAL] VPC CIDR block
+availability_zones = ["eu-west-1a", "eu-west-1b"]  # [OPTIONAL] Auto-detected if using defaults
 
 # Aurora Serverless v2 Configuration
-aurora_min_capacity         = 1
-aurora_max_capacity         = 16
-aurora_engine_version       = "15.4"
-aurora_backup_retention_days = 7
+aurora_min_capacity         = 1      # [OPTIONAL] Minimum ACUs (0.5-128)
+aurora_max_capacity         = 16     # [OPTIONAL] Maximum ACUs
+aurora_engine_version       = "15.4" # [OPTIONAL] PostgreSQL version
+aurora_backup_retention_days = 7      # [OPTIONAL] Backup retention period
 
 # ElastiCache Serverless Configuration
-elasticache_engine_version = "7.1"
+elasticache_engine_version = "7.1"  # [OPTIONAL] Redis version
 
 # S3 Buckets
-s3_buckets = [
+s3_buckets = [  # [RECOMMENDED] Customize bucket types for your needs
   "images",
   "documents",
   "miniatures"
 ]
 
 # CloudWatch Configuration
-log_retention_days = 7
+log_retention_days = 7  # [OPTIONAL] Log retention in days
 
 # Feature Flags
-enable_enhanced_monitoring     = true
-enable_performance_insights    = true
-enable_ecr_enhanced_scanning   = true
-enable_waf                     = true
+enable_enhanced_monitoring     = true  # [OPTIONAL] RDS detailed metrics
+enable_performance_insights    = true  # [OPTIONAL] RDS query analysis
+enable_ecr_enhanced_scanning   = true  # [OPTIONAL] Deep image scanning
+enable_waf                     = true  # [OPTIONAL] Web Application Firewall
 
-# Additional Tags (optional)
-additional_tags = {
+# Additional Tags
+additional_tags = {  # [OPTIONAL] Custom resource tags
   CostCenter = "Engineering"
   Compliance = "GDPR"
 }

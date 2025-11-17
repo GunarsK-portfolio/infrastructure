@@ -82,6 +82,8 @@ Create IAM OIDC provider and roles:
 **GitHub OIDC Provider** (one-time):
 
 ```bash
+# Note: Thumbprint no longer required as of 2025
+# AWS added GitHub to its root CAs, making thumbprint optional
 aws iam create-open-id-connect-provider \
   --url https://token.actions.githubusercontent.com \
   --client-id-list sts.amazonaws.com \
