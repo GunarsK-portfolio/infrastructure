@@ -242,6 +242,4 @@ module "budgets" {
   enable_budgets       = var.enable_budgets
   monthly_budget_limit = var.monthly_budget_limit
   alert_emails         = var.budget_alert_emails
-
-  tags = local.common_tags
 }
