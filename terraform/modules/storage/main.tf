@@ -256,6 +256,8 @@ resource "aws_s3_bucket_logging" "main" {
 
   target_bucket = aws_s3_bucket.logging.id
   target_prefix = "s3-access-logs/${each.key}/"
+
+  depends_on = [aws_s3_bucket_acl.logging]
 }
 
 # Bucket policy (deny non-HTTPS)

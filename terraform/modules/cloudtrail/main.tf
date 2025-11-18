@@ -84,6 +84,118 @@ resource "aws_s3_bucket_lifecycle_configuration" "cloudtrail" {
   }
 }
 
+# Bucket ownership controls for CloudTrail bucket
+resource "aws_s3_bucket_ownership_controls" "cloudtrail" {
+  bucket = aws_s3_bucket.cloudtrail.id
+
+  rule {
+    object_ownership = "BucketOwnerEnforced"
+  }
+}
+
+# Explicit ACL for CloudTrail bucket
+resource "aws_s3_bucket_acl" "cloudtrail" {
+  bucket = aws_s3_bucket.cloudtrail.id
+  acl    = "private"
+
+  depends_on = [aws_s3_bucket_ownership_controls.cloudtrail]
+}
+
+# S3 Bucket for CloudTrail Access Logs
+resource "aws_s3_bucket" "cloudtrail_logging" {
+  bucket = "${var.project_name}-cloudtrail-access-logs-${var.environment}-${var.account_id}"
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-cloudtrail-access-logs"
+      Type = "logging"
+    }
+  )
+}
+
+# Block public access for CloudTrail logging bucket
+resource "aws_s3_bucket_public_access_block" "cloudtrail_logging" {
+  bucket = aws_s3_bucket.cloudtrail_logging.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# Versioning for CloudTrail logging bucket
+resource "aws_s3_bucket_versioning" "cloudtrail_logging" {
+  bucket = aws_s3_bucket.cloudtrail_logging.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# Encryption for CloudTrail logging bucket
+resource "aws_s3_bucket_server_side_encryption_configuration" "cloudtrail_logging" {
+  bucket = aws_s3_bucket.cloudtrail_logging.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = var.kms_key_arn
+    }
+    bucket_key_enabled = true
+  }
+}
+
+# Lifecycle policy for CloudTrail logging bucket
+resource "aws_s3_bucket_lifecycle_configuration" "cloudtrail_logging" {
+  bucket = aws_s3_bucket.cloudtrail_logging.id
+
+  rule {
+    id     = "expire-old-logs"
+    status = "Enabled"
+
+    transition {
+      days          = 90
+      storage_class = "GLACIER"
+    }
+
+    expiration {
+      days = 365
+    }
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
+}
+
+# Bucket ownership controls for CloudTrail logging bucket
+resource "aws_s3_bucket_ownership_controls" "cloudtrail_logging" {
+  bucket = aws_s3_bucket.cloudtrail_logging.id
+
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+# ACL for CloudTrail logging bucket
+resource "aws_s3_bucket_acl" "cloudtrail_logging" {
+  bucket = aws_s3_bucket.cloudtrail_logging.id
+  acl    = "log-delivery-write"
+
+  depends_on = [aws_s3_bucket_ownership_controls.cloudtrail_logging]
+}
+
+# Enable S3 access logging for CloudTrail bucket
+resource "aws_s3_bucket_logging" "cloudtrail" {
+  bucket = aws_s3_bucket.cloudtrail.id
+
+  target_bucket = aws_s3_bucket.cloudtrail_logging.id
+  target_prefix = "cloudtrail-access-logs/"
+
+  depends_on = [aws_s3_bucket_acl.cloudtrail_logging]
+}
+
 # Bucket policy to allow CloudTrail to write logs
 resource "aws_s3_bucket_policy" "cloudtrail" {
   bucket = aws_s3_bucket.cloudtrail.id

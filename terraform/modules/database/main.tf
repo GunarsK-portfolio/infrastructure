@@ -33,6 +33,30 @@ data "aws_secretsmanager_secret_version" "master_password" {
 
 locals {
   master_credentials = jsondecode(data.aws_secretsmanager_secret_version.master_password.secret_string)
+
+  # Validate credentials exist and are non-empty
+  username = coalesce(try(local.master_credentials.username, null), "")
+  password = coalesce(try(local.master_credentials.password, null), "")
+}
+
+# Validate username is present
+resource "null_resource" "validate_username" {
+  lifecycle {
+    precondition {
+      condition     = local.username != ""
+      error_message = "Database username must be non-empty. Check the master_password_secret_arn secret in Secrets Manager."
+    }
+  }
+}
+
+# Validate password is present
+resource "null_resource" "validate_password" {
+  lifecycle {
+    precondition {
+      condition     = local.password != ""
+      error_message = "Database password must be non-empty. Check the master_password_secret_arn secret in Secrets Manager."
+    }
+  }
 }
 
 # Aurora Serverless v2 Cluster
@@ -42,8 +66,8 @@ resource "aws_rds_cluster" "main" {
   engine_mode        = "provisioned"
   engine_version     = var.engine_version
   database_name      = var.database_name
-  master_username    = local.master_credentials.username
-  master_password    = local.master_credentials.password
+  master_username    = local.username
+  master_password    = local.password
 
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [var.database_security_group_id]
