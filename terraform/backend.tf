@@ -11,7 +11,7 @@
 # Option 2: CLI arguments
 #   terraform init \
 #     -backend-config="bucket=portfolio-terraform-state-{env}" \
-#     -backend-config="dynamodb_table=portfolio-terraform-locks-{env}"
+#     -backend-config="use_lockfile=true"
 #
 # Option 3: Terraform workspaces
 #   Use workspace-aware state key:
@@ -21,11 +21,13 @@
 
 terraform {
   backend "s3" {
-    bucket         = "gunarsk-portfolio-terraform-state-prod"
-    key            = "infrastructure/terraform.tfstate"
-    region         = "eu-west-1"
-    encrypt        = true
-    dynamodb_table = "portfolio-terraform-locks"
+    bucket  = "gunarsk-portfolio-terraform-state-prod"
+    key     = "infrastructure/terraform.tfstate"
+    region  = "eu-west-1"
+    encrypt = true
+
+    # State locking with DynamoDB
+    use_lockfile = true
 
     # Additional security settings
     # Enable versioning on the S3 bucket for state file recovery
