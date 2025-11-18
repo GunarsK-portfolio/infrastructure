@@ -136,7 +136,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         type = "metric"
         properties = {
           metrics = [
-            ["AWS/RDS", "ACUUtilization", { stat = "Average", label = "ACU Utilization" }]
+            ["AWS/RDS", "ACUUtilization", { stat = "Average", label = "ACU Utilization", dimensions = { DBClusterIdentifier = var.db_cluster_id } }]
           ]
           period = 300
           region = data.aws_region.current.id
@@ -155,7 +155,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         type = "metric"
         properties = {
           metrics = [
-            ["AWS/RDS", "DatabaseConnections", { stat = "Average", label = "Connections" }]
+            ["AWS/RDS", "DatabaseConnections", { stat = "Average", label = "Connections", dimensions = { DBClusterIdentifier = var.db_cluster_id } }]
           ]
           period = 300
           region = data.aws_region.current.id
@@ -298,7 +298,7 @@ resource "aws_cloudwatch_metric_alarm" "waf_high_blocks" {
   dimensions = {
     Rule   = "ALL"
     WebACL = var.waf_web_acl_name
-    Region = "CloudFront"
+    Region = "us-east-1" # WAF for CloudFront must be in us-east-1
   }
 
   tags = var.tags
@@ -422,16 +422,31 @@ resource "aws_cloudwatch_metric_alarm" "elasticache_memory" {
   alarm_name          = "${var.project_name}-${var.environment}-elasticache-memory"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2
-  metric_name         = "BytesUsedForCache"
-  namespace           = "AWS/ElastiCache"
-  period              = 300
-  statistic           = "Average"
   threshold           = var.cache_memory_threshold
   alarm_description   = "ElastiCache memory utilization above ${var.cache_memory_threshold}%"
   alarm_actions       = [aws_sns_topic.alarms.arn]
 
-  dimensions = {
-    CacheClusterId = var.cache_id
+  # Use metric math to calculate percentage from BytesUsedForCache
+  # Convert max_data_storage_gb (GB) to bytes: GB * 1024^3
+  metric_query {
+    id          = "memory_percent"
+    expression  = "(m1 / ${var.cache_max_data_storage_gb * 1073741824}) * 100"
+    label       = "Memory Utilization %"
+    return_data = true
+  }
+
+  metric_query {
+    id = "m1"
+    metric {
+      metric_name = "BytesUsedForCache"
+      namespace   = "AWS/ElastiCache"
+      period      = 300
+      stat        = "Average"
+      dimensions = {
+        CacheClusterId = var.cache_id
+      }
+    }
+    return_data = false
   }
 
   tags = var.tags

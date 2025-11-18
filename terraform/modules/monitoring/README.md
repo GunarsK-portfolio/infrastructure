@@ -68,6 +68,24 @@ module "monitoring" {
 }
 ```
 
+### Important: SNS Email Subscription Confirmation
+
+After deploying this module, **recipients must manually confirm their SNS
+subscriptions**:
+
+1. Each email address in `alarm_email_addresses` receives a confirmation email
+   from AWS
+2. Recipients must click the "Confirm subscription" link in the email
+3. Alarms will NOT send notifications until subscriptions are confirmed
+4. Confirmation links expire after 3 days
+
+**Security Note**: Email addresses are stored in Terraform state files. Ensure
+state files are:
+
+- Stored in encrypted S3 buckets (backend encryption enabled)
+- Access-controlled via IAM policies
+- Never committed to version control
+
 ## Outputs
 
 | Output | Type | Description |

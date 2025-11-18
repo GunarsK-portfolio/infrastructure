@@ -99,6 +99,18 @@ variable "aurora_backup_retention_days" {
   }
 }
 
+# ElastiCache Configuration
+variable "elasticache_data_storage_gb" {
+  description = "Maximum data storage in GB for ElastiCache Serverless"
+  type        = number
+  default     = 10
+
+  validation {
+    condition     = var.elasticache_data_storage_gb >= 1 && var.elasticache_data_storage_gb <= 5000
+    error_message = "ElastiCache data storage must be between 1 and 5000 GB."
+  }
+}
+
 # App Runner Configuration
 variable "app_runner_services" {
   description = "List of App Runner service configurations"

@@ -109,6 +109,12 @@ variable "cache_memory_threshold" {
   default     = 80
 }
 
+variable "cache_max_data_storage_gb" {
+  description = "Maximum data storage in GB for ElastiCache (used to calculate memory percentage)"
+  type        = number
+  default     = 10
+}
+
 variable "cache_evictions_threshold" {
   description = "Threshold for ElastiCache evictions per minute"
   type        = number

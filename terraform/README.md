@@ -102,7 +102,8 @@ internal communication.
   - Login (`auth.gunarsk.com/login`): 20 requests (brute-force protection)
   - Token Refresh (`auth.gunarsk.com/refresh`): 100 requests (token abuse prevention)
   - Token Validation (`auth.gunarsk.com/validate`): 300 requests (validation protection)
-  - Admin API (`admin.gunarsk.com/api/v1/*`): 1200 requests (4 req/sec)
+  - Admin API (`admin.gunarsk.com/api/v1/*`): 1200 requests total
+    (DELETE: 60, POST: 300, PUT: 300, GET: 600)
   - Public API (`gunarsk.com/api/v1/*`): 600 requests (2 req/sec, reduced from 1800)
   - Files API (`files.gunarsk.com/api/v1/*`): 200 requests (file upload/download)
 - **AWS Managed Rules**:
@@ -211,7 +212,6 @@ aurora_max_capacity     = 16
 enable_enhanced_monitoring    = true
 enable_performance_insights   = true
 enable_ecr_enhanced_scanning  = true
-enable_waf                    = true
 ```
 
 ## Deployment
