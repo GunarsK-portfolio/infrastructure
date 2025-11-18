@@ -85,7 +85,7 @@ variable "aurora_max_capacity" {
 variable "aurora_engine_version" {
   description = "PostgreSQL engine version for Aurora"
   type        = string
-  default     = "15.4"
+  default     = "17.4"
 }
 
 variable "aurora_backup_retention_days" {
@@ -174,6 +174,27 @@ variable "app_runner_services" {
       max_concurrency   = 100
       health_check_path = "/"
     }
+  }
+}
+
+variable "service_image_tags" {
+  description = "Docker image tags per service (use semantic versioning, e.g., v1.0.0)"
+  type        = map(string)
+  default = {
+    auth-service = "latest"
+    admin-api    = "latest"
+    public-api   = "latest"
+    files-api    = "latest"
+    admin-web    = "latest"
+    public-web   = "latest"
+  }
+
+  validation {
+    condition = alltrue([
+      for tag in values(var.service_image_tags) :
+      can(regex("^v?[0-9]+\\.[0-9]+\\.[0-9]+", tag)) || tag == "latest"
+    ])
+    error_message = "All image tags must be semantic version (v1.0.0 or 1.0.0) or 'latest'. Use versioned tags for production."
   }
 }
 

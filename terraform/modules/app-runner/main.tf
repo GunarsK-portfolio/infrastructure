@@ -247,7 +247,7 @@ resource "aws_apprunner_service" "main" {
     }
 
     image_repository {
-      image_identifier      = "${var.ecr_repository_urls[each.key]}:latest"
+      image_identifier      = "${var.ecr_repository_urls[each.key]}:${var.service_image_tags[each.key]}"
       image_repository_type = "ECR"
 
       image_configuration {

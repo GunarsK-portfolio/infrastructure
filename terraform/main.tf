@@ -171,9 +171,10 @@ module "waf" {
 module "app_runner" {
   source = "./modules/app-runner"
 
-  project_name = var.project_name
-  environment  = var.environment
-  services     = var.app_runner_services
+  project_name       = var.project_name
+  environment        = var.environment
+  services           = var.app_runner_services
+  service_image_tags = var.service_image_tags
 
   # VPC connector for private resource access
   private_subnet_ids           = module.networking.private_subnet_ids

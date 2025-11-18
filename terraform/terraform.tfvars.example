@@ -25,7 +25,7 @@ availability_zones = ["eu-west-1a", "eu-west-1b"]  # [OPTIONAL] Auto-detected if
 # Aurora Serverless v2 Configuration
 aurora_min_capacity         = 1      # [OPTIONAL] Minimum ACUs (0.5-128)
 aurora_max_capacity         = 16     # [OPTIONAL] Maximum ACUs
-aurora_engine_version       = "15.4" # [OPTIONAL] PostgreSQL version
+aurora_engine_version       = "17.4" # [OPTIONAL] PostgreSQL version
 aurora_backup_retention_days = 7      # [OPTIONAL] Backup retention period
 
 # ElastiCache Serverless Configuration
