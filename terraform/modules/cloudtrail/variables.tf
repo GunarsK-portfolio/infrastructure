@@ -27,7 +27,7 @@ variable "tags" {
 variable "cloudtrail_log_retention_days" {
   description = "Number of days to retain CloudTrail logs in CloudWatch"
   type        = number
-  default     = 90
+  default     = 365
 
   validation {
     condition     = var.cloudtrail_log_retention_days >= 1 && var.cloudtrail_log_retention_days <= 3653

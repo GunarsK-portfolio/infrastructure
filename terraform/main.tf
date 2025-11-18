@@ -112,9 +112,8 @@ module "storage" {
 module "ecr" {
   source = "./modules/ecr"
 
-  project_name             = var.project_name
-  service_names            = keys(var.app_runner_services)
-  enable_enhanced_scanning = var.enable_ecr_enhanced_scanning
+  project_name  = var.project_name
+  service_names = keys(var.app_runner_services)
 
   tags = local.common_tags
 }
@@ -236,6 +235,7 @@ module "monitoring" {
     auth   = module.cloudfront.auth_distribution_id
     files  = module.cloudfront.files_distribution_id
   }
+  waf_web_acl_name = module.waf.web_acl_name
 
   tags = local.common_tags
 }

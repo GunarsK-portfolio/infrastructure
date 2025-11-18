@@ -130,3 +130,27 @@ resource "aws_cloudwatch_metric_alarm" "cloudfront_5xx" {
 
   tags = var.tags
 }
+
+# CloudWatch Alarm: WAF high block rate (potential attack)
+resource "aws_cloudwatch_metric_alarm" "waf_high_blocks" {
+  count = var.waf_web_acl_name != "" ? 1 : 0
+
+  alarm_name          = "${var.project_name}-${var.environment}-waf-high-blocks"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "BlockedRequests"
+  namespace           = "AWS/WAFV2"
+  period              = 300
+  statistic           = "Sum"
+  threshold           = 100
+  alarm_description   = "WAF blocked more than 100 requests in 5 minutes - potential attack"
+  alarm_actions       = [aws_sns_topic.alarms.arn]
+
+  dimensions = {
+    Rule   = "ALL"
+    WebACL = var.waf_web_acl_name
+    Region = "CloudFront"
+  }
+
+  tags = var.tags
+}

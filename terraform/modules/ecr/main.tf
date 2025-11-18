@@ -73,10 +73,8 @@ resource "aws_ecr_lifecycle_policy" "main" {
   })
 }
 
-# Enable enhanced scanning if requested
+# Enhanced scanning
 resource "aws_ecr_registry_scanning_configuration" "main" {
-  count = var.enable_enhanced_scanning ? 1 : 0
-
   scan_type = "ENHANCED"
 
   rule {

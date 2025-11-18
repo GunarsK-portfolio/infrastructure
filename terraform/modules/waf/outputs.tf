@@ -9,3 +9,8 @@ output "web_acl_arn" {
   description = "WAF Web ACL ARN"
   value       = var.enable_waf ? aws_wafv2_web_acl.main[0].arn : null
 }
+
+output "web_acl_name" {
+  description = "WAF Web ACL Name (for CloudWatch alarms)"
+  value       = var.enable_waf ? aws_wafv2_web_acl.main[0].name : ""
+}

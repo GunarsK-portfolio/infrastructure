@@ -239,12 +239,6 @@ variable "enable_performance_insights" {
   default     = true
 }
 
-variable "enable_ecr_enhanced_scanning" {
-  description = "Enable enhanced image scanning for ECR"
-  type        = bool
-  default     = true
-}
-
 variable "enable_waf" {
   description = "Enable WAF for CloudFront distribution"
   type        = bool
@@ -285,7 +279,7 @@ variable "budget_alert_emails" {
 variable "cloudtrail_log_retention_days" {
   description = "Number of days to retain CloudTrail logs in CloudWatch"
   type        = number
-  default     = 90
+  default     = 365
 
   validation {
     condition = contains([
