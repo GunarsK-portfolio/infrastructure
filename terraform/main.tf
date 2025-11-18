@@ -125,15 +125,17 @@ module "dns" {
 
   domain_name = var.domain_name
 
-  # CloudFront distributions - depends_on ensures CloudFront is created first
+  # CloudFront distributions - explicit dependency ensures CloudFront is created first
   cloudfront_distributions = {
-    public = try(module.cloudfront.public_distribution_domain_name, "placeholder.cloudfront.net")
-    admin  = try(module.cloudfront.admin_distribution_domain_name, "placeholder.cloudfront.net")
-    auth   = try(module.cloudfront.auth_distribution_domain_name, "placeholder.cloudfront.net")
-    files  = try(module.cloudfront.files_distribution_domain_name, "placeholder.cloudfront.net")
+    public = module.cloudfront.public_distribution_domain_name
+    admin  = module.cloudfront.admin_distribution_domain_name
+    auth   = module.cloudfront.auth_distribution_domain_name
+    files  = module.cloudfront.files_distribution_domain_name
   }
 
   tags = local.common_tags
+
+  depends_on = [module.cloudfront]
 }
 
 # ACM Certificate Module (us-east-1 for CloudFront)
@@ -210,6 +212,9 @@ module "cloudfront" {
     for key, value in module.app_runner.service_urls :
     key => replace(value, "https://", "")
   }
+
+  # WAF Web ACL ARN for security protection
+  web_acl_arn = module.waf.web_acl_arn
 
   tags = local.common_tags
 }

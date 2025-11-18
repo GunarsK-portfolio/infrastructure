@@ -2,6 +2,31 @@
 
 AWS serverless infrastructure for production deployment.
 
+## AWS Services Used
+
+<!-- markdownlint-disable MD013 -->
+
+| Service | Type | Purpose |
+|---------|------|---------|
+| **App Runner** | Compute | Serverless container runtime for 6 microservices (auth-service, admin-api, public-api, files-api, admin-web, public-web). Auto-scales 1-10 instances per service. |
+| **Aurora Serverless v2** | Database | PostgreSQL 15+ with auto-scaling (1-16 ACU). Multi-AZ deployment with automated backups and encryption. |
+| **ElastiCache Serverless** | Cache | Redis 7.x for session storage and caching. Dual endpoints (write/read) with cluster mode enabled. |
+| **S3** | Storage | Object storage for images, documents, miniatures. Versioning enabled with lifecycle policies (Standard-IA at 30d, Glacier at 90d). |
+| **CloudFront** | CDN | 4 distributions (public, admin, auth, files) with path-based routing, TLS 1.2+, HTTP/3, and global edge caching. |
+| **WAF** | Security | Web Application Firewall protecting CloudFront with rate limiting, OWASP Top 10 rules, and Log4j protection. |
+| **Route53** | DNS | DNS hosting with DNSSEC, CAA records, query logging, and automatic certificate validation. |
+| **ACM** | Security | SSL/TLS certificates (*.gunarsk.com wildcard) with automatic DNS validation and renewal. |
+| **Secrets Manager** | Security | Encrypted storage for database passwords, Redis auth tokens, JWT secrets with automatic rotation support. |
+| **KMS** | Security | Encryption key management for secrets, database, and S3 bucket encryption. |
+| **ECR** | Registry | Container image registry with vulnerability scanning and lifecycle policies (keep last 10 images). |
+| **VPC** | Network | Isolated network with 2 public and 2 private subnets across 2 AZs. Security groups control access between services. |
+| **CloudWatch** | Monitoring | Log aggregation, metrics collection, dashboards, and alarms for error rates and performance monitoring. |
+| **SNS** | Alerting | Email/SMS notifications for critical alarms (errors, latency spikes, resource limits). |
+| **GuardDuty** | Security | Threat detection monitoring for suspicious activity, compromised credentials, and malicious IPs. |
+| **IAM** | Security | Role-based access control with least privilege. OIDC for GitHub Actions, no long-lived credentials. |
+
+<!-- markdownlint-enable MD013 -->
+
 ## Production URLs
 
 | Domain | Purpose | Backend Services |
@@ -47,6 +72,7 @@ AWS serverless infrastructure for production deployment.
 ### CDN & Security
 
 #### CloudFront
+
 - **4 separate distributions**: public, admin, auth, files
 - **Path-based routing**: / → frontend, /api/v1/* → backend
 - **TLS**: Minimum TLSv1.2, HTTP/3 enabled
@@ -56,14 +82,20 @@ AWS serverless infrastructure for production deployment.
 - **Caching**: Frontend cached (3600s), APIs bypass cache (TTL 0)
 
 #### Why CloudFront + App Runner?
-**App Runner limitation**: Each service can only have one custom domain. Cannot do path-based routing like `gunarsk.com/api/v1/*`.
 
-**Solution**: CloudFront handles custom domains and path routing. App Runner services use their default `.awsapprunner.com` URLs for internal communication.
+**App Runner limitation**: Each service can only have one custom domain.
+Cannot do path-based routing like `gunarsk.com/api/v1/*`.
+
+**Solution**: CloudFront handles custom domains and path routing.
+App Runner services use their default `.awsapprunner.com` URLs for
+internal communication.
 
 **External traffic**: Users → CloudFront (custom domains) → App Runner
+
 **Internal traffic**: Backend-to-backend uses App Runner default URLs
 
 #### WAF
+
 - **Rate limiting** (per IP, per 5 minutes):
   - Login endpoint (`/auth/login`): 20 requests (anti-brute-force)
   - Admin API (`/admin-api/*`): 1200 requests (4 req/sec)
@@ -72,7 +104,18 @@ AWS serverless infrastructure for production deployment.
 - **Logging**: CloudWatch Logs, 30-day retention for security forensics
 - **Associated with**: All CloudFront distributions
 
+#### Security Headers
+
+- **HSTS**: Strict-Transport-Security (2 years, preload enabled)
+- **X-Frame-Options**: DENY (prevents clickjacking)
+- **X-Content-Type-Options**: nosniff (prevents MIME sniffing)
+- **Referrer-Policy**: strict-origin-when-cross-origin
+- **X-XSS-Protection**: 1; mode=block (legacy browser protection)
+- **Content-Security-Policy**: Restricts script/style sources
+- **Applied to**: All CloudFront distributions via response headers policy
+
 #### ACM & DNS
+
 - **ACM certificates**: `*.gunarsk.com` (wildcard, us-east-1 for CloudFront)
 - **Validation**: DNS (automatic via Route53)
 - **Route53**: DNS hosting, DNSSEC enabled, CAA records, query logging
@@ -177,6 +220,7 @@ GitHub Actions workflows in infrastructure repo:
 - `terraform-apply.yml`: runs on version tags (`v*`), applies infrastructure changes
 
 Required GitHub secrets:
+
 - `AWS_ROLE_ARN`: OIDC role for GitHub Actions
 - `AWS_REGION`: `eu-west-1`
 - `TF_VAR_domain_name`: `gunarsk.com`
@@ -185,6 +229,7 @@ Required GitHub secrets:
 #### Application Deployments
 
 Each service repository has its own GitHub Actions workflow that:
+
 1. Builds Docker image
 2. Pushes to ECR
 3. Triggers App Runner deployment
@@ -275,7 +320,8 @@ Module dependencies (applied in order):
 terraform output route53_nameservers
 ```
 
-Update your domain registrar with these nameservers. DNS propagation takes 24-48 hours.
+Update your domain registrar with these nameservers.
+DNS propagation takes 24-48 hours.
 
 ### 2. Verify ACM Certificate
 
@@ -428,6 +474,7 @@ fields @timestamp, @message
 ### Expected Costs
 
 Approximate monthly costs (low traffic):
+
 - App Runner: $30-50 (6 services)
 - Aurora Serverless v2: $40-60 (1-16 ACU)
 - ElastiCache Serverless: $20-30

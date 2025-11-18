@@ -12,6 +12,9 @@ terraform {
   }
 }
 
+# Data source to get current AWS region
+data "aws_region" "current" {}
+
 locals {
   # Service-specific environment variables
   # Note: DB_USER values are application-level PostgreSQL users created via Flyway migrations
@@ -43,7 +46,7 @@ locals {
       DB_USER         = "portfolio_admin"
       ALLOWED_ORIGINS = "https://admin.${var.domain_name}"
       # Internal auth validation (fast, no CloudFront)
-      AUTH_SERVICE_URL = "https://${var.project_name}-${var.environment}-auth-service.eu-west-1.awsapprunner.com/api/v1"
+      AUTH_SERVICE_URL = "https://${var.project_name}-${var.environment}-auth-service.${data.aws_region.current.region}.awsapprunner.com/api/v1"
       # Public file URL generation (for frontend)
       FILES_API_URL = "https://files.${var.domain_name}/api/v1"
     }
@@ -74,7 +77,7 @@ locals {
       ALLOWED_FILE_TYPES = "image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
       ALLOWED_ORIGINS    = "https://${var.domain_name},https://admin.${var.domain_name}"
       # Internal auth validation (fast, no CloudFront)
-      AUTH_SERVICE_URL = "https://${var.project_name}-${var.environment}-auth-service.eu-west-1.awsapprunner.com/api/v1"
+      AUTH_SERVICE_URL = "https://${var.project_name}-${var.environment}-auth-service.${data.aws_region.current.region}.awsapprunner.com/api/v1"
     }
     "admin-web" = {
       ENVIRONMENT  = var.environment
