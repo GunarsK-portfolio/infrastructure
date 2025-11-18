@@ -9,6 +9,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 6.21"
     }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
+    }
   }
 }
 
@@ -32,11 +36,31 @@ data "aws_secretsmanager_secret_version" "auth_token" {
 }
 
 locals {
-  # Try to parse JSON, fallback to treating as plain string
+  # Parse auth token from Secrets Manager
+  # Accepts two formats:
+  #   1. JSON: {"token": "your-redis-token-here"}
+  #   2. Plain text: "your-redis-token-here"
+  # If JSON parsing fails, treats entire secret as the token value
   auth_token_data = try(
     jsondecode(data.aws_secretsmanager_secret_version.auth_token.secret_string),
-    { password = data.aws_secretsmanager_secret_version.auth_token.secret_string }
+    { token = data.aws_secretsmanager_secret_version.auth_token.secret_string }
   )
+
+  # Extract and validate token exists and is non-empty
+  auth_token = coalesce(
+    try(local.auth_token_data.token, null),
+    ""
+  )
+}
+
+# Validate token is present
+resource "null_resource" "validate_auth_token" {
+  lifecycle {
+    precondition {
+      condition     = local.auth_token != ""
+      error_message = "Redis auth token must be non-empty. Check the auth_token_secret_arn secret in Secrets Manager."
+    }
+  }
 }
 
 # ElastiCache Serverless Cache
@@ -85,16 +109,21 @@ resource "aws_elasticache_serverless_cache" "main" {
 resource "aws_elasticache_user" "main" {
   user_id   = "${var.project_name}-${var.environment}-redis-user"
   user_name = "default"
-  # Restrict to safe commands only (no dangerous commands like FLUSHALL, CONFIG, SHUTDOWN)
-  access_string = "on ~* &* +@read +@write +@list +@set +@hash +@sortedset +@string +@connection +@keyspace -@dangerous"
+  # Least privilege: Only allow commands needed for session management
+  # Commands: GET, SET, DEL, EXPIRE, TTL, EXISTS, PING
+  # Blocks: FLUSHALL, CONFIG, SHUTDOWN, FLUSHDB, KEYS, SCAN, and all other unnecessary commands
+  # Explicitly block dangerous, slow, and admin command groups
+  access_string = "on ~* &* +get +set +del +expire +ttl +exists +ping -@dangerous -@slow -@admin"
   engine        = "redis"
 
   authentication_mode {
     type      = "password"
-    passwords = [local.auth_token_data.token]
+    passwords = [local.auth_token]
   }
 
   tags = var.tags
+
+  depends_on = [null_resource.validate_auth_token]
 
   lifecycle {
     ignore_changes = [authentication_mode]

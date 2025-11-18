@@ -9,6 +9,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 6.21"
     }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
+    }
   }
 }
 
@@ -32,7 +36,29 @@ data "aws_secretsmanager_secret_version" "master_password" {
 }
 
 locals {
+  # Parse database credentials from Secrets Manager
+  # Expected JSON format: {"username": "admin_user", "password": "secure_password"}
   master_credentials = jsondecode(data.aws_secretsmanager_secret_version.master_password.secret_string)
+}
+
+# Validate username is present and non-empty
+resource "null_resource" "validate_username" {
+  lifecycle {
+    precondition {
+      condition     = can(local.master_credentials.username) && local.master_credentials.username != ""
+      error_message = "Database username must be non-empty. Check the master_password_secret_arn secret in Secrets Manager."
+    }
+  }
+}
+
+# Validate password is present and non-empty
+resource "null_resource" "validate_password" {
+  lifecycle {
+    precondition {
+      condition     = can(local.master_credentials.password) && local.master_credentials.password != ""
+      error_message = "Database password must be non-empty. Check the master_password_secret_arn secret in Secrets Manager."
+    }
+  }
 }
 
 # Aurora Serverless v2 Cluster
@@ -85,6 +111,11 @@ resource "aws_rds_cluster" "main" {
       Name = "${var.project_name}-${var.environment}-aurora-cluster"
     }
   )
+
+  depends_on = [
+    null_resource.validate_username,
+    null_resource.validate_password
+  ]
 
   lifecycle {
     ignore_changes = [master_password]

@@ -239,6 +239,24 @@ module "monitoring" {
   tags = local.common_tags
 }
 
+# CloudTrail Module - API Audit Logging
+module "cloudtrail" {
+  source = "./modules/cloudtrail"
+
+  project_name = var.project_name
+  environment  = var.environment
+  account_id   = local.account_id
+
+  cloudtrail_log_retention_days = var.cloudtrail_log_retention_days
+  enable_cloudtrail_alarms      = var.enable_cloudtrail_alarms
+  sns_topic_arn                 = module.monitoring.sns_topic_arn
+
+  # Use same customer-managed KMS key as other resources
+  kms_key_arn = module.secrets.kms_key_arn
+
+  tags = local.common_tags
+}
+
 # GuardDuty Module - Threat Detection
 module "guardduty" {
   source = "./modules/guardduty"

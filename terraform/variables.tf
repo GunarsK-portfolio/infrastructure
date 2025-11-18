@@ -260,6 +260,26 @@ variable "budget_alert_emails" {
   default     = []
 }
 
+# CloudTrail Configuration
+variable "cloudtrail_log_retention_days" {
+  description = "Number of days to retain CloudTrail logs in CloudWatch"
+  type        = number
+  default     = 90
+
+  validation {
+    condition = contains([
+      1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653
+    ], var.cloudtrail_log_retention_days)
+    error_message = "CloudTrail log retention must be a valid CloudWatch Logs retention period."
+  }
+}
+
+variable "enable_cloudtrail_alarms" {
+  description = "Enable CloudWatch alarms for CloudTrail security events"
+  type        = bool
+  default     = true
+}
+
 # Tags
 variable "additional_tags" {
   description = "Additional tags to apply to all resources"
