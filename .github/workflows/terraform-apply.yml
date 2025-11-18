@@ -50,7 +50,7 @@ jobs:
           TF_VAR_enable_budgets: ${{ secrets.TF_VAR_enable_budgets || 'true' }}
           TF_VAR_monthly_budget_limit: ${{ secrets.TF_VAR_monthly_budget_limit || '100' }}
           TF_VAR_enable_vpc_flow_logs: ${{ secrets.TF_VAR_enable_vpc_flow_logs || 'true' }}
-          TF_VAR_service_image_tags: ${{ secrets.TF_VAR_service_image_tags }}
+          TF_VAR_service_image_tags: ${{ vars.TF_VAR_service_image_tags }}
 
       - name: Terraform Apply
         run: terraform apply -auto-approve -input=false
@@ -61,7 +61,7 @@ jobs:
           TF_VAR_enable_budgets: ${{ secrets.TF_VAR_enable_budgets || 'true' }}
           TF_VAR_monthly_budget_limit: ${{ secrets.TF_VAR_monthly_budget_limit || '100' }}
           TF_VAR_enable_vpc_flow_logs: ${{ secrets.TF_VAR_enable_vpc_flow_logs || 'true' }}
-          TF_VAR_service_image_tags: ${{ secrets.TF_VAR_service_image_tags }}
+          TF_VAR_service_image_tags: ${{ vars.TF_VAR_service_image_tags }}
 
       - name: Save Terraform Outputs
         id: outputs
