@@ -91,7 +91,7 @@ variable "aurora_engine_version" {
 variable "aurora_backup_retention_days" {
   description = "Number of days to retain Aurora backups"
   type        = number
-  default     = 7
+  default     = 30
 
   validation {
     condition     = var.aurora_backup_retention_days >= 1 && var.aurora_backup_retention_days <= 35
