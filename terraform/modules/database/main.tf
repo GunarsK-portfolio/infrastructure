@@ -59,6 +59,16 @@ resource "aws_rds_cluster_parameter_group" "main" {
     value = "10000"
   }
 
+  # Connection pooling limits
+  # Set max_connections based on Aurora Serverless v2 ACU capacity
+  # Formula: LEAST({DBInstanceClassMemory/9531392}, 5000)
+  # For 0.5-16 ACU range: ~87-2782 connections
+  # Set conservative limit to prevent connection exhaustion
+  parameter {
+    name  = "max_connections"
+    value = var.max_connections
+  }
+
   tags = merge(
     var.tags,
     {

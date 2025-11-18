@@ -13,6 +13,11 @@ variable "environment" {
 variable "domain_name" {
   description = "Domain name for rate limiting rules"
   type        = string
+
+  validation {
+    condition     = can(regex("^([a-z0-9]+(-[a-z0-9]+)*\\.)+[a-z]{2,}$", var.domain_name))
+    error_message = "Domain name must be a valid FQDN (e.g., example.com, subdomain.example.com)."
+  }
 }
 
 variable "tags" {
