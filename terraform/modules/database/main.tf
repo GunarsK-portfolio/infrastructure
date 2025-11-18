@@ -76,6 +76,9 @@ locals {
   # Parse database credentials from Secrets Manager
   # Expected JSON format: {"username": "admin_user", "password": "secure_password"}
   master_credentials = jsondecode(data.aws_secretsmanager_secret_version.master_password.secret_string)
+
+  # Performance Insights KMS key (used across cluster and instances)
+  performance_insights_kms_key = var.kms_key_id
 }
 
 # Validate username is present and non-empty
@@ -137,7 +140,7 @@ resource "aws_rds_cluster" "main" {
 
   # Performance Insights
   performance_insights_enabled          = var.enable_performance_insights
-  performance_insights_kms_key_id       = var.kms_key_id
+  performance_insights_kms_key_id       = local.performance_insights_kms_key
   performance_insights_retention_period = var.enable_performance_insights ? 7 : null
 
   # Point-in-time recovery
@@ -170,7 +173,7 @@ resource "aws_rds_cluster_instance" "writer" {
 
   # Performance Insights
   performance_insights_enabled    = var.enable_performance_insights
-  performance_insights_kms_key_id = var.kms_key_id
+  performance_insights_kms_key_id = local.performance_insights_kms_key
 
   # Enhanced Monitoring
   monitoring_interval = var.enable_enhanced_monitoring ? 60 : 0
@@ -197,7 +200,7 @@ resource "aws_rds_cluster_instance" "reader" {
 
   # Performance Insights
   performance_insights_enabled    = var.enable_performance_insights
-  performance_insights_kms_key_id = var.kms_key_id
+  performance_insights_kms_key_id = local.performance_insights_kms_key
 
   # Enhanced Monitoring
   monitoring_interval = var.enable_enhanced_monitoring ? 60 : 0

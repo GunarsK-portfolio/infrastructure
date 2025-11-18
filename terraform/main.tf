@@ -235,7 +235,7 @@ module "monitoring" {
     auth   = module.cloudfront.auth_distribution_id
     files  = module.cloudfront.files_distribution_id
   }
-  waf_web_acl_name = var.enable_waf ? module.waf[0].web_acl_name : ""
+  waf_web_acl_name = module.waf.web_acl_name
 
   tags = local.common_tags
 }
