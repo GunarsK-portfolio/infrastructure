@@ -5,15 +5,22 @@ using Prometheus, Loki, Promtail, and Grafana.
 
 ## Components
 
-| Component | Port | Purpose |
-|-----------|------|---------|
-| **Prometheus** | 9090 | Metrics collection (30d retention) |
-| **Loki** | 3100 | Log aggregation (7d retention) |
-| **Promtail** | 9080 | Log shipper (Docker → Loki) |
-| **Grafana** | 3000 | Dashboards & visualization |
-| **OTel Collector** | 4317/4318 | OTLP receiver (Claude Code telemetry) |
+| Component | Version | Port | Purpose |
+|-----------|---------|------|---------|
+| **Prometheus** | v3.7.3 | 9090 | Metrics collection (30d retention) |
+| **Loki** | 3.6.0 | 3100 | Log aggregation (7d retention) |
+| **Promtail** | 3.6.0 | 9080 | Log shipper (⚠️ EOL Mar 2026) |
+| **Grafana** | 12.2.1 | 3000 | Dashboards & visualization |
+| **OTel Collector** | 0.139.0 | 4317/4318 | OTLP receiver (Claude) |
+| **Postgres Exporter** | v0.18.1 | 9187 | PostgreSQL metrics |
+| **Redis Exporter** | v1.80.0 | 9121 | Redis metrics |
 
-**Grafana Credentials**: admin / admin
+**Grafana Credentials**: Configurable via environment variables
+(default: admin / admin)
+
+**⚠️ Important**: Promtail is deprecated and will reach End-of-Life on
+March 2, 2026. For new deployments, consider migrating to
+[Grafana Alloy](https://grafana.com/docs/alloy/latest/).
 
 ---
 
@@ -100,6 +107,10 @@ LOG_LEVEL=info
 LOG_FORMAT=json
 LOG_SOURCE=false
 ENVIRONMENT=development
+
+# Optional: Customize Grafana credentials
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=admin
 ```
 
 ### 4. Update docker-compose.yml

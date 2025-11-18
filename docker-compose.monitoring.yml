@@ -13,6 +13,7 @@
 
 networks:
   monitoring:
+    name: infrastructure_monitoring
     driver: bridge
   portfolio:
     external: true
@@ -26,7 +27,7 @@ volumes:
 services:
   # OpenTelemetry Collector - Receives telemetry from Claude Code
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
+    image: otel/opentelemetry-collector-contrib:0.139.0
     container_name: otel-collector
     restart: unless-stopped
     command: ["--config=/etc/otel-collector-config.yml"]
@@ -60,7 +61,7 @@ services:
 
   # Prometheus - Metrics collection and storage
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.7.3
     container_name: prometheus
     restart: unless-stopped
     command:
@@ -98,7 +99,7 @@ services:
 
   # Loki - Log aggregation
   loki:
-    image: grafana/loki:latest
+    image: grafana/loki:3.6.0
     container_name: loki
     restart: unless-stopped
     ports:
@@ -106,7 +107,6 @@ services:
     command: -config.file=/etc/loki/loki.yml
     volumes:
       - ./monitoring/loki/loki.yml:/etc/loki/loki.yml:ro
-      - loki_data:/loki
     networks:
       - monitoring
     labels:
@@ -128,8 +128,10 @@ services:
       start_period: 30s
 
   # Promtail - Log shipper (ships Docker logs to Loki)
+  # NOTE: Promtail is deprecated and enters EOL on March 2, 2026
+  # Consider migrating to Grafana Alloy for new deployments
   promtail:
-    image: grafana/promtail:latest
+    image: grafana/promtail:3.6.0
     container_name: promtail
     restart: unless-stopped
     command: -config.file=/etc/promtail/promtail.yml
@@ -161,14 +163,14 @@ services:
 
   # Grafana - Visualization and dashboards
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:12.2.1
     container_name: grafana
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SERVER_ROOT_URL=http://localhost:3000
       - GF_INSTALL_PLUGINS=
@@ -222,7 +224,7 @@ services:
   # cAdvisor - Container metrics
   # PostgreSQL Exporter - Database metrics
   postgres-exporter:
-    image: prometheuscommunity/postgres-exporter:latest
+    image: prometheuscommunity/postgres-exporter:v0.18.1
     container_name: postgres-exporter
     restart: unless-stopped
     environment:
@@ -253,7 +255,7 @@ services:
 
   # Redis Exporter - Cache metrics
   redis-exporter:
-    image: oliver006/redis_exporter:latest
+    image: oliver006/redis_exporter:v1.80.0
     container_name: redis-exporter
     restart: unless-stopped
     environment:

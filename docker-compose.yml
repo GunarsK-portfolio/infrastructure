@@ -4,6 +4,12 @@ services:
     image: traefik:v3.6.1
     container_name: traefik
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
     command:
       # API
       - "--api.dashboard=true"
@@ -51,7 +57,6 @@ services:
       # - ./docker/traefik/letsencrypt:/letsencrypt  # For Let's Encrypt
     networks:
       - network
-      - monitoring
     depends_on:
       - public-web
       - admin-web
@@ -90,7 +95,7 @@ services:
       DB_USER_READONLY: ${DB_USER_READONLY}
       DB_PASSWORD_READONLY: ${DB_PASSWORD_READONLY}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       # Bootstrap users before Flyway runs
@@ -116,12 +121,21 @@ services:
     image: redis:8.2-alpine
     container_name: redis
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETGID
+      - SETUID
+      - CHOWN
+      - DAC_OVERRIDE
     command: >
       sh -c "redis-server /usr/local/etc/redis/redis.conf --requirepass '${REDIS_PASSWORD}'"
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
       - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
@@ -140,6 +154,8 @@ services:
           memory: 128M
 
   # MinIO (S3-compatible storage)
+  # NOTE: MinIO stopped publishing to Docker Hub in October 2025
+  # Current image should continue to work, but updates require building from source
   minio:
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: minio
@@ -193,7 +209,7 @@ services:
 
   # Database Migrations (Flyway)
   flyway:
-    image: flyway/flyway:11
+    image: flyway/flyway:11.1.0
     container_name: flyway
     restart: "no"
     command: migrate
@@ -618,10 +634,8 @@ services:
 
 networks:
   network:
+    name: infrastructure_network
     driver: bridge
-  monitoring:
-    external: true
-    name: infrastructure_monitoring
 
 volumes:
   postgres_data:
