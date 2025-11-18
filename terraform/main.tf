@@ -161,7 +161,6 @@ module "waf" {
 
   project_name = var.project_name
   environment  = var.environment
-  enable_waf   = var.enable_waf
 
   tags = local.common_tags
 }
@@ -235,7 +234,11 @@ module "monitoring" {
     auth   = module.cloudfront.auth_distribution_id
     files  = module.cloudfront.files_distribution_id
   }
-  waf_web_acl_name = module.waf.web_acl_name
+  waf_web_acl_name          = module.waf.web_acl_name
+  db_cluster_id             = module.database.cluster_id
+  cache_id                  = module.cache.cache_id
+  cache_max_data_storage_gb = var.elasticache_data_storage_gb
+  alarm_email_addresses     = var.alarm_email_addresses
 
   tags = local.common_tags
 }

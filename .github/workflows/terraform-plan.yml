@@ -55,6 +55,7 @@ jobs:
         env:
           TF_VAR_domain_name: ${{ secrets.TF_VAR_domain_name }}
           TF_VAR_budget_alert_emails: ${{ secrets.TF_VAR_budget_alert_emails }}
+          TF_VAR_alarm_email_addresses: ${{ secrets.TF_VAR_alarm_email_addresses }}
           TF_VAR_enable_guardduty: ${{ secrets.TF_VAR_enable_guardduty || 'true' }}
           TF_VAR_enable_budgets: ${{ secrets.TF_VAR_enable_budgets || 'true' }}
           TF_VAR_monthly_budget_limit: ${{ secrets.TF_VAR_monthly_budget_limit || '100' }}

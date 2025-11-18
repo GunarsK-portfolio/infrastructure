@@ -52,26 +52,31 @@ resource "aws_cloudfront_response_headers_policy" "security_headers" {
   }
 
   # Content Security Policy
-  # IMPORTANT: This CSP uses 'unsafe-hashes' for Vue 3 event handlers
+  # SECURITY NOTE: This CSP uses 'unsafe-hashes' (CSP Level 3) for inline styles
+  # Vue @click/@change directives do NOT need unsafe-hashes (they compile to JS)
+  # ACTUAL REASON: Vue :style bindings, v-show directive, and Naive UI runtime styles
+  #   generate inline style attributes that cannot be nonce-protected
+  # RISK: Weaker than nonce-based CSP, but significantly safer than 'unsafe-inline'
+  # TODO (8h): Migrate to nonce-based CSP by refactoring all inline styles to CSS classes
   custom_headers_config {
     items {
       header = "Content-Security-Policy"
-      # Strict CSP for production:
-      # - Removed 'unsafe-inline' and 'unsafe-eval' for scripts
-      # - Allow 'unsafe-hashes' for Vue event handlers (onclick, etc)
-      # - Allow specific CDNs if needed (add to script-src/style-src)
+      # CSP Level 3 with unsafe-hashes (not supported in Safari):
+      # - Removed 'unsafe-inline' and 'unsafe-eval' for scripts (strict)
+      # - Allow 'unsafe-hashes' for Vue :style bindings and Naive UI runtime styles
+      # - Script-src does NOT need unsafe-hashes (Vue event directives compile to JS)
       # - Use 'strict-dynamic' when nonce-based CSP is implemented
       value = join("; ", [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-hashes'", # unsafe-hashes allows Vue event handlers
-        "style-src 'self' 'unsafe-hashes'",  # unsafe-hashes allows inline styles from Naive UI
-        "img-src 'self' data: https:",       # Allow external images and data URIs
-        "font-src 'self' data:",             # Allow web fonts
-        "connect-src 'self' https:",         # Allow HTTPS API calls
-        "frame-ancestors 'none'",            # Prevent clickjacking
-        "base-uri 'self'",                   # Restrict <base> tag
-        "form-action 'self'",                # Restrict form submissions
-        "upgrade-insecure-requests"          # Upgrade HTTP to HTTPS
+        "script-src 'self'",                # No unsafe-hashes needed for Vue directives
+        "style-src 'self' 'unsafe-hashes'", # Required for :style, v-show, Naive UI
+        "img-src 'self' data: https:",      # Allow external images and data URIs
+        "font-src 'self' data:",            # Allow web fonts
+        "connect-src 'self' https:",        # Allow HTTPS API calls
+        "frame-ancestors 'none'",           # Prevent clickjacking
+        "base-uri 'self'",                  # Restrict <base> tag
+        "form-action 'self'",               # Restrict form submissions
+        "upgrade-insecure-requests"         # Upgrade HTTP to HTTPS
       ])
       override = true
     }
