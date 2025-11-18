@@ -140,6 +140,118 @@ resource "aws_s3_bucket_cors_configuration" "main" {
   }
 }
 
+# Bucket ACL - explicitly set to private
+resource "aws_s3_bucket_acl" "main" {
+  for_each = aws_s3_bucket.main
+
+  bucket = each.value.id
+  acl    = "private"
+
+  depends_on = [aws_s3_bucket_ownership_controls.main]
+}
+
+# Bucket ownership controls
+resource "aws_s3_bucket_ownership_controls" "main" {
+  for_each = aws_s3_bucket.main
+
+  bucket = each.value.id
+
+  rule {
+    object_ownership = "BucketOwnerEnforced"
+  }
+}
+
+# S3 Bucket for Access Logs
+resource "aws_s3_bucket" "logging" {
+  bucket = "${var.project_name}-s3-access-logs-${var.environment}-${var.account_id}"
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-s3-access-logs"
+      Type = "logging"
+    }
+  )
+}
+
+# Block public access for logging bucket
+resource "aws_s3_bucket_public_access_block" "logging" {
+  bucket = aws_s3_bucket.logging.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# Versioning for logging bucket
+resource "aws_s3_bucket_versioning" "logging" {
+  bucket = aws_s3_bucket.logging.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# Encryption for logging bucket
+resource "aws_s3_bucket_server_side_encryption_configuration" "logging" {
+  bucket = aws_s3_bucket.logging.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+# Lifecycle policy for logging bucket
+resource "aws_s3_bucket_lifecycle_configuration" "logging" {
+  bucket = aws_s3_bucket.logging.id
+
+  rule {
+    id     = "expire-old-logs"
+    status = "Enabled"
+
+    filter {}
+
+    transition {
+      days          = 90
+      storage_class = "GLACIER"
+    }
+
+    expiration {
+      days = 365
+    }
+  }
+}
+
+# Bucket ownership controls for logging bucket
+resource "aws_s3_bucket_ownership_controls" "logging" {
+  bucket = aws_s3_bucket.logging.id
+
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+# ACL for logging bucket
+resource "aws_s3_bucket_acl" "logging" {
+  bucket = aws_s3_bucket.logging.id
+  acl    = "log-delivery-write"
+
+  depends_on = [aws_s3_bucket_ownership_controls.logging]
+}
+
+# Enable S3 access logging for all buckets
+resource "aws_s3_bucket_logging" "main" {
+  for_each = aws_s3_bucket.main
+
+  bucket = each.value.id
+
+  target_bucket = aws_s3_bucket.logging.id
+  target_prefix = "s3-access-logs/${each.key}/"
+}
+
 # Bucket policy (deny non-HTTPS)
 resource "aws_s3_bucket_policy" "main" {
   for_each = aws_s3_bucket.main

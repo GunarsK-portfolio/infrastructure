@@ -85,8 +85,10 @@ resource "aws_elasticache_serverless_cache" "main" {
 resource "aws_elasticache_user" "main" {
   user_id   = "${var.project_name}-${var.environment}-redis-user"
   user_name = "default"
-  # Restrict to safe commands only (no dangerous commands like FLUSHALL, CONFIG, SHUTDOWN)
-  access_string = "on ~* &* +@read +@write +@list +@set +@hash +@sortedset +@string +@connection +@keyspace -@dangerous"
+  # Least privilege: Only allow commands needed for session management
+  # Commands: GET, SET, DEL, EXPIRE, TTL, EXISTS, PING
+  # Blocks: FLUSHALL, CONFIG, SHUTDOWN, FLUSHDB, KEYS, SCAN, and all other unnecessary commands
+  access_string = "on ~* &* +get +set +del +expire +ttl +exists +ping -@dangerous"
   engine        = "redis"
 
   authentication_mode {

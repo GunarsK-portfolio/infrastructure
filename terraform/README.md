@@ -11,15 +11,16 @@ AWS serverless infrastructure for production deployment.
 | **App Runner** | Compute | Serverless container runtime for 6 microservices (auth-service, admin-api, public-api, files-api, admin-web, public-web). Auto-scales 1-10 instances per service. |
 | **Aurora Serverless v2** | Database | PostgreSQL 15+ with auto-scaling (1-16 ACU). Multi-AZ deployment with automated backups and encryption. |
 | **ElastiCache Serverless** | Cache | Redis 7.x for session storage and caching. Dual endpoints (write/read) with cluster mode enabled. |
-| **S3** | Storage | Object storage for images, documents, miniatures. Versioning enabled with lifecycle policies (Standard-IA at 30d, Glacier at 90d). |
+| **S3** | Storage | Object storage for images, documents, miniatures. Versioning enabled with lifecycle policies and access logging. |
 | **CloudFront** | CDN | 4 distributions (public, admin, auth, files) with path-based routing, TLS 1.2+, HTTP/3, and global edge caching. |
 | **WAF** | Security | Web Application Firewall protecting CloudFront with rate limiting, OWASP Top 10 rules, and Log4j protection. |
 | **Route53** | DNS | DNS hosting with DNSSEC, CAA records, query logging, and automatic certificate validation. |
 | **ACM** | Security | SSL/TLS certificates (*.gunarsk.com wildcard) with automatic DNS validation and renewal. |
-| **Secrets Manager** | Security | Encrypted storage for database passwords, Redis auth tokens, JWT secrets with automatic rotation support. |
+| **CloudTrail** | Audit | API activity logging for all AWS services with CloudWatch integration and security event alarms. |
+| **Secrets Manager** | Security | Encrypted storage for database passwords, Redis auth tokens, JWT secrets. Manual rotation required. |
 | **KMS** | Security | Encryption key management for secrets, database, and S3 bucket encryption. |
 | **ECR** | Registry | Container image registry with vulnerability scanning and lifecycle policies (keep last 10 images). |
-| **VPC** | Network | Isolated network with 2 public and 2 private subnets across 2 AZs. Security groups control access between services. |
+| **VPC** | Network | Isolated network with 2 public and 2 private subnets across 2 AZs. VPC Flow Logs enabled. |
 | **CloudWatch** | Monitoring | Log aggregation, metrics collection, dashboards, and alarms for error rates and performance monitoring. |
 | **SNS** | Alerting | Email/SMS notifications for critical alarms (errors, latency spikes, resource limits). |
 | **GuardDuty** | Security | Threat detection monitoring for suspicious activity, compromised credentials, and malicious IPs. |
@@ -291,8 +292,39 @@ terraform import <resource_type>.<resource_name> <resource_id>
 
 ### Secrets Rotation
 
-Database credentials rotate automatically every 90 days via Lambda.
-JWT secret rotates manually.
+**Manual Rotation Required**: All secrets must be rotated manually.
+
+Database passwords (portfolio_master, portfolio_owner, portfolio_admin, portfolio_public):
+
+```bash
+aws secretsmanager update-secret \
+  --secret-id portfolio/prod/db/admin \
+  --secret-string '{"username":"portfolio_admin","password":"NEW_PASSWORD"}'
+```
+
+Redis AUTH token:
+
+```bash
+aws secretsmanager update-secret \
+  --secret-id portfolio/prod/redis/password \
+  --secret-string 'NEW_REDIS_AUTH_TOKEN'
+```
+
+JWT secret:
+
+```bash
+aws secretsmanager update-secret \
+  --secret-id portfolio/prod/jwt/secret \
+  --secret-string 'NEW_JWT_SECRET'
+```
+
+**Rotation Schedule** (recommended):
+
+- Database passwords: Every 90 days
+- Redis AUTH token: Every 90 days
+- JWT secret: Every 180 days or after security incident
+
+**After rotation**: Restart affected App Runner services to pick up new secrets.
 
 ## Dependencies
 
@@ -346,24 +378,39 @@ Add the DS record to your domain registrar's DNS settings.
 
 ### 4. Update Secrets Manager
 
-Terraform creates secrets with placeholder values. Update them:
+Terraform creates secrets with placeholder values. Update them immediately:
 
 ```bash
-# Database password (auto-rotates every 90 days)
+# Database passwords (4 users: master, owner, admin, public)
+aws secretsmanager update-secret \
+  --secret-id portfolio/prod/db/master \
+  --secret-string '{"username":"portfolio_master","password":"STRONG_PASSWORD"}'
+
+aws secretsmanager update-secret \
+  --secret-id portfolio/prod/db/owner \
+  --secret-string '{"username":"portfolio_owner","password":"STRONG_PASSWORD"}'
+
 aws secretsmanager update-secret \
   --secret-id portfolio/prod/db/admin \
   --secret-string '{"username":"portfolio_admin","password":"STRONG_PASSWORD"}'
 
-# Redis password
+aws secretsmanager update-secret \
+  --secret-id portfolio/prod/db/public \
+  --secret-string '{"username":"portfolio_public","password":"STRONG_PASSWORD"}'
+
+# Redis AUTH token
 aws secretsmanager update-secret \
   --secret-id portfolio/prod/redis/password \
-  --secret-string 'REDIS_PASSWORD'
+  --secret-string '{"token":"REDIS_AUTH_TOKEN"}'
 
 # JWT secret
 aws secretsmanager update-secret \
   --secret-id portfolio/prod/jwt/secret \
-  --secret-string 'JWT_SECRET'
+  --secret-string '{"secret":"JWT_SECRET_KEY"}'
 ```
+
+**Note**: Secrets do not auto-rotate. See [Secrets Rotation](#secrets-rotation)
+section for manual rotation schedule.
 
 ### 5. Run Database Migrations
 
