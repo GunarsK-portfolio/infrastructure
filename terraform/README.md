@@ -9,7 +9,7 @@ AWS serverless infrastructure for production deployment.
 | Service | Type | Purpose |
 |---------|------|---------|
 | **App Runner** | Compute | Serverless container runtime for 6 microservices (auth-service, admin-api, public-api, files-api, admin-web, public-web). Auto-scales 1-10 instances per service. |
-| **Aurora Serverless v2** | Database | PostgreSQL 15+ with auto-scaling (1-16 ACU). Multi-AZ deployment with automated backups and encryption. |
+| **Aurora Serverless v2** | Database | PostgreSQL 17.4 with auto-scaling (1-16 ACU). Multi-AZ deployment with 30-day backups, encryption, and pg_cron/pg_stat_statements extensions. |
 | **ElastiCache Serverless** | Cache | Redis 7.x for session storage and caching. Dual endpoints (write/read) with cluster mode enabled. |
 | **S3** | Storage | Object storage for images, documents, miniatures. Versioning enabled with lifecycle policies and access logging. |
 | **CloudFront** | CDN | 4 distributions (public, admin, auth, files) with path-based routing, TLS 1.2+, HTTP/3, and global edge caching. |
@@ -50,11 +50,12 @@ AWS serverless infrastructure for production deployment.
 
 ### Database
 
-- Aurora Serverless v2 PostgreSQL 15+
+- Aurora Serverless v2 PostgreSQL 17.4
 - Scaling: 1-16 ACU (configurable)
 - Multi-AZ deployment
 - Encryption: KMS at rest, TLS in transit
-- Backups: 7-day retention, automated snapshots
+- Backups: 30-day retention, automated snapshots
+- Extensions: pg_stat_statements, pg_cron
 
 ### Cache
 
@@ -102,9 +103,15 @@ internal communication.
   - Token Refresh (`auth.gunarsk.com/refresh`): 100 requests (token abuse prevention)
   - Token Validation (`auth.gunarsk.com/validate`): 300 requests (validation protection)
   - Admin API (`admin.gunarsk.com/api/v1/*`): 1200 requests (4 req/sec)
-  - Public API (`gunarsk.com/api/v1/*`): 1800 requests (6 req/sec)
+  - Public API (`gunarsk.com/api/v1/*`): 600 requests (2 req/sec, reduced from 1800)
   - Files API (`files.gunarsk.com/api/v1/*`): 200 requests (file upload/download)
-- **AWS Managed Rules**: Core Rule Set (OWASP Top 10), Known Bad Inputs
+- **AWS Managed Rules**:
+  - Core Rule Set (OWASP Top 10)
+  - Known Bad Inputs (Log4Shell protection)
+  - SQL Injection Rule Set
+  - IP Reputation List (blocks known malicious IPs)
+  - Bot Control (CAPTCHA challenges for suspicious bots)
+  - Linux Rule Set (OS-level exploit protection)
 - **Logging**: CloudWatch Logs, 30-day retention for security forensics
 - **Associated with**: All CloudFront distributions
 
@@ -126,7 +133,10 @@ internal communication.
 
 ### Monitoring
 
-- CloudWatch: log groups per service, 7-day retention
+- CloudWatch: log groups per service
+  - Application logs: 7-day retention
+  - VPC Flow Logs: 90-day retention (forensic analysis)
+  - Route53 Query Logs: 30-day retention (DNS attack analysis)
 - Alarms: error rates, latency, resource utilization
 - SNS notifications for critical events
 - Dashboard: unified metrics view

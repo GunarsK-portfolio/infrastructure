@@ -263,7 +263,7 @@ resource "aws_wafv2_web_acl" "main" {
 
     statement {
       rate_based_statement {
-        limit              = 1800
+        limit              = 600
         aggregate_key_type = "IP"
 
         scope_down_statement {
@@ -365,7 +365,7 @@ resource "aws_wafv2_web_acl" "main" {
     }
   }
 
-  # AWS Managed Rules - Core Rule Set
+  # AWS Managed Rules - Core Rule Set (OWASP Top 10)
   rule {
     name     = "aws-managed-core-rule-set"
     priority = 10
@@ -388,7 +388,7 @@ resource "aws_wafv2_web_acl" "main" {
     }
   }
 
-  # AWS Managed Rules - Known Bad Inputs
+  # AWS Managed Rules - Known Bad Inputs (Log4Shell, etc.)
   rule {
     name     = "aws-managed-known-bad-inputs"
     priority = 11
@@ -407,6 +407,105 @@ resource "aws_wafv2_web_acl" "main" {
     visibility_config {
       cloudwatch_metrics_enabled = true
       metric_name                = "AWSManagedKnownBadInputs"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  # AWS Managed Rules - SQL Injection Protection
+  rule {
+    name     = "aws-managed-sqli-rule-set"
+    priority = 12
+
+    override_action {
+      none {}
+    }
+
+    statement {
+      managed_rule_group_statement {
+        vendor_name = "AWS"
+        name        = "AWSManagedRulesSQLiRuleSet"
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "AWSManagedSQLiRuleSet"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  # AWS Managed Rules - IP Reputation List (Known Bad IPs)
+  rule {
+    name     = "aws-managed-ip-reputation-list"
+    priority = 13
+
+    override_action {
+      none {}
+    }
+
+    statement {
+      managed_rule_group_statement {
+        vendor_name = "AWS"
+        name        = "AWSManagedRulesAmazonIpReputationList"
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "AWSManagedIPReputationList"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  # AWS Managed Rules - Linux Operating System Protection
+  rule {
+    name     = "aws-managed-linux-rule-set"
+    priority = 14
+
+    override_action {
+      none {}
+    }
+
+    statement {
+      managed_rule_group_statement {
+        vendor_name = "AWS"
+        name        = "AWSManagedRulesLinuxRuleSet"
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "AWSManagedLinuxRuleSet"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  # AWS Managed Rules - Bot Control (CAPTCHA challenges for suspicious bots)
+  rule {
+    name     = "aws-managed-bot-control-rule-set"
+    priority = 15
+
+    override_action {
+      none {}
+    }
+
+    statement {
+      managed_rule_group_statement {
+        vendor_name = "AWS"
+        name        = "AWSManagedRulesBotControlRuleSet"
+
+        # Managed rule group configuration for Bot Control
+        managed_rule_group_configs {
+          aws_managed_rules_bot_control_rule_set {
+            inspection_level = "COMMON"
+          }
+        }
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "AWSManagedBotControlRuleSet"
       sampled_requests_enabled   = true
     }
   }

@@ -162,7 +162,7 @@ resource "aws_route53_query_log" "main" {
 # CloudWatch Log Group for Route53 query logs
 resource "aws_cloudwatch_log_group" "route53" {
   name              = "/aws/route53/${var.domain_name}"
-  retention_in_days = 7
+  retention_in_days = 30
 
   tags = var.tags
 }
