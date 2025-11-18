@@ -150,7 +150,7 @@ resource "aws_iam_role" "app_runner" {
   tags = var.tags
 }
 
-# IAM Policy for Secrets Manager access
+# IAM Policy for Secrets Manager access (with region restriction)
 resource "aws_iam_role_policy" "secrets_access" {
   for_each = var.services
 
@@ -167,6 +167,11 @@ resource "aws_iam_role_policy" "secrets_access" {
           "secretsmanager:DescribeSecret"
         ]
         Resource = [for arn in var.secrets_arns : arn]
+        Condition = {
+          StringEquals = {
+            "aws:RequestedRegion" = data.aws_region.current.region
+          }
+        }
       }
     ]
   })

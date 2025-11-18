@@ -59,6 +59,16 @@ resource "aws_rds_cluster_parameter_group" "main" {
     value = "10000"
   }
 
+  # Connection pooling limits
+  # Set max_connections based on Aurora Serverless v2 ACU capacity
+  # Formula: LEAST({DBInstanceClassMemory/9531392}, 5000)
+  # For 0.5-16 ACU range: ~87-2782 connections
+  # Set conservative limit to prevent connection exhaustion
+  parameter {
+    name  = "max_connections"
+    value = var.max_connections
+  }
+
   tags = merge(
     var.tags,
     {
@@ -75,7 +85,8 @@ data "aws_secretsmanager_secret_version" "master_password" {
 locals {
   # Parse database credentials from Secrets Manager
   # Expected JSON format: {"username": "admin_user", "password": "secure_password"}
-  master_credentials = jsondecode(data.aws_secretsmanager_secret_version.master_password.secret_string)
+  # Mark as sensitive to prevent exposure in Terraform state and logs
+  master_credentials = sensitive(jsondecode(data.aws_secretsmanager_secret_version.master_password.secret_string))
 
   # Performance Insights KMS key (used across cluster and instances)
   performance_insights_kms_key = var.kms_key_id
@@ -123,6 +134,10 @@ resource "aws_rds_cluster" "main" {
   # Encryption
   storage_encrypted = true
   kms_key_id        = var.kms_key_id
+
+  # IAM Database Authentication (recommended for production)
+  # Provides centralized access management and eliminates long-lived credentials
+  iam_database_authentication_enabled = true
 
   # Serverless v2 scaling configuration
   serverlessv2_scaling_configuration {

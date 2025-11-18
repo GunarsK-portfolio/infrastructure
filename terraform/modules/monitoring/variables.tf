@@ -127,3 +127,9 @@ variable "alarm_email_addresses" {
   type        = list(string)
   default     = []
 }
+
+variable "kms_key_arn" {
+  description = "KMS key ARN for encrypting CloudWatch logs (optional)"
+  type        = string
+  default     = null
+}

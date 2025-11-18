@@ -86,8 +86,11 @@ resource "aws_elasticache_serverless_cache" "main" {
   }
 
   # Encryption and authentication
-  # Note: ElastiCache Serverless automatically encrypts data at rest
-  # TLS is required for all connections
+  # Note: ElastiCache Serverless has the following security features enabled by default:
+  # - Data at rest encryption: Automatically enabled (cannot be disabled)
+  # - Data in transit encryption (TLS): Automatically enabled and enforced (cannot be disabled)
+  # - All client connections must use TLS 1.2 or higher
+  # Reference: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/serverless-encryption.html
   user_group_id = aws_elasticache_user_group.main.id
 
   # Daily snapshot time

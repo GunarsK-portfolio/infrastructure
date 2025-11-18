@@ -32,6 +32,12 @@ variable "enable_vpc_flow_logs" {
   default     = true
 }
 
+variable "kms_key_arn" {
+  description = "KMS key ARN for encrypting CloudWatch logs (optional)"
+  type        = string
+  default     = null
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)
