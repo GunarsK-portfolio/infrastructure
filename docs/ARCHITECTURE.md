@@ -369,12 +369,12 @@ All services run in a Docker bridge network named `network`.
 - Internal service communication via Docker network
 - External access only through Traefik
 - SSL/TLS termination at reverse proxy
-- PostgreSQL and Redis bound to localhost only (127.0.0.1) - not accessible
-  from external networks
+- PostgreSQL and Redis bound to localhost only (127.0.0.1) — inaccessible from
+  external networks
 - Container security hardening:
   - Traefik: no-new-privileges, capabilities dropped except
     NET_BIND_SERVICE
-  - Redis: no-new-privileges, capabilities dropped except SETUID/SETGID
+  - Redis: no-new-privileges, capabilities dropped except SETUID/SETGID/CHOWN
 - Environment-based secrets
 
 ### Data Security

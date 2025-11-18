@@ -129,7 +129,6 @@ services:
       - SETGID
       - SETUID
       - CHOWN
-      - DAC_OVERRIDE
     command: >
       sh -c "redis-server /usr/local/etc/redis/redis.conf --requirepass '${REDIS_PASSWORD}'"
     environment:
