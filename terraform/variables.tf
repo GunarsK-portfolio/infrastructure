@@ -33,13 +33,13 @@ variable "owner" {
 variable "domain_name" {
   description = "Primary domain name for the application"
   type        = string
-  default     = "gk.codes"
+  default     = "gunarsk.com"
 }
 
 variable "admin_domain_name" {
   description = "Admin panel domain name"
   type        = string
-  default     = "admin.gk.codes"
+  default     = "admin.gunarsk.com"
 }
 
 # VPC Configuration

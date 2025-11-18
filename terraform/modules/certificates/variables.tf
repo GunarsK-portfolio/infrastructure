@@ -6,8 +6,15 @@ variable "domain_name" {
 }
 
 variable "zone_id" {
-  description = "Route53 hosted zone ID for DNS validation"
+  description = "Route53 hosted zone ID for DNS validation (optional if using manual validation)"
   type        = string
+  default     = ""
+}
+
+variable "use_route53_validation" {
+  description = "Automatically create Route53 DNS validation records and wait for validation (set to false if DNS is managed in Cloudflare)"
+  type        = bool
+  default     = true
 }
 
 variable "tags" {

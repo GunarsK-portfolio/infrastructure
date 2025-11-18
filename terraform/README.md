@@ -37,7 +37,7 @@ AWS serverless infrastructure deployed in eu-west-1 (Ireland).
 
 - CloudFront distribution with path-based routing
 - WAF: rate limiting, AWS Managed Rules (Core, Known Bad Inputs)
-- ACM certificates: *.gk.codes (us-east-1)
+- ACM certificates: *.gunarsk.com (us-east-1)
 - Route53: DNS hosting, CAA records
 
 ### Monitoring
@@ -111,8 +111,8 @@ Copy `terraform.tfvars.example` to `terraform.tfvars` (gitignored) and configure
 aws_region              = "eu-west-1"
 environment             = "prod"
 project_name            = "portfolio"
-domain_name             = "gk.codes"
-admin_domain_name       = "admin.gk.codes"
+domain_name             = "gunarsk.com"
+admin_domain_name       = "admin.gunarsk.com"
 aurora_min_capacity     = 1
 aurora_max_capacity     = 16
 enable_enhanced_monitoring    = true

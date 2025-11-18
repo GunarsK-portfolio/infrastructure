@@ -23,7 +23,7 @@ variable "bucket_names" {
 variable "allowed_origins" {
   description = "List of allowed CORS origins"
   type        = list(string)
-  default     = ["https://gk.codes", "https://admin.gk.codes"]
+  default     = ["https://gunarsk.com", "https://admin.gunarsk.com"]
 }
 
 variable "kms_key_id" {
