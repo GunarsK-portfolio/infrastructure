@@ -140,17 +140,8 @@ resource "aws_s3_bucket_cors_configuration" "main" {
   }
 }
 
-# Bucket ACL - explicitly set to private
-resource "aws_s3_bucket_acl" "main" {
-  for_each = aws_s3_bucket.main
-
-  bucket = each.value.id
-  acl    = "private"
-
-  depends_on = [aws_s3_bucket_ownership_controls.main]
-}
-
 # Bucket ownership controls
+# BucketOwnerEnforced disables ACLs - buckets default to private without explicit ACL
 resource "aws_s3_bucket_ownership_controls" "main" {
   for_each = aws_s3_bucket.main
 
