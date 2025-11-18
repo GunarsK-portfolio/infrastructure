@@ -36,13 +36,17 @@ data "aws_secretsmanager_secret_version" "auth_token" {
 }
 
 locals {
-  # Try to parse JSON, fallback to treating as plain string
+  # Parse auth token from Secrets Manager
+  # Accepts two formats:
+  #   1. JSON: {"token": "your-redis-token-here"}
+  #   2. Plain text: "your-redis-token-here"
+  # If JSON parsing fails, treats entire secret as the token value
   auth_token_data = try(
     jsondecode(data.aws_secretsmanager_secret_version.auth_token.secret_string),
     { token = data.aws_secretsmanager_secret_version.auth_token.secret_string }
   )
 
-  # Validate token exists and is non-empty
+  # Extract and validate token exists and is non-empty
   auth_token = coalesce(
     try(local.auth_token_data.token, null),
     ""
@@ -118,6 +122,8 @@ resource "aws_elasticache_user" "main" {
   }
 
   tags = var.tags
+
+  depends_on = [null_resource.validate_auth_token]
 
   lifecycle {
     ignore_changes = [authentication_mode]

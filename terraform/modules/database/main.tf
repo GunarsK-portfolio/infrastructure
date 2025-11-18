@@ -36,28 +36,26 @@ data "aws_secretsmanager_secret_version" "master_password" {
 }
 
 locals {
+  # Parse database credentials from Secrets Manager
+  # Expected JSON format: {"username": "admin_user", "password": "secure_password"}
   master_credentials = jsondecode(data.aws_secretsmanager_secret_version.master_password.secret_string)
-
-  # Validate credentials exist and are non-empty
-  username = coalesce(try(local.master_credentials.username, null), "")
-  password = coalesce(try(local.master_credentials.password, null), "")
 }
 
-# Validate username is present
+# Validate username is present and non-empty
 resource "null_resource" "validate_username" {
   lifecycle {
     precondition {
-      condition     = local.username != ""
+      condition     = can(local.master_credentials.username) && local.master_credentials.username != ""
       error_message = "Database username must be non-empty. Check the master_password_secret_arn secret in Secrets Manager."
     }
   }
 }
 
-# Validate password is present
+# Validate password is present and non-empty
 resource "null_resource" "validate_password" {
   lifecycle {
     precondition {
-      condition     = local.password != ""
+      condition     = can(local.master_credentials.password) && local.master_credentials.password != ""
       error_message = "Database password must be non-empty. Check the master_password_secret_arn secret in Secrets Manager."
     }
   }
@@ -70,8 +68,8 @@ resource "aws_rds_cluster" "main" {
   engine_mode        = "provisioned"
   engine_version     = var.engine_version
   database_name      = var.database_name
-  master_username    = local.username
-  master_password    = local.password
+  master_username    = local.master_credentials.username
+  master_password    = local.master_credentials.password
 
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [var.database_security_group_id]
@@ -113,6 +111,11 @@ resource "aws_rds_cluster" "main" {
       Name = "${var.project_name}-${var.environment}-aurora-cluster"
     }
   )
+
+  depends_on = [
+    null_resource.validate_username,
+    null_resource.validate_password
+  ]
 
   lifecycle {
     ignore_changes = [master_password]

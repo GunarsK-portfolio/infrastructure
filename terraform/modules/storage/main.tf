@@ -260,7 +260,7 @@ resource "aws_s3_bucket_logging" "main" {
   depends_on = [aws_s3_bucket_acl.logging]
 }
 
-# Bucket policy (deny non-HTTPS)
+# Bucket policy (deny non-HTTPS) for main buckets
 resource "aws_s3_bucket_policy" "main" {
   for_each = aws_s3_bucket.main
 
@@ -277,6 +277,32 @@ resource "aws_s3_bucket_policy" "main" {
         Resource = [
           each.value.arn,
           "${each.value.arn}/*"
+        ]
+        Condition = {
+          Bool = {
+            "aws:SecureTransport" = "false"
+          }
+        }
+      }
+    ]
+  })
+}
+
+# Bucket policy (deny non-HTTPS) for logging bucket
+resource "aws_s3_bucket_policy" "logging" {
+  bucket = aws_s3_bucket.logging.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "DenyNonHTTPS"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource = [
+          aws_s3_bucket.logging.arn,
+          "${aws_s3_bucket.logging.arn}/*"
         ]
         Condition = {
           Bool = {

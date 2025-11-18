@@ -29,10 +29,15 @@ variable "enable_cloudtrail_alarms" {
   description = "Enable CloudWatch alarms for CloudTrail security events"
   type        = bool
   default     = true
+
+  validation {
+    condition     = !var.enable_cloudtrail_alarms || var.sns_topic_arn != ""
+    error_message = "SNS topic ARN is required when CloudTrail alarms are enabled. Set enable_cloudtrail_alarms=false or provide sns_topic_arn."
+  }
 }
 
 variable "sns_topic_arn" {
-  description = "SNS topic ARN for CloudTrail alarms (optional)"
+  description = "SNS topic ARN for CloudTrail alarms (required if enable_cloudtrail_alarms=true)"
   type        = string
   default     = ""
 }
