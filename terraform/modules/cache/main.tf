@@ -35,7 +35,7 @@ locals {
   # Try to parse JSON, fallback to treating as plain string
   auth_token_data = try(
     jsondecode(data.aws_secretsmanager_secret_version.auth_token.secret_string),
-    { password = data.aws_secretsmanager_secret_version.auth_token.secret_string }
+    { token = data.aws_secretsmanager_secret_version.auth_token.secret_string }
   )
 }
 

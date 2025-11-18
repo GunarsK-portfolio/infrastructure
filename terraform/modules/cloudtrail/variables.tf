@@ -36,3 +36,8 @@ variable "sns_topic_arn" {
   type        = string
   default     = ""
 }
+
+variable "kms_key_arn" {
+  description = "ARN of KMS key for encryption (S3 bucket and CloudWatch logs)"
+  type        = string
+}

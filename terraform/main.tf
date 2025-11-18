@@ -251,6 +251,9 @@ module "cloudtrail" {
   enable_cloudtrail_alarms      = var.enable_cloudtrail_alarms
   sns_topic_arn                 = module.monitoring.sns_topic_arn
 
+  # Use same customer-managed KMS key as other resources
+  kms_key_arn = module.secrets.kms_key_arn
+
   tags = local.common_tags
 }
 
