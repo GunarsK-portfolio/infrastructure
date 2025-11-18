@@ -39,6 +39,11 @@ variable "ecr_repository_urls" {
   type        = map(string)
 }
 
+variable "service_image_tags" {
+  description = "Map of service names to Docker image tags (use semantic versioning, e.g., v1.0.0)"
+  type        = map(string)
+}
+
 variable "aurora_endpoint" {
   description = "Aurora cluster endpoint"
   type        = string

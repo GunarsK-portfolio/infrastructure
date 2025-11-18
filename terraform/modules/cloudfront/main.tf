@@ -98,7 +98,7 @@ resource "aws_cloudfront_distribution" "public" {
       http_port              = 80
       https_port             = 443
       origin_protocol_policy = "https-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
+      origin_ssl_protocols   = ["TLSv1.3"]
     }
   }
 
@@ -111,7 +111,7 @@ resource "aws_cloudfront_distribution" "public" {
       http_port              = 80
       https_port             = 443
       origin_protocol_policy = "https-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
+      origin_ssl_protocols   = ["TLSv1.3"]
     }
   }
 
@@ -185,7 +185,7 @@ resource "aws_cloudfront_distribution" "public" {
 
   viewer_certificate {
     acm_certificate_arn      = var.certificate_arn
-    minimum_protocol_version = "TLSv1.2_2021"
+    minimum_protocol_version = "TLS1.3_2025"
     ssl_support_method       = "sni-only"
   }
 
@@ -223,7 +223,7 @@ resource "aws_cloudfront_distribution" "admin" {
       http_port              = 80
       https_port             = 443
       origin_protocol_policy = "https-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
+      origin_ssl_protocols   = ["TLSv1.3"]
     }
   }
 
@@ -236,7 +236,7 @@ resource "aws_cloudfront_distribution" "admin" {
       http_port              = 80
       https_port             = 443
       origin_protocol_policy = "https-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
+      origin_ssl_protocols   = ["TLSv1.3"]
     }
   }
 
@@ -310,7 +310,7 @@ resource "aws_cloudfront_distribution" "admin" {
 
   viewer_certificate {
     acm_certificate_arn      = var.certificate_arn
-    minimum_protocol_version = "TLSv1.2_2021"
+    minimum_protocol_version = "TLS1.3_2025"
     ssl_support_method       = "sni-only"
   }
 
@@ -347,7 +347,7 @@ resource "aws_cloudfront_distribution" "auth" {
       http_port              = 80
       https_port             = 443
       origin_protocol_policy = "https-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
+      origin_ssl_protocols   = ["TLSv1.3"]
     }
   }
 
@@ -375,7 +375,7 @@ resource "aws_cloudfront_distribution" "auth" {
 
   viewer_certificate {
     acm_certificate_arn      = var.certificate_arn
-    minimum_protocol_version = "TLSv1.2_2021"
+    minimum_protocol_version = "TLS1.3_2025"
     ssl_support_method       = "sni-only"
   }
 
@@ -412,7 +412,7 @@ resource "aws_cloudfront_distribution" "files" {
       http_port              = 80
       https_port             = 443
       origin_protocol_policy = "https-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
+      origin_ssl_protocols   = ["TLSv1.3"]
     }
   }
 
@@ -440,7 +440,7 @@ resource "aws_cloudfront_distribution" "files" {
 
   viewer_certificate {
     acm_certificate_arn      = var.certificate_arn
-    minimum_protocol_version = "TLSv1.2_2021"
+    minimum_protocol_version = "TLS1.3_2025"
     ssl_support_method       = "sni-only"
   }
 

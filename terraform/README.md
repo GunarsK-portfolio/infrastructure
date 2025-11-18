@@ -76,7 +76,7 @@ AWS serverless infrastructure for production deployment.
 
 - **4 separate distributions**: public, admin, auth, files
 - **Path-based routing**: / → frontend, /api/v1/* → backend
-- **TLS**: Minimum TLSv1.2, HTTP/3 enabled
+- **TLS**: TLS 1.3 only with post-quantum cryptography (TLS1.3_2025), HTTP/3 enabled
 - **IPv6**: Enabled
 - **HTTPS redirect**: Enforced
 - **Price class**: PriceClass_100 (North America + Europe)

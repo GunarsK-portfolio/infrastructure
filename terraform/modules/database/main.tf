@@ -30,6 +30,43 @@ resource "aws_db_subnet_group" "main" {
   )
 }
 
+# DB Cluster Parameter Group for PostgreSQL extensions
+resource "aws_rds_cluster_parameter_group" "main" {
+  name_prefix = "${var.project_name}-${var.environment}-aurora-pg-"
+  family      = "aurora-postgresql17"
+  description = "Custom parameter group for Aurora PostgreSQL 17 with extensions"
+
+  # Enable pg_cron and pg_partman extensions
+  parameter {
+    name  = "shared_preload_libraries"
+    value = "pg_stat_statements,pg_cron"
+  }
+
+  # pg_cron configuration
+  parameter {
+    name  = "cron.database_name"
+    value = var.database_name
+  }
+
+  # pg_stat_statements configuration
+  parameter {
+    name  = "pg_stat_statements.track"
+    value = "all"
+  }
+
+  parameter {
+    name  = "pg_stat_statements.max"
+    value = "10000"
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-aurora-parameter-group"
+    }
+  )
+}
+
 # Data source to fetch master password from Secrets Manager
 data "aws_secretsmanager_secret_version" "master_password" {
   secret_id = var.master_password_secret_arn
@@ -71,8 +108,9 @@ resource "aws_rds_cluster" "main" {
   master_username    = local.master_credentials.username
   master_password    = local.master_credentials.password
 
-  db_subnet_group_name   = aws_db_subnet_group.main.name
-  vpc_security_group_ids = [var.database_security_group_id]
+  db_subnet_group_name            = aws_db_subnet_group.main.name
+  db_cluster_parameter_group_name = aws_rds_cluster_parameter_group.main.name
+  vpc_security_group_ids          = [var.database_security_group_id]
 
   # Backup configuration
   backup_retention_period      = var.backup_retention_days
