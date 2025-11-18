@@ -16,8 +16,7 @@ project_name = "portfolio"  # [RECOMMENDED] Customize for resource naming
 owner        = "DevOps"     # [OPTIONAL] Team or individual owner
 
 # Domain Configuration
-domain_name       = "gunarsk.com"        # [REQUIRED] Your primary domain
-admin_domain_name = "admin.gunarsk.com"  # [REQUIRED] Admin interface domain
+domain_name = "gunarsk.com"  # [REQUIRED] Your primary domain (subdomains: admin.*, auth.*, files.*)
 
 # Network Configuration
 vpc_cidr           = "10.0.0.0/16"                  # [OPTIONAL] VPC CIDR block

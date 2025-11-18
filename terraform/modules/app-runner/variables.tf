@@ -59,6 +59,11 @@ variable "secrets_arns" {
   type        = map(string)
 }
 
+variable "domain_name" {
+  description = "Primary domain name (e.g., gunarsk.com). Subdomains: admin.*, auth.*, files.*"
+  type        = string
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)

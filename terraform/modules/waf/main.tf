@@ -71,7 +71,7 @@ resource "aws_wafv2_web_acl" "main" {
 
     statement {
       rate_based_statement {
-        limit              = 1800
+        limit              = 1200
         aggregate_key_type = "IP"
 
         scope_down_statement {
@@ -108,7 +108,7 @@ resource "aws_wafv2_web_acl" "main" {
 
     statement {
       rate_based_statement {
-        limit              = 3600
+        limit              = 1800
         aggregate_key_type = "IP"
 
         scope_down_statement {

@@ -1,4 +1,4 @@
-# CDN Module Variables
+# CloudFront Module Variables
 
 variable "project_name" {
   description = "Project name"
@@ -11,27 +11,17 @@ variable "environment" {
 }
 
 variable "domain_name" {
-  description = "Primary domain name"
-  type        = string
-}
-
-variable "admin_domain_name" {
-  description = "Admin domain name"
+  description = "Primary domain name (e.g., gunarsk.com). Subdomains: admin.*, auth.*, files.*"
   type        = string
 }
 
 variable "certificate_arn" {
-  description = "ACM certificate ARN"
+  description = "ACM certificate ARN for CloudFront (must be in us-east-1)"
   type        = string
 }
 
-variable "waf_web_acl_id" {
-  description = "WAF Web ACL ID"
-  type        = string
-}
-
-variable "app_runner_service_urls" {
-  description = "Map of App Runner service URLs"
+variable "app_runner_urls" {
+  description = "Map of App Runner service URLs (without https://)"
   type        = map(string)
 }
 

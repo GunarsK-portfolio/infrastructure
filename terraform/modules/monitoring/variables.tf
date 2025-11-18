@@ -21,9 +21,9 @@ variable "app_runner_service_arns" {
   type        = map(string)
 }
 
-variable "cloudfront_distribution_id" {
-  description = "CloudFront distribution ID"
-  type        = string
+variable "cloudfront_distribution_ids" {
+  description = "Map of CloudFront distribution IDs"
+  type        = map(string)
 }
 
 variable "tags" {

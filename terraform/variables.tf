@@ -31,15 +31,9 @@ variable "owner" {
 }
 
 variable "domain_name" {
-  description = "Primary domain name for the application"
+  description = "Primary domain name (e.g., gunarsk.com). Subdomains: admin.*, auth.*, files.*"
   type        = string
   default     = "gunarsk.com"
-}
-
-variable "admin_domain_name" {
-  description = "Admin panel domain name"
-  type        = string
-  default     = "admin.gunarsk.com"
 }
 
 # VPC Configuration

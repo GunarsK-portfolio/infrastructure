@@ -119,6 +119,23 @@ module "ecr" {
   tags = local.common_tags
 }
 
+# Route53 DNS Module - Creates zone first, records added via depends_on after CloudFront
+module "dns" {
+  source = "./modules/dns"
+
+  domain_name = var.domain_name
+
+  # CloudFront distributions - depends_on ensures CloudFront is created first
+  cloudfront_distributions = {
+    public = try(module.cloudfront.public_distribution_domain_name, "placeholder.cloudfront.net")
+    admin  = try(module.cloudfront.admin_distribution_domain_name, "placeholder.cloudfront.net")
+    auth   = try(module.cloudfront.auth_distribution_domain_name, "placeholder.cloudfront.net")
+    files  = try(module.cloudfront.files_distribution_domain_name, "placeholder.cloudfront.net")
+  }
+
+  tags = local.common_tags
+}
+
 # ACM Certificate Module (us-east-1 for CloudFront)
 module "certificates" {
   source = "./modules/certificates"
@@ -129,18 +146,6 @@ module "certificates" {
 
   domain_name = var.domain_name
   zone_id     = module.dns.zone_id
-
-  tags = local.common_tags
-}
-
-# Route53 DNS Module
-module "dns" {
-  source = "./modules/dns"
-
-  domain_name            = var.domain_name
-  admin_domain_name      = var.admin_domain_name
-  cloudfront_domain_name = module.cdn.distribution_domain_name
-  cloudfront_zone_id     = module.cdn.distribution_zone_id
 
   tags = local.common_tags
 }
@@ -156,23 +161,6 @@ module "waf" {
   project_name = var.project_name
   environment  = var.environment
   enable_waf   = var.enable_waf
-
-  tags = local.common_tags
-}
-
-# CloudFront CDN Module
-module "cdn" {
-  source = "./modules/cdn"
-
-  project_name      = var.project_name
-  environment       = var.environment
-  domain_name       = var.domain_name
-  admin_domain_name = var.admin_domain_name
-  certificate_arn   = module.certificates.certificate_arn
-  waf_web_acl_id    = module.waf.web_acl_id
-
-  # App Runner service URLs as origins
-  app_runner_service_urls = module.app_runner.service_urls
 
   tags = local.common_tags
 }
@@ -202,6 +190,27 @@ module "app_runner" {
   # Secrets Manager ARNs
   secrets_arns = module.secrets.secret_arns
 
+  # Domain name for service URLs
+  domain_name = var.domain_name
+
+  tags = local.common_tags
+}
+
+# CloudFront CDN Module
+module "cloudfront" {
+  source = "./modules/cloudfront"
+
+  project_name    = var.project_name
+  environment     = var.environment
+  domain_name     = var.domain_name
+  certificate_arn = module.certificates.certificate_arn
+
+  # App Runner service URLs as origins (without https://)
+  app_runner_urls = {
+    for key, value in module.app_runner.service_urls :
+    key => replace(value, "https://", "")
+  }
+
   tags = local.common_tags
 }
 
@@ -214,8 +223,13 @@ module "monitoring" {
   log_retention_days = var.log_retention_days
 
   # Resources to monitor
-  app_runner_service_arns    = module.app_runner.service_arns
-  cloudfront_distribution_id = module.cdn.distribution_id
+  app_runner_service_arns = module.app_runner.service_arns
+  cloudfront_distribution_ids = {
+    public = module.cloudfront.public_distribution_id
+    admin  = module.cloudfront.admin_distribution_id
+    auth   = module.cloudfront.auth_distribution_id
+    files  = module.cloudfront.files_distribution_id
+  }
 
   tags = local.common_tags
 }

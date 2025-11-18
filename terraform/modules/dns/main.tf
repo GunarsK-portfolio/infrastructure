@@ -24,15 +24,20 @@ resource "aws_route53_zone" "main" {
   )
 }
 
-# A record for root domain (gunarsk.com) pointing to CloudFront
+# CloudFront hosted zone ID (constant for all CloudFront distributions)
+locals {
+  cloudfront_zone_id = "Z2FDTNDATAQYW2"
+}
+
+# A record for root domain (gunarsk.com) pointing to public CloudFront
 resource "aws_route53_record" "root" {
   zone_id = aws_route53_zone.main.zone_id
   name    = var.domain_name
   type    = "A"
 
   alias {
-    name                   = var.cloudfront_domain_name
-    zone_id                = var.cloudfront_zone_id
+    name                   = var.cloudfront_distributions.public
+    zone_id                = local.cloudfront_zone_id
     evaluate_target_health = false
   }
 }
@@ -44,8 +49,8 @@ resource "aws_route53_record" "root_ipv6" {
   type    = "AAAA"
 
   alias {
-    name                   = var.cloudfront_domain_name
-    zone_id                = var.cloudfront_zone_id
+    name                   = var.cloudfront_distributions.public
+    zone_id                = local.cloudfront_zone_id
     evaluate_target_health = false
   }
 }
@@ -53,12 +58,12 @@ resource "aws_route53_record" "root_ipv6" {
 # A record for admin subdomain
 resource "aws_route53_record" "admin" {
   zone_id = aws_route53_zone.main.zone_id
-  name    = var.admin_domain_name
+  name    = "admin.${var.domain_name}"
   type    = "A"
 
   alias {
-    name                   = var.cloudfront_domain_name
-    zone_id                = var.cloudfront_zone_id
+    name                   = var.cloudfront_distributions.admin
+    zone_id                = local.cloudfront_zone_id
     evaluate_target_health = false
   }
 }
@@ -66,12 +71,64 @@ resource "aws_route53_record" "admin" {
 # AAAA record for admin subdomain (IPv6)
 resource "aws_route53_record" "admin_ipv6" {
   zone_id = aws_route53_zone.main.zone_id
-  name    = var.admin_domain_name
+  name    = "admin.${var.domain_name}"
   type    = "AAAA"
 
   alias {
-    name                   = var.cloudfront_domain_name
-    zone_id                = var.cloudfront_zone_id
+    name                   = var.cloudfront_distributions.admin
+    zone_id                = local.cloudfront_zone_id
+    evaluate_target_health = false
+  }
+}
+
+# A record for auth subdomain
+resource "aws_route53_record" "auth" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "auth.${var.domain_name}"
+  type    = "A"
+
+  alias {
+    name                   = var.cloudfront_distributions.auth
+    zone_id                = local.cloudfront_zone_id
+    evaluate_target_health = false
+  }
+}
+
+# AAAA record for auth subdomain (IPv6)
+resource "aws_route53_record" "auth_ipv6" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "auth.${var.domain_name}"
+  type    = "AAAA"
+
+  alias {
+    name                   = var.cloudfront_distributions.auth
+    zone_id                = local.cloudfront_zone_id
+    evaluate_target_health = false
+  }
+}
+
+# A record for files subdomain
+resource "aws_route53_record" "files" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "files.${var.domain_name}"
+  type    = "A"
+
+  alias {
+    name                   = var.cloudfront_distributions.files
+    zone_id                = local.cloudfront_zone_id
+    evaluate_target_health = false
+  }
+}
+
+# AAAA record for files subdomain (IPv6)
+resource "aws_route53_record" "files_ipv6" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "files.${var.domain_name}"
+  type    = "AAAA"
+
+  alias {
+    name                   = var.cloudfront_distributions.files
+    zone_id                = local.cloudfront_zone_id
     evaluate_target_health = false
   }
 }
