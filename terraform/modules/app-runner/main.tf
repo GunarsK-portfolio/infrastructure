@@ -30,7 +30,7 @@ locals {
       REDIS_PORT         = "6379"
       JWT_ACCESS_EXPIRY  = "15m"
       JWT_REFRESH_EXPIRY = "168h"
-      ALLOWED_ORIGINS    = "https://admin.gk.codes"
+      ALLOWED_ORIGINS    = "https://admin.gunarsk.com"
     }
     "admin-api" = {
       ENVIRONMENT     = var.environment
@@ -41,7 +41,7 @@ locals {
       DB_PORT         = "5432"
       DB_NAME         = "portfolio"
       DB_USER         = "portfolio_admin"
-      ALLOWED_ORIGINS = "https://admin.gk.codes"
+      ALLOWED_ORIGINS = "https://admin.gunarsk.com"
       # Note: AUTH_SERVICE_URL and FILES_API_URL must be set via AWS Secrets Manager after deployment
       # These cannot be known at service creation time due to circular dependency
     }
@@ -54,7 +54,7 @@ locals {
       DB_PORT         = "5432"
       DB_NAME         = "portfolio"
       DB_USER         = "portfolio_public"
-      ALLOWED_ORIGINS = "https://gk.codes"
+      ALLOWED_ORIGINS = "https://gunarsk.com"
       # Note: FILES_API_URL must be set via AWS Secrets Manager after deployment
       # This cannot be known at service creation time due to circular dependency
     }
@@ -70,7 +70,7 @@ locals {
       S3_USE_SSL         = "true"
       MAX_FILE_SIZE      = "10485760"
       ALLOWED_FILE_TYPES = "image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
-      ALLOWED_ORIGINS    = "https://gk.codes,https://admin.gk.codes"
+      ALLOWED_ORIGINS    = "https://gunarsk.com,https://admin.gunarsk.com"
       # Note: AUTH_SERVICE_URL must be set via AWS Secrets Manager after deployment
       # This cannot be known at service creation time due to circular dependency
     }

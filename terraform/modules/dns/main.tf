@@ -24,7 +24,7 @@ resource "aws_route53_zone" "main" {
   )
 }
 
-# A record for root domain (gk.codes) pointing to CloudFront
+# A record for root domain (gunarsk.com) pointing to CloudFront
 resource "aws_route53_record" "root" {
   zone_id = aws_route53_zone.main.zone_id
   name    = var.domain_name

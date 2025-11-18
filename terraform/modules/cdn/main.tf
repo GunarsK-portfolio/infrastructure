@@ -64,7 +64,7 @@ resource "aws_cloudfront_response_headers_policy" "security_headers" {
   custom_headers_config {
     items {
       header   = "Content-Security-Policy"
-      value    = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://gk.codes https://admin.gk.codes; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+      value    = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://gunarsk.com https://admin.gunarsk.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
       override = true
     }
 
