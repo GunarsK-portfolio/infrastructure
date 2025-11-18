@@ -238,7 +238,10 @@ Required GitHub secrets:
 - `AWS_ROLE_ARN`: OIDC role for GitHub Actions
 - `AWS_REGION`: `eu-west-1`
 - `TF_VAR_domain_name`: `gunarsk.com`
-- `TF_VAR_budget_alert_emails`: JSON array of email addresses
+- `TF_VAR_budget_alert_emails`: JSON array `["email@example.com"]`
+  for budget alerts
+- `TF_VAR_alarm_email_addresses`: JSON array
+  `["ops@example.com","oncall@example.com"]` for alarm notifications
 
 #### Application Deployments
 

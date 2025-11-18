@@ -290,6 +290,13 @@ variable "enable_cloudtrail_alarms" {
   default     = true
 }
 
+# Monitoring Configuration
+variable "alarm_email_addresses" {
+  description = "Email addresses to receive CloudWatch alarm notifications"
+  type        = list(string)
+  default     = []
+}
+
 # Tags
 variable "additional_tags" {
   description = "Additional tags to apply to all resources"

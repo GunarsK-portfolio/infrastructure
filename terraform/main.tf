@@ -234,7 +234,10 @@ module "monitoring" {
     auth   = module.cloudfront.auth_distribution_id
     files  = module.cloudfront.files_distribution_id
   }
-  waf_web_acl_name = module.waf.web_acl_name
+  waf_web_acl_name      = module.waf.web_acl_name
+  db_cluster_id         = module.database.cluster_id
+  cache_id              = module.cache.cache_id
+  alarm_email_addresses = var.alarm_email_addresses
 
   tags = local.common_tags
 }
