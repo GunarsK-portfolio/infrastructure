@@ -80,7 +80,7 @@ variable "enable_enhanced_monitoring" {
 variable "max_connections" {
   description = "Maximum number of database connections (must be appropriate for ACU capacity)"
   type        = number
-  default     = 1000
+  default     = 400
 
   validation {
     condition     = var.max_connections >= 100 && var.max_connections <= 5000
