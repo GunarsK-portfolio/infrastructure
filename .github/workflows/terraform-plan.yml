@@ -70,7 +70,8 @@ jobs:
 
             Plan completed successfully. The plan is too large to display inline.
 
-            📊 **[View full plan output →](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})**
+            📊 **[View full plan output →](${{ github.server_url }}/${{
+            github.repository }}/actions/runs/${{ github.run_id }})**
 
             *Note: Format and validation checks run in the CI workflow*
 

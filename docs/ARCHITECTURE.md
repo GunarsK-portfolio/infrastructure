@@ -315,25 +315,25 @@ All services run in a Docker bridge network named `network`.
 
 ### Port Mapping
 
-| Service | Internal | External | Access |
-|---------|----------|----------|--------|
-| **Public Facing** | | | |
-| Public Web | 80 | 80 | HTTP |
-| Public Web | 443 | 443 | HTTPS |
-| Admin Web | 80 | 81 | HTTP |
-| Admin Web | 443 | 8443 | HTTPS |
-| Swagger Docs | - | 82 | HTTP |
-| **Internal Services** | | | |
-| Public API | 8082 | 8082 | Direct (dev) |
-| Admin API | 8083 | 8083 | Direct (dev) |
-| Auth Service | 8084 | 8084 | Direct (dev) |
-| Files API | 8085 | 8085 | Direct (dev) |
-| **Infrastructure** | | | |
-| PostgreSQL | 5432 | 5432 | TCP |
-| Redis | 6379 | 6379 | TCP |
-| MinIO API | 9000 | 9000 | HTTP |
-| MinIO Console | 9001 | 9001 | HTTP |
-| Traefik Dashboard | 8080 | 9002 | HTTP |
+| Service | Internal | External | Binding | Access |
+|---------|----------|----------|---------|--------|
+| **Public Facing** | | | | |
+| Public Web | 80 | 80 | 0.0.0.0 | HTTP |
+| Public Web | 443 | 443 | 0.0.0.0 | HTTPS |
+| Admin Web | 80 | 81 | 0.0.0.0 | HTTP |
+| Admin Web | 443 | 8443 | 0.0.0.0 | HTTPS |
+| Swagger Docs | - | 82 | 0.0.0.0 | HTTP |
+| **Internal Services** | | | | |
+| Public API | 8082 | 8082 | 0.0.0.0 | Direct (dev) |
+| Admin API | 8083 | 8083 | 0.0.0.0 | Direct (dev) |
+| Auth Service | 8084 | 8084 | 0.0.0.0 | Direct (dev) |
+| Files API | 8085 | 8085 | 0.0.0.0 | Direct (dev) |
+| **Infrastructure** | | | | |
+| PostgreSQL | 5432 | 5432 | 127.0.0.1 | TCP (localhost only) |
+| Redis | 6379 | 6379 | 127.0.0.1 | TCP (localhost only) |
+| MinIO API | 9000 | 9000 | 0.0.0.0 | HTTP |
+| MinIO Console | 9001 | 9001 | 0.0.0.0 | HTTP |
+| Traefik Dashboard | 8080 | 9002 | 0.0.0.0 | HTTP |
 
 ## Security Architecture
 
@@ -369,6 +369,12 @@ All services run in a Docker bridge network named `network`.
 - Internal service communication via Docker network
 - External access only through Traefik
 - SSL/TLS termination at reverse proxy
+- PostgreSQL and Redis bound to localhost only (127.0.0.1) — inaccessible from
+  external networks
+- Container security hardening:
+  - Traefik: no-new-privileges, capabilities dropped except
+    NET_BIND_SERVICE
+  - Redis: no-new-privileges, capabilities dropped except SETUID/SETGID/CHOWN
 - Environment-based secrets
 
 ### Data Security
@@ -409,12 +415,13 @@ Startup order and dependencies:
 | Layer | Technologies |
 |-------|-------------|
 | **Frontend** | Vue 3.5, Vite 7, Naive UI 2, Axios, Pinia 3, Vue Router 4 |
-| **Backend** | Go 1.25, Gin 1.11, GORM 1.31, JWT v5, bcrypt |
+| **Backend** | Go 1.24.5, Gin 1.11, GORM 1.31, JWT v5, bcrypt |
 | **Database** | PostgreSQL 18-alpine |
 | **Cache** | Redis 8.2-alpine |
 | **Storage** | MinIO (S3-compatible, SDK v7) |
-| **Proxy** | Traefik v3.5 |
-| **Migrations** | Flyway 11 |
+| **Proxy** | Traefik v3.6.1 |
+| **Migrations** | Flyway 11.1.0 |
+| **Observability** | Prometheus v3.7.3, Loki 3.6.0, Grafana 12.2.1, OTel |
 | **Container** | Docker, Docker Compose |
 | **Task Runner** | Task (Taskfile) |
 | **Documentation** | Swagger/OpenAPI 3.0 |

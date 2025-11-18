@@ -22,19 +22,21 @@ reverse proxy setup for running all portfolio services together.
 
 ### Infrastructure Services
 
-- **Traefik** - Reverse proxy and load balancer
-- **PostgreSQL** - Main database
-- **Redis** - Session and cache store
-- **MinIO** - S3-compatible object storage
-- **Flyway** - Database migrations
+- **Traefik v3.6.1** - Reverse proxy and load balancer
+- **PostgreSQL 18** - Main database
+- **Redis 8.2** - Session and cache store
+- **MinIO** - S3-compatible object storage (⚠️ no longer updated on Docker Hub)
+- **Flyway 11.1.0** - Database migrations
 
 ### Observability Stack (Optional)
 
-- **OpenTelemetry Collector** - Receives telemetry from Claude Code
-- **Prometheus** - Metrics collection and storage
-- **Loki** - Log aggregation and indexing
-- **Promtail** - Log shipping from containers
-- **Grafana** - Metrics and logs visualization
+- **OpenTelemetry Collector 0.139.0** - Receives telemetry from Claude Code
+- **Prometheus v3.7.3** - Metrics collection and storage (30d retention)
+- **Loki 3.6.0** - Log aggregation and indexing
+- **Promtail 3.6.0** - Log shipping (⚠️ deprecated, EOL Mar 2026)
+- **Grafana 12.2.1** - Metrics and logs visualization
+- **Postgres Exporter v0.18.1** - PostgreSQL metrics
+- **Redis Exporter v1.80.0** - Redis metrics
 
 > See [monitoring/README.md](monitoring/README.md) for observability
 > stack setup and usage.
@@ -238,13 +240,13 @@ docker-compose up -d --build [service]  # Rebuild service
 
 ### Infrastructure Ports
 
-| Port | Service |
-|------|---------|
-| 5432 | PostgreSQL |
-| 6379 | Redis |
-| 9000 | MinIO API |
-| 9001 | MinIO Console |
-| 9002 | Traefik Dashboard |
+| Port | Service | Binding |
+|------|---------|---------|
+| 5432 | PostgreSQL | 127.0.0.1 (localhost only) |
+| 6379 | Redis | 127.0.0.1 (localhost only) |
+| 9000 | MinIO API | 0.0.0.0 (all interfaces) |
+| 9001 | MinIO Console | 0.0.0.0 (all interfaces) |
+| 9002 | Traefik Dashboard | 0.0.0.0 (all interfaces) |
 
 ### Observability Ports
 
@@ -316,7 +318,7 @@ DB_PASSWORD=portfolio_admin_dev_pass
 DB_USER_READONLY=portfolio_public
 DB_PASSWORD_READONLY=portfolio_public_dev_pass
 
-# Redis
+# Redis (bound to localhost only for security)
 REDIS_HOST=redis
 REDIS_PORT=6379
 REDIS_PASSWORD=redis_dev_pass
@@ -515,6 +517,8 @@ documentation.
 
 ### Access PostgreSQL
 
+PostgreSQL is bound to localhost only (127.0.0.1:5432) for security.
+
 ```bash
 # As superuser
 docker exec -it postgres psql -U postgres -d portfolio
@@ -528,8 +532,15 @@ docker exec -it postgres psql -U portfolio_public -d portfolio
 
 ### Access Redis CLI
 
+Redis is bound to localhost only (127.0.0.1:6379) for security.
+
 ```bash
+# Connect with authentication
+docker exec -it redis redis-cli -a "${REDIS_PASSWORD}"
+
+# Or use password in CLI
 docker exec -it redis redis-cli
+127.0.0.1:6379> AUTH your-redis-password
 ```
 
 ### Clean restart
