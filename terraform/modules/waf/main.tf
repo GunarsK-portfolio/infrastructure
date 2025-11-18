@@ -269,17 +269,36 @@ resource "aws_wafv2_web_acl" "main" {
         scope_down_statement {
           and_statement {
             statement {
-              byte_match_statement {
-                field_to_match {
-                  single_header {
-                    name = "host"
+              or_statement {
+                statement {
+                  byte_match_statement {
+                    field_to_match {
+                      single_header {
+                        name = "host"
+                      }
+                    }
+                    positional_constraint = "EXACTLY"
+                    search_string         = "gunarsk.com"
+                    text_transformation {
+                      priority = 0
+                      type     = "LOWERCASE"
+                    }
                   }
                 }
-                positional_constraint = "EXACTLY"
-                search_string         = "gunarsk.com"
-                text_transformation {
-                  priority = 0
-                  type     = "LOWERCASE"
+                statement {
+                  byte_match_statement {
+                    field_to_match {
+                      single_header {
+                        name = "host"
+                      }
+                    }
+                    positional_constraint = "EXACTLY"
+                    search_string         = "www.gunarsk.com"
+                    text_transformation {
+                      priority = 0
+                      type     = "LOWERCASE"
+                    }
+                  }
                 }
               }
             }

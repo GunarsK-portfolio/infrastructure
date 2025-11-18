@@ -130,14 +130,14 @@ resource "aws_rds_cluster" "main" {
   # Enhanced monitoring
   enabled_cloudwatch_logs_exports = ["postgresql"]
 
-  # Deletion protection for production and staging (dev only allows easier teardown)
-  deletion_protection       = var.environment != "dev"
+  # Deletion protection enabled for all environments
+  deletion_protection       = true
   skip_final_snapshot       = var.environment == "dev"
   final_snapshot_identifier = var.environment != "dev" ? "${var.project_name}-${var.environment}-final-snapshot-${formatdate("YYYY-MM-DD-hhmm", timestamp())}" : null
 
   # Performance Insights
   performance_insights_enabled          = var.enable_performance_insights
-  performance_insights_kms_key_id       = var.enable_performance_insights ? var.kms_key_id : null
+  performance_insights_kms_key_id       = var.kms_key_id
   performance_insights_retention_period = var.enable_performance_insights ? 7 : null
 
   # Point-in-time recovery
@@ -170,7 +170,7 @@ resource "aws_rds_cluster_instance" "writer" {
 
   # Performance Insights
   performance_insights_enabled    = var.enable_performance_insights
-  performance_insights_kms_key_id = var.enable_performance_insights ? var.kms_key_id : null
+  performance_insights_kms_key_id = var.kms_key_id
 
   # Enhanced Monitoring
   monitoring_interval = var.enable_enhanced_monitoring ? 60 : 0
@@ -197,7 +197,7 @@ resource "aws_rds_cluster_instance" "reader" {
 
   # Performance Insights
   performance_insights_enabled    = var.enable_performance_insights
-  performance_insights_kms_key_id = var.enable_performance_insights ? var.kms_key_id : null
+  performance_insights_kms_key_id = var.kms_key_id
 
   # Enhanced Monitoring
   monitoring_interval = var.enable_enhanced_monitoring ? 60 : 0

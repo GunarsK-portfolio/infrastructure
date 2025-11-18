@@ -26,6 +26,12 @@ variable "cloudfront_distribution_ids" {
   type        = map(string)
 }
 
+variable "waf_web_acl_name" {
+  description = "Name of the WAF Web ACL for CloudWatch alarms (optional)"
+  type        = string
+  default     = ""
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)

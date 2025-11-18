@@ -10,12 +10,6 @@ variable "service_names" {
   type        = list(string)
 }
 
-variable "enable_enhanced_scanning" {
-  description = "Enable enhanced image scanning"
-  type        = bool
-  default     = true
-}
-
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)
