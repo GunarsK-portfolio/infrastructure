@@ -40,6 +40,7 @@ resource "aws_cloudwatch_log_group" "app_runner" {
 
   name              = "/aws/apprunner/${var.project_name}-${var.environment}-${each.key}"
   retention_in_days = var.log_retention_days
+  kms_key_id        = var.kms_key_arn
 
   tags = var.tags
 }
@@ -75,7 +76,7 @@ resource "aws_cloudwatch_dashboard" "main" {
             ]
           )
           period = 300
-          region = data.aws_region.current.id
+          region = data.aws_region.current.region
           title  = "App Runner - All Services Error Rates"
           yAxis = {
             left = {
@@ -98,7 +99,7 @@ resource "aws_cloudwatch_dashboard" "main" {
             }]
           ]
           period = 300
-          region = data.aws_region.current.id
+          region = data.aws_region.current.region
           title  = "App Runner - p99 Latency (All Services)"
           yAxis = {
             left = {
@@ -121,7 +122,7 @@ resource "aws_cloudwatch_dashboard" "main" {
             }]
           ]
           period = 300
-          region = data.aws_region.current.id
+          region = data.aws_region.current.region
           title  = "App Runner - Request Count (All Services)"
           yAxis = {
             left = {
@@ -139,7 +140,7 @@ resource "aws_cloudwatch_dashboard" "main" {
             ["AWS/RDS", "ACUUtilization", { stat = "Average", label = "ACU Utilization", dimensions = { DBClusterIdentifier = var.db_cluster_id } }]
           ]
           period = 300
-          region = data.aws_region.current.id
+          region = data.aws_region.current.region
           title  = "Aurora ACU Utilization"
           yAxis = {
             left = {
@@ -158,7 +159,7 @@ resource "aws_cloudwatch_dashboard" "main" {
             ["AWS/RDS", "DatabaseConnections", { stat = "Average", label = "Connections", dimensions = { DBClusterIdentifier = var.db_cluster_id } }]
           ]
           period = 300
-          region = data.aws_region.current.id
+          region = data.aws_region.current.region
           title  = "Aurora Database Connections"
           yAxis = {
             left = {
@@ -176,7 +177,7 @@ resource "aws_cloudwatch_dashboard" "main" {
             ["AWS/ElastiCache", "BytesUsedForCache", { stat = "Average", label = "Memory Used" }]
           ]
           period = 300
-          region = data.aws_region.current.id
+          region = data.aws_region.current.region
           title  = "ElastiCache Memory Utilization"
           yAxis = {
             left = {
@@ -194,7 +195,7 @@ resource "aws_cloudwatch_dashboard" "main" {
             ["AWS/ElastiCache", "Evictions", { stat = "Sum", label = "Evictions" }]
           ]
           period = 60
-          region = data.aws_region.current.id
+          region = data.aws_region.current.region
           title  = "ElastiCache Evictions"
           yAxis = {
             left = {

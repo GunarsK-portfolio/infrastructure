@@ -46,7 +46,7 @@ resource "aws_wafv2_web_acl" "main" {
                   }
                 }
                 positional_constraint = "STARTS_WITH"
-                search_string         = "auth."
+                search_string         = "auth.${var.domain_name}"
                 text_transformation {
                   priority = 0
                   type     = "LOWERCASE"
@@ -103,7 +103,7 @@ resource "aws_wafv2_web_acl" "main" {
                   }
                 }
                 positional_constraint = "STARTS_WITH"
-                search_string         = "auth."
+                search_string         = "auth.${var.domain_name}"
                 text_transformation {
                   priority = 0
                   type     = "LOWERCASE"
@@ -160,7 +160,7 @@ resource "aws_wafv2_web_acl" "main" {
                   }
                 }
                 positional_constraint = "STARTS_WITH"
-                search_string         = "auth."
+                search_string         = "auth.${var.domain_name}"
                 text_transformation {
                   priority = 0
                   type     = "LOWERCASE"
@@ -217,7 +217,7 @@ resource "aws_wafv2_web_acl" "main" {
                   }
                 }
                 positional_constraint = "STARTS_WITH"
-                search_string         = "admin."
+                search_string         = "admin.${var.domain_name}"
                 text_transformation {
                   priority = 0
                   type     = "LOWERCASE"
@@ -287,7 +287,7 @@ resource "aws_wafv2_web_acl" "main" {
                   }
                 }
                 positional_constraint = "STARTS_WITH"
-                search_string         = "admin."
+                search_string         = "admin.${var.domain_name}"
                 text_transformation {
                   priority = 0
                   type     = "LOWERCASE"
@@ -357,7 +357,7 @@ resource "aws_wafv2_web_acl" "main" {
                   }
                 }
                 positional_constraint = "STARTS_WITH"
-                search_string         = "admin."
+                search_string         = "admin.${var.domain_name}"
                 text_transformation {
                   priority = 0
                   type     = "LOWERCASE"
@@ -427,7 +427,7 @@ resource "aws_wafv2_web_acl" "main" {
                   }
                 }
                 positional_constraint = "STARTS_WITH"
-                search_string         = "admin."
+                search_string         = "admin.${var.domain_name}"
                 text_transformation {
                   priority = 0
                   type     = "LOWERCASE"
@@ -499,7 +499,7 @@ resource "aws_wafv2_web_acl" "main" {
                       }
                     }
                     positional_constraint = "EXACTLY"
-                    search_string         = "gunarsk.com"
+                    search_string         = var.domain_name
                     text_transformation {
                       priority = 0
                       type     = "LOWERCASE"
@@ -514,7 +514,7 @@ resource "aws_wafv2_web_acl" "main" {
                       }
                     }
                     positional_constraint = "EXACTLY"
-                    search_string         = "www.gunarsk.com"
+                    search_string         = "www.${var.domain_name}"
                     text_transformation {
                       priority = 0
                       type     = "LOWERCASE"
@@ -573,7 +573,7 @@ resource "aws_wafv2_web_acl" "main" {
                   }
                 }
                 positional_constraint = "STARTS_WITH"
-                search_string         = "files."
+                search_string         = "files.${var.domain_name}"
                 text_transformation {
                   priority = 0
                   type     = "LOWERCASE"
@@ -763,6 +763,7 @@ resource "aws_wafv2_web_acl" "main" {
 resource "aws_cloudwatch_log_group" "waf" {
   name              = "/aws/wafv2/${var.project_name}-${var.environment}"
   retention_in_days = 30
+  kms_key_id        = var.kms_key_arn
 
   tags = var.tags
 }

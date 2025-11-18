@@ -18,11 +18,62 @@ terraform {
   }
 }
 
+# Get current AWS account and caller identity
+data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
+
 # KMS Key for Secrets Encryption (optional, enhances audit trail)
 resource "aws_kms_key" "secrets" {
   description             = "${var.project_name}-${var.environment}-secrets-key"
   deletion_window_in_days = 30
   enable_key_rotation     = true
+
+  # Explicit key policy for least-privilege access control
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      },
+      {
+        Sid    = "Allow Secrets Manager to use the key"
+        Effect = "Allow"
+        Principal = {
+          Service = "secretsmanager.amazonaws.com"
+        }
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey",
+          "kms:CreateGrant"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "kms:ViaService" = "secretsmanager.${data.aws_region.current.region}.amazonaws.com"
+          }
+        }
+      },
+      {
+        Sid    = "Allow RDS to use the key"
+        Effect = "Allow"
+        Principal = {
+          Service = "rds.amazonaws.com"
+        }
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey",
+          "kms:CreateGrant"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
 
   tags = merge(
     var.tags,
@@ -52,12 +103,14 @@ resource "aws_secretsmanager_secret" "aurora_master_password" {
   )
 }
 
-# Placeholder secret version (must be updated with actual password)
+# Initial secret version with strong random password
+# IMPORTANT: Update this with your own secure password after deployment using:
+# aws secretsmanager update-secret --secret-id <secret-arn> --secret-string '{"username":"portfolio_master","password":"your-secure-password"}'
 resource "aws_secretsmanager_secret_version" "aurora_master_password" {
   secret_id = aws_secretsmanager_secret.aurora_master_password.id
   secret_string = jsonencode({
     username = "portfolio_master"
-    password = "CHANGE_ME_${random_password.aurora_master.result}"
+    password = random_password.aurora_master.result
   })
 
   lifecycle {
@@ -84,7 +137,7 @@ resource "aws_secretsmanager_secret_version" "aurora_owner_password" {
   secret_id = aws_secretsmanager_secret.aurora_owner_password.id
   secret_string = jsonencode({
     username = "portfolio_owner"
-    password = "CHANGE_ME_${random_password.aurora_owner.result}"
+    password = random_password.aurora_owner.result
   })
 
   lifecycle {
@@ -111,7 +164,7 @@ resource "aws_secretsmanager_secret_version" "aurora_admin_password" {
   secret_id = aws_secretsmanager_secret.aurora_admin_password.id
   secret_string = jsonencode({
     username = "portfolio_admin"
-    password = "CHANGE_ME_${random_password.aurora_admin.result}"
+    password = random_password.aurora_admin.result
   })
 
   lifecycle {
@@ -138,7 +191,7 @@ resource "aws_secretsmanager_secret_version" "aurora_public_password" {
   secret_id = aws_secretsmanager_secret.aurora_public_password.id
   secret_string = jsonencode({
     username = "portfolio_public"
-    password = "CHANGE_ME_${random_password.aurora_public.result}"
+    password = random_password.aurora_public.result
   })
 
   lifecycle {
@@ -164,7 +217,7 @@ resource "aws_secretsmanager_secret" "redis_auth_token" {
 resource "aws_secretsmanager_secret_version" "redis_auth_token" {
   secret_id = aws_secretsmanager_secret.redis_auth_token.id
   secret_string = jsonencode({
-    token = "CHANGE_ME_${random_password.redis_auth.result}"
+    token = random_password.redis_auth.result
   })
 
   lifecycle {
@@ -190,7 +243,7 @@ resource "aws_secretsmanager_secret" "jwt_secret" {
 resource "aws_secretsmanager_secret_version" "jwt_secret" {
   secret_id = aws_secretsmanager_secret.jwt_secret.id
   secret_string = jsonencode({
-    secret = "CHANGE_ME_${random_password.jwt_secret.result}"
+    secret = random_password.jwt_secret.result
   })
 
   lifecycle {
@@ -235,6 +288,7 @@ resource "aws_cloudwatch_log_group" "rotation" {
 
   name              = "/aws/lambda/${var.project_name}-${var.environment}-secret-rotation"
   retention_in_days = 30
+  kms_key_id        = aws_kms_key.secrets.arn
 
   tags = var.tags
 }

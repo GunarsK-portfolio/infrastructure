@@ -38,6 +38,7 @@ module "networking" {
   availability_zones = local.availability_zones
 
   enable_vpc_flow_logs = var.enable_vpc_flow_logs
+  kms_key_arn          = module.secrets.kms_key_arn # Use secrets KMS key for flow logs
 
   tags = local.common_tags
 }
@@ -132,6 +133,9 @@ module "dns" {
     files  = module.cloudfront.files_distribution_domain_name
   }
 
+  # KMS encryption for logs
+  kms_key_arn = module.secrets.kms_key_arn
+
   tags = local.common_tags
 
   depends_on = [module.cloudfront]
@@ -161,6 +165,10 @@ module "waf" {
 
   project_name = var.project_name
   environment  = var.environment
+  domain_name  = var.domain_name
+
+  # KMS encryption for logs
+  kms_key_arn = module.secrets.kms_key_arn
 
   tags = local.common_tags
 }
@@ -240,6 +248,9 @@ module "monitoring" {
   cache_max_data_storage_gb = var.elasticache_data_storage_gb
   alarm_email_addresses     = var.alarm_email_addresses
 
+  # KMS encryption for logs
+  kms_key_arn = module.secrets.kms_key_arn
+
   tags = local.common_tags
 }
 
@@ -269,6 +280,9 @@ module "guardduty" {
   environment  = var.environment
 
   enable_guardduty = var.enable_guardduty
+
+  # KMS encryption for logs
+  kms_key_arn = module.secrets.kms_key_arn
 
   tags = local.common_tags
 }

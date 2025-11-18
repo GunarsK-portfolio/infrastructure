@@ -37,6 +37,7 @@ resource "aws_cloudwatch_log_group" "guardduty" {
 
   name              = "/aws/guardduty/${var.project_name}-${var.environment}"
   retention_in_days = 90
+  kms_key_id        = var.kms_key_arn
 
   tags = var.tags
 }

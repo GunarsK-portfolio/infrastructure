@@ -259,6 +259,18 @@ resource "aws_s3_bucket_policy" "cloudtrail" {
             "aws:SecureTransport" = "false"
           }
         }
+      },
+      {
+        Sid       = "DenyUnencryptedObjectUploads"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:PutObject"
+        Resource  = "${aws_s3_bucket.cloudtrail.arn}/*"
+        Condition = {
+          StringNotEquals = {
+            "s3:x-amz-server-side-encryption" = "aws:kms"
+          }
+        }
       }
     ]
   })
