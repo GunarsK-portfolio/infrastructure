@@ -1,23 +1,18 @@
 # DNS Module Variables
 
 variable "domain_name" {
-  description = "Primary domain name"
+  description = "Primary domain name (e.g., gunarsk.com). Subdomains: admin.*, auth.*, files.*"
   type        = string
 }
 
-variable "admin_domain_name" {
-  description = "Admin subdomain name"
-  type        = string
-}
-
-variable "cloudfront_domain_name" {
-  description = "CloudFront distribution domain name"
-  type        = string
-}
-
-variable "cloudfront_zone_id" {
-  description = "CloudFront hosted zone ID"
-  type        = string
+variable "cloudfront_distributions" {
+  description = "Map of CloudFront distribution domain names"
+  type = object({
+    public = string
+    admin  = string
+    auth   = string
+    files  = string
+  })
 }
 
 variable "tags" {

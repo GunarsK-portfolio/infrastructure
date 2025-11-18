@@ -110,7 +110,9 @@ data "aws_region" "current" {}
 
 # CloudWatch Alarm: CloudFront 5xx errors
 resource "aws_cloudwatch_metric_alarm" "cloudfront_5xx" {
-  alarm_name          = "${var.project_name}-${var.environment}-cloudfront-5xx"
+  for_each = var.cloudfront_distribution_ids
+
+  alarm_name          = "${var.project_name}-${var.environment}-cloudfront-${each.key}-5xx"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2
   metric_name         = "5xxErrorRate"
@@ -118,11 +120,11 @@ resource "aws_cloudwatch_metric_alarm" "cloudfront_5xx" {
   period              = 300
   statistic           = "Average"
   threshold           = 5
-  alarm_description   = "CloudFront 5xx error rate above 5%"
+  alarm_description   = "CloudFront ${each.key} 5xx error rate above 5%"
   alarm_actions       = [aws_sns_topic.alarms.arn]
 
   dimensions = {
-    DistributionId = var.cloudfront_distribution_id
+    DistributionId = each.value
     Region         = "Global"
   }
 

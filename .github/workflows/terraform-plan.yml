@@ -54,7 +54,6 @@ jobs:
         continue-on-error: true
         env:
           TF_VAR_domain_name: ${{ secrets.TF_VAR_domain_name }}
-          TF_VAR_admin_domain_name: ${{ secrets.TF_VAR_admin_domain_name }}
           TF_VAR_budget_alert_emails: ${{ secrets.TF_VAR_budget_alert_emails }}
           TF_VAR_enable_guardduty: ${{ secrets.TF_VAR_enable_guardduty || 'true' }}
           TF_VAR_enable_budgets: ${{ secrets.TF_VAR_enable_budgets || 'true' }}

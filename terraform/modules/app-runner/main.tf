@@ -12,6 +12,9 @@ terraform {
   }
 }
 
+# Data source to get current AWS region
+data "aws_region" "current" {}
+
 locals {
   # Service-specific environment variables
   # Note: DB_USER values are application-level PostgreSQL users created via Flyway migrations
@@ -30,7 +33,7 @@ locals {
       REDIS_PORT         = "6379"
       JWT_ACCESS_EXPIRY  = "15m"
       JWT_REFRESH_EXPIRY = "168h"
-      ALLOWED_ORIGINS    = "https://admin.gk.codes"
+      ALLOWED_ORIGINS    = "https://admin.${var.domain_name}"
     }
     "admin-api" = {
       ENVIRONMENT     = var.environment
@@ -41,9 +44,11 @@ locals {
       DB_PORT         = "5432"
       DB_NAME         = "portfolio"
       DB_USER         = "portfolio_admin"
-      ALLOWED_ORIGINS = "https://admin.gk.codes"
-      # Note: AUTH_SERVICE_URL and FILES_API_URL must be set via AWS Secrets Manager after deployment
-      # These cannot be known at service creation time due to circular dependency
+      ALLOWED_ORIGINS = "https://admin.${var.domain_name}"
+      # Internal auth validation (fast, no CloudFront)
+      AUTH_SERVICE_URL = "https://${var.project_name}-${var.environment}-auth-service.${data.aws_region.current.region}.awsapprunner.com/api/v1"
+      # Public file URL generation (for frontend)
+      FILES_API_URL = "https://files.${var.domain_name}/api/v1"
     }
     "public-api" = {
       ENVIRONMENT     = var.environment
@@ -54,9 +59,9 @@ locals {
       DB_PORT         = "5432"
       DB_NAME         = "portfolio"
       DB_USER         = "portfolio_public"
-      ALLOWED_ORIGINS = "https://gk.codes"
-      # Note: FILES_API_URL must be set via AWS Secrets Manager after deployment
-      # This cannot be known at service creation time due to circular dependency
+      ALLOWED_ORIGINS = "https://${var.domain_name}"
+      # Public file URL generation (for frontend)
+      FILES_API_URL = "https://files.${var.domain_name}/api/v1"
     }
     "files-api" = {
       ENVIRONMENT        = var.environment
@@ -70,9 +75,9 @@ locals {
       S3_USE_SSL         = "true"
       MAX_FILE_SIZE      = "10485760"
       ALLOWED_FILE_TYPES = "image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
-      ALLOWED_ORIGINS    = "https://gk.codes,https://admin.gk.codes"
-      # Note: AUTH_SERVICE_URL must be set via AWS Secrets Manager after deployment
-      # This cannot be known at service creation time due to circular dependency
+      ALLOWED_ORIGINS    = "https://${var.domain_name},https://admin.${var.domain_name}"
+      # Internal auth validation (fast, no CloudFront)
+      AUTH_SERVICE_URL = "https://${var.project_name}-${var.environment}-auth-service.${data.aws_region.current.region}.awsapprunner.com/api/v1"
     }
     "admin-web" = {
       ENVIRONMENT  = var.environment
