@@ -32,6 +32,12 @@ variable "waf_web_acl_name" {
   default     = ""
 }
 
+variable "enable_waf_alarms" {
+  description = "Enable WAF alarms"
+  type        = bool
+  default     = true
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)
@@ -45,11 +51,23 @@ variable "db_cluster_id" {
   default     = ""
 }
 
+variable "enable_db_alarms" {
+  description = "Enable Aurora database alarms"
+  type        = bool
+  default     = true
+}
+
 # Cache monitoring variables
 variable "cache_id" {
   description = "ElastiCache serverless cache ID for monitoring"
   type        = string
   default     = ""
+}
+
+variable "enable_cache_alarms" {
+  description = "Enable ElastiCache alarms"
+  type        = bool
+  default     = true
 }
 
 # App Runner alarm thresholds

@@ -282,7 +282,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudfront_5xx" {
 
 # CloudWatch Alarm: WAF high block rate (potential attack)
 resource "aws_cloudwatch_metric_alarm" "waf_high_blocks" {
-  count = var.waf_web_acl_name != "" ? 1 : 0
+  for_each = var.enable_waf_alarms ? toset(["enabled"]) : toset([])
 
   alarm_name          = "${var.project_name}-${var.environment}-waf-high-blocks"
   comparison_operator = "GreaterThanThreshold"
@@ -395,7 +395,7 @@ resource "aws_cloudwatch_metric_alarm" "app_runner_low_requests" {
 
 # Aurora Alarm - Database Connections
 resource "aws_cloudwatch_metric_alarm" "aurora_connections" {
-  count = var.db_cluster_id != "" ? 1 : 0
+  for_each = var.enable_db_alarms ? toset(["enabled"]) : toset([])
 
   alarm_name          = "${var.project_name}-${var.environment}-aurora-connections"
   comparison_operator = "GreaterThanThreshold"
@@ -417,7 +417,7 @@ resource "aws_cloudwatch_metric_alarm" "aurora_connections" {
 
 # ElastiCache Alarm - Memory Utilization
 resource "aws_cloudwatch_metric_alarm" "elasticache_memory" {
-  count = var.cache_id != "" ? 1 : 0
+  for_each = var.enable_cache_alarms ? toset(["enabled"]) : toset([])
 
   alarm_name          = "${var.project_name}-${var.environment}-elasticache-memory"
   comparison_operator = "GreaterThanThreshold"
@@ -439,7 +439,7 @@ resource "aws_cloudwatch_metric_alarm" "elasticache_memory" {
 
 # ElastiCache Alarm - Evictions
 resource "aws_cloudwatch_metric_alarm" "elasticache_evictions" {
-  count = var.cache_id != "" ? 1 : 0
+  for_each = var.enable_cache_alarms ? toset(["enabled"]) : toset([])
 
   alarm_name          = "${var.project_name}-${var.environment}-elasticache-evictions"
   comparison_operator = "GreaterThanThreshold"
