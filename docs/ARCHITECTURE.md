@@ -444,9 +444,7 @@ Startup order and dependencies:
 ### Future Improvements
 
 - Database read replicas for read-heavy loads
-- API rate limiting (Traefik middleware)
 - Response caching layer (Redis)
-- CDN for static assets
 - Monitoring (Prometheus + Grafana)
 - Centralized logging (ELK stack)
 - Message queue for async operations
@@ -472,11 +470,22 @@ Startup order and dependencies:
 - Strong JWT secrets
 - Secure passwords and credentials
 - HTTP to HTTPS redirect
-- Rate limiting enabled
+- WAF rate limiting (CloudFront + AWS WAF)
 - Health checks and monitoring
 - Automated backups
 - Log aggregation
 - CDN for static content
+
+**AWS Production WAF Rate Limits** (per IP, per 5 minutes):
+
+| Endpoint | Host | Path | Limit |
+|----------|------|------|-------|
+| Login | `auth.gunarsk.com` | `/login` | 20 |
+| Token Refresh | `auth.gunarsk.com` | `/refresh` | 100 |
+| Token Validation | `auth.gunarsk.com` | `/validate` | 300 |
+| Admin API | `admin.gunarsk.com` | `/api/v1/*` | 1200 |
+| Public API | `gunarsk.com` | `/api/v1/*` | 1800 |
+| Files API | `files.gunarsk.com` | `/api/v1/*` | 200 |
 
 ## API Documentation
 

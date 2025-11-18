@@ -97,10 +97,13 @@ internal communication.
 
 #### WAF
 
-- **Rate limiting** (per IP, per 5 minutes):
-  - Login endpoint (`/auth/login`): 20 requests (anti-brute-force)
-  - Admin API (`/admin-api/*`): 1200 requests (4 req/sec)
-  - Public API (`/api/*`): 1800 requests (6 req/sec)
+- **Rate limiting** (per IP, per 5 minutes, filters by Host header + path):
+  - Login (`auth.gunarsk.com/login`): 20 requests (brute-force protection)
+  - Token Refresh (`auth.gunarsk.com/refresh`): 100 requests (token abuse prevention)
+  - Token Validation (`auth.gunarsk.com/validate`): 300 requests (validation protection)
+  - Admin API (`admin.gunarsk.com/api/v1/*`): 1200 requests (4 req/sec)
+  - Public API (`gunarsk.com/api/v1/*`): 1800 requests (6 req/sec)
+  - Files API (`files.gunarsk.com/api/v1/*`): 200 requests (file upload/download)
 - **AWS Managed Rules**: Core Rule Set (OWASP Top 10), Known Bad Inputs
 - **Logging**: CloudWatch Logs, 30-day retention for security forensics
 - **Associated with**: All CloudFront distributions

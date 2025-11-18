@@ -52,10 +52,27 @@ resource "aws_cloudfront_response_headers_policy" "security_headers" {
   }
 
   # Content Security Policy
+  # IMPORTANT: This CSP uses 'unsafe-hashes' for Vue 3 event handlers
   custom_headers_config {
     items {
-      header   = "Content-Security-Policy"
-      value    = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none';"
+      header = "Content-Security-Policy"
+      # Strict CSP for production:
+      # - Removed 'unsafe-inline' and 'unsafe-eval' for scripts
+      # - Allow 'unsafe-hashes' for Vue event handlers (onclick, etc)
+      # - Allow specific CDNs if needed (add to script-src/style-src)
+      # - Use 'strict-dynamic' when nonce-based CSP is implemented
+      value = join("; ", [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-hashes'", # unsafe-hashes allows Vue event handlers
+        "style-src 'self' 'unsafe-hashes'",  # unsafe-hashes allows inline styles from Naive UI
+        "img-src 'self' data: https:",       # Allow external images and data URIs
+        "font-src 'self' data:",             # Allow web fonts
+        "connect-src 'self' https:",         # Allow HTTPS API calls
+        "frame-ancestors 'none'",            # Prevent clickjacking
+        "base-uri 'self'",                   # Restrict <base> tag
+        "form-action 'self'",                # Restrict form submissions
+        "upgrade-insecure-requests"          # Upgrade HTTP to HTTPS
+      ])
       override = true
     }
   }
