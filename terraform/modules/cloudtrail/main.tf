@@ -14,8 +14,12 @@ terraform {
 }
 
 # S3 Bucket for CloudTrail Logs
+# Object Lock enabled to prevent log deletion/tampering
 resource "aws_s3_bucket" "cloudtrail" {
   bucket = "${var.project_name}-cloudtrail-logs-${var.environment}-${var.account_id}"
+
+  # Object Lock must be enabled at bucket creation
+  object_lock_enabled = true
 
   tags = merge(
     var.tags,
@@ -42,6 +46,21 @@ resource "aws_s3_bucket_versioning" "cloudtrail" {
   versioning_configuration {
     status = "Enabled"
   }
+}
+
+# Object Lock configuration for CloudTrail bucket
+# Compliance mode with 90-day retention prevents deletion of audit logs
+resource "aws_s3_bucket_object_lock_configuration" "cloudtrail" {
+  bucket = aws_s3_bucket.cloudtrail.id
+
+  rule {
+    default_retention {
+      mode = "COMPLIANCE"
+      days = 90
+    }
+  }
+
+  depends_on = [aws_s3_bucket_versioning.cloudtrail]
 }
 
 # Server-side encryption for CloudTrail bucket

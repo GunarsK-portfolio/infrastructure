@@ -161,7 +161,6 @@ module "waf" {
 
   project_name = var.project_name
   environment  = var.environment
-  enable_waf   = var.enable_waf
 
   tags = local.common_tags
 }

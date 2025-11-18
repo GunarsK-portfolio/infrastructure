@@ -2,15 +2,15 @@
 
 output "web_acl_id" {
   description = "WAF Web ACL ID"
-  value       = var.enable_waf ? aws_wafv2_web_acl.main[0].id : null
+  value       = aws_wafv2_web_acl.main.id
 }
 
 output "web_acl_arn" {
   description = "WAF Web ACL ARN"
-  value       = var.enable_waf ? aws_wafv2_web_acl.main[0].arn : null
+  value       = aws_wafv2_web_acl.main.arn
 }
 
 output "web_acl_name" {
   description = "WAF Web ACL Name (for CloudWatch alarms)"
-  value       = var.enable_waf ? aws_wafv2_web_acl.main[0].name : ""
+  value       = aws_wafv2_web_acl.main.name
 }

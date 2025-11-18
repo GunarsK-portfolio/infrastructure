@@ -45,9 +45,14 @@ variable "max_capacity" {
 }
 
 variable "backup_retention_days" {
-  description = "Backup retention period in days"
+  description = "Backup retention period in days (increased to 30 for disaster recovery)"
   type        = number
-  default     = 7
+  default     = 30
+
+  validation {
+    condition     = var.backup_retention_days >= 7 && var.backup_retention_days <= 35
+    error_message = "Backup retention must be between 7 and 35 days."
+  }
 }
 
 variable "master_password_secret_arn" {

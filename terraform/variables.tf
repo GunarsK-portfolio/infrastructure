@@ -239,11 +239,6 @@ variable "enable_performance_insights" {
   default     = true
 }
 
-variable "enable_waf" {
-  description = "Enable WAF for CloudFront distribution"
-  type        = bool
-  default     = true
-}
 
 variable "enable_vpc_flow_logs" {
   description = "Enable VPC Flow Logs for network monitoring"

@@ -10,12 +10,6 @@ variable "environment" {
   type        = string
 }
 
-variable "enable_waf" {
-  description = "Enable WAF"
-  type        = bool
-  default     = true
-}
-
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)
