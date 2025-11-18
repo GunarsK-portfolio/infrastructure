@@ -29,7 +29,7 @@ variable "database_name" {
 variable "engine_version" {
   description = "PostgreSQL engine version"
   type        = string
-  default     = "15.4"
+  default     = "17.4"
 }
 
 variable "min_capacity" {
@@ -56,9 +56,8 @@ variable "master_password_secret_arn" {
 }
 
 variable "kms_key_id" {
-  description = "KMS key ID for encryption (optional)"
+  description = "KMS key ARN for encryption (customer-managed key required for production security)"
   type        = string
-  default     = null
 }
 
 variable "enable_performance_insights" {
