@@ -439,3 +439,213 @@ resource "aws_cloudwatch_metric_alarm" "root_account_usage" {
 
   tags = var.tags
 }
+
+# Metric Filter: Console Sign-In Failures
+resource "aws_cloudwatch_log_metric_filter" "console_signin_failures" {
+  count = var.enable_cloudtrail_alarms ? 1 : 0
+
+  name           = "${var.project_name}-${var.environment}-console-signin-failures"
+  log_group_name = aws_cloudwatch_log_group.cloudtrail.name
+  pattern        = "{ ($.eventName = ConsoleLogin) && ($.errorMessage = \"Failed authentication\") }"
+
+  metric_transformation {
+    name      = "ConsoleSignInFailureCount"
+    namespace = "${var.project_name}/${var.environment}/CloudTrail"
+    value     = "1"
+  }
+}
+
+# Alarm: Console Sign-In Failures
+resource "aws_cloudwatch_metric_alarm" "console_signin_failures" {
+  count = var.enable_cloudtrail_alarms ? 1 : 0
+
+  alarm_name          = "${var.project_name}-${var.environment}-console-signin-failures"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "ConsoleSignInFailureCount"
+  namespace           = "${var.project_name}/${var.environment}/CloudTrail"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "3"
+  alarm_description   = "Multiple console authentication failures detected (potential brute-force attack)"
+  treat_missing_data  = "notBreaching"
+
+  alarm_actions = var.sns_topic_arn != "" ? [var.sns_topic_arn] : []
+
+  tags = var.tags
+}
+
+# Metric Filter: IAM Policy Changes
+resource "aws_cloudwatch_log_metric_filter" "iam_policy_changes" {
+  count = var.enable_cloudtrail_alarms ? 1 : 0
+
+  name           = "${var.project_name}-${var.environment}-iam-policy-changes"
+  log_group_name = aws_cloudwatch_log_group.cloudtrail.name
+  pattern        = "{ ($.eventName = DeleteGroupPolicy) || ($.eventName = DeleteRolePolicy) || ($.eventName = DeleteUserPolicy) || ($.eventName = PutGroupPolicy) || ($.eventName = PutRolePolicy) || ($.eventName = PutUserPolicy) || ($.eventName = CreatePolicy) || ($.eventName = DeletePolicy) || ($.eventName = CreatePolicyVersion) || ($.eventName = DeletePolicyVersion) || ($.eventName = AttachRolePolicy) || ($.eventName = DetachRolePolicy) || ($.eventName = AttachUserPolicy) || ($.eventName = DetachUserPolicy) || ($.eventName = AttachGroupPolicy) || ($.eventName = DetachGroupPolicy) }"
+
+  metric_transformation {
+    name      = "IAMPolicyChangeCount"
+    namespace = "${var.project_name}/${var.environment}/CloudTrail"
+    value     = "1"
+  }
+}
+
+# Alarm: IAM Policy Changes
+resource "aws_cloudwatch_metric_alarm" "iam_policy_changes" {
+  count = var.enable_cloudtrail_alarms ? 1 : 0
+
+  alarm_name          = "${var.project_name}-${var.environment}-iam-policy-changes"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "IAMPolicyChangeCount"
+  namespace           = "${var.project_name}/${var.environment}/CloudTrail"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1"
+  alarm_description   = "IAM policy changes detected (review for unauthorized permission modifications)"
+  treat_missing_data  = "notBreaching"
+
+  alarm_actions = var.sns_topic_arn != "" ? [var.sns_topic_arn] : []
+
+  tags = var.tags
+}
+
+# Metric Filter: S3 Bucket Policy Changes
+resource "aws_cloudwatch_log_metric_filter" "s3_bucket_policy_changes" {
+  count = var.enable_cloudtrail_alarms ? 1 : 0
+
+  name           = "${var.project_name}-${var.environment}-s3-bucket-policy-changes"
+  log_group_name = aws_cloudwatch_log_group.cloudtrail.name
+  pattern        = "{ ($.eventSource = s3.amazonaws.com) && (($.eventName = PutBucketAcl) || ($.eventName = PutBucketPolicy) || ($.eventName = PutBucketCors) || ($.eventName = PutBucketLifecycle) || ($.eventName = PutBucketReplication) || ($.eventName = DeleteBucketPolicy) || ($.eventName = DeleteBucketCors) || ($.eventName = DeleteBucketLifecycle) || ($.eventName = DeleteBucketReplication)) }"
+
+  metric_transformation {
+    name      = "S3BucketPolicyChangeCount"
+    namespace = "${var.project_name}/${var.environment}/CloudTrail"
+    value     = "1"
+  }
+}
+
+# Alarm: S3 Bucket Policy Changes
+resource "aws_cloudwatch_metric_alarm" "s3_bucket_policy_changes" {
+  count = var.enable_cloudtrail_alarms ? 1 : 0
+
+  alarm_name          = "${var.project_name}-${var.environment}-s3-bucket-policy-changes"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "S3BucketPolicyChangeCount"
+  namespace           = "${var.project_name}/${var.environment}/CloudTrail"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1"
+  alarm_description   = "S3 bucket policy/configuration changes detected (review for data exposure risks)"
+  treat_missing_data  = "notBreaching"
+
+  alarm_actions = var.sns_topic_arn != "" ? [var.sns_topic_arn] : []
+
+  tags = var.tags
+}
+
+# Metric Filter: KMS Key Changes
+resource "aws_cloudwatch_log_metric_filter" "kms_key_changes" {
+  count = var.enable_cloudtrail_alarms ? 1 : 0
+
+  name           = "${var.project_name}-${var.environment}-kms-key-changes"
+  log_group_name = aws_cloudwatch_log_group.cloudtrail.name
+  pattern        = "{ ($.eventSource = kms.amazonaws.com) && (($.eventName = DisableKey) || ($.eventName = ScheduleKeyDeletion) || ($.eventName = DeleteAlias) || ($.eventName = DeleteImportedKeyMaterial) || ($.eventName = PutKeyPolicy)) }"
+
+  metric_transformation {
+    name      = "KMSKeyChangeCount"
+    namespace = "${var.project_name}/${var.environment}/CloudTrail"
+    value     = "1"
+  }
+}
+
+# Alarm: KMS Key Changes
+resource "aws_cloudwatch_metric_alarm" "kms_key_changes" {
+  count = var.enable_cloudtrail_alarms ? 1 : 0
+
+  alarm_name          = "${var.project_name}-${var.environment}-kms-key-changes"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "KMSKeyChangeCount"
+  namespace           = "${var.project_name}/${var.environment}/CloudTrail"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1"
+  alarm_description   = "KMS key deletion/disablement detected (critical encryption key changes)"
+  treat_missing_data  = "notBreaching"
+
+  alarm_actions = var.sns_topic_arn != "" ? [var.sns_topic_arn] : []
+
+  tags = var.tags
+}
+
+# Metric Filter: Network Changes (VPC, Security Groups, NACLs)
+resource "aws_cloudwatch_log_metric_filter" "network_changes" {
+  count = var.enable_cloudtrail_alarms ? 1 : 0
+
+  name           = "${var.project_name}-${var.environment}-network-changes"
+  log_group_name = aws_cloudwatch_log_group.cloudtrail.name
+  pattern        = "{ ($.eventName = CreateVpc) || ($.eventName = DeleteVpc) || ($.eventName = ModifyVpcAttribute) || ($.eventName = AcceptVpcPeeringConnection) || ($.eventName = CreateVpcPeeringConnection) || ($.eventName = DeleteVpcPeeringConnection) || ($.eventName = RejectVpcPeeringConnection) || ($.eventName = AttachInternetGateway) || ($.eventName = CreateInternetGateway) || ($.eventName = DeleteInternetGateway) || ($.eventName = DetachInternetGateway) || ($.eventName = CreateSecurityGroup) || ($.eventName = DeleteSecurityGroup) || ($.eventName = AuthorizeSecurityGroupIngress) || ($.eventName = AuthorizeSecurityGroupEgress) || ($.eventName = RevokeSecurityGroupIngress) || ($.eventName = RevokeSecurityGroupEgress) || ($.eventName = CreateNetworkAcl) || ($.eventName = CreateNetworkAclEntry) || ($.eventName = DeleteNetworkAcl) || ($.eventName = DeleteNetworkAclEntry) || ($.eventName = ReplaceNetworkAclEntry) || ($.eventName = ReplaceNetworkAclAssociation) }"
+
+  metric_transformation {
+    name      = "NetworkChangeCount"
+    namespace = "${var.project_name}/${var.environment}/CloudTrail"
+    value     = "1"
+  }
+}
+
+# Alarm: Network Changes
+resource "aws_cloudwatch_metric_alarm" "network_changes" {
+  count = var.enable_cloudtrail_alarms ? 1 : 0
+
+  alarm_name          = "${var.project_name}-${var.environment}-network-changes"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "NetworkChangeCount"
+  namespace           = "${var.project_name}/${var.environment}/CloudTrail"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1"
+  alarm_description   = "VPC/Security Group/NACL changes detected (review network security modifications)"
+  treat_missing_data  = "notBreaching"
+
+  alarm_actions = var.sns_topic_arn != "" ? [var.sns_topic_arn] : []
+
+  tags = var.tags
+}
+
+# Metric Filter: CloudTrail Configuration Changes
+resource "aws_cloudwatch_log_metric_filter" "cloudtrail_changes" {
+  count = var.enable_cloudtrail_alarms ? 1 : 0
+
+  name           = "${var.project_name}-${var.environment}-cloudtrail-changes"
+  log_group_name = aws_cloudwatch_log_group.cloudtrail.name
+  pattern        = "{ ($.eventSource = cloudtrail.amazonaws.com) && (($.eventName = StopLogging) || ($.eventName = DeleteTrail) || ($.eventName = UpdateTrail)) }"
+
+  metric_transformation {
+    name      = "CloudTrailChangeCount"
+    namespace = "${var.project_name}/${var.environment}/CloudTrail"
+    value     = "1"
+  }
+}
+
+# Alarm: CloudTrail Configuration Changes
+resource "aws_cloudwatch_metric_alarm" "cloudtrail_changes" {
+  count = var.enable_cloudtrail_alarms ? 1 : 0
+
+  alarm_name          = "${var.project_name}-${var.environment}-cloudtrail-changes"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "CloudTrailChangeCount"
+  namespace           = "${var.project_name}/${var.environment}/CloudTrail"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1"
+  alarm_description   = "CloudTrail logging disabled/modified (critical security audit trail tampering)"
+  treat_missing_data  = "notBreaching"
+
+  alarm_actions = var.sns_topic_arn != "" ? [var.sns_topic_arn] : []
+
+  tags = var.tags
+}

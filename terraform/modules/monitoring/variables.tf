@@ -13,7 +13,7 @@ variable "environment" {
 variable "log_retention_days" {
   description = "CloudWatch log retention in days"
   type        = number
-  default     = 7
+  default     = 90
 }
 
 variable "app_runner_service_arns" {
