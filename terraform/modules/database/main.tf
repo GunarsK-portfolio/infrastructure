@@ -45,6 +45,11 @@ resource "aws_rds_cluster_parameter_group" "main" {
     apply_method = "pending-reboot"
   }
 
+  # Force replacement when static parameters change (can't modify in-place)
+  lifecycle {
+    create_before_destroy = true
+  }
+
   # pgaudit configuration
   # Log all DDL, DCL, and security-relevant operations
   # Options: READ, WRITE, FUNCTION, ROLE, DDL, MISC, MISC_SET, ALL
