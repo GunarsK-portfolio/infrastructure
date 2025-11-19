@@ -173,13 +173,7 @@ module "waf" {
   environment  = var.environment
   domain_name  = var.domain_name
 
-  # KMS encryption for logs
-  kms_key_arn = module.secrets.kms_key_arn
-
   tags = local.common_tags
-
-  # Ensure KMS key is created before CloudWatch log groups
-  depends_on = [module.secrets]
 }
 
 # App Runner Module

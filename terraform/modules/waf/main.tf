@@ -12,6 +12,54 @@ terraform {
   }
 }
 
+# Get current AWS account and region
+data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
+
+# KMS Key for WAF CloudWatch Logs (us-east-1)
+# Separate key required because WAF is in us-east-1 while main KMS key is in eu-west-1
+resource "aws_kms_key" "waf_logs" {
+  description             = "${var.project_name}-${var.environment}-waf-logs-key"
+  deletion_window_in_days = 30
+  enable_key_rotation     = true
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      },
+      {
+        Sid    = "Allow CloudWatch Logs to use the key"
+        Effect = "Allow"
+        Principal = {
+          Service = "logs.${data.aws_region.current.region}.amazonaws.com"
+        }
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey",
+          "kms:CreateGrant"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+
+  tags = var.tags
+}
+
+# KMS Key Alias
+resource "aws_kms_alias" "waf_logs" {
+  name          = "alias/${var.project_name}-${var.environment}-waf-logs"
+  target_key_id = aws_kms_key.waf_logs.key_id
+}
+
 # WAF Web ACL
 resource "aws_wafv2_web_acl" "main" {
   name  = "${var.project_name}-${var.environment}-waf"
@@ -787,10 +835,11 @@ resource "aws_wafv2_web_acl" "main" {
 }
 
 # CloudWatch Log Group for WAF logs (30 days for security forensics)
+# Uses local KMS key (us-east-1) instead of main secrets KMS key (eu-west-1)
 resource "aws_cloudwatch_log_group" "waf" {
   name              = "/aws/wafv2/${var.project_name}-${var.environment}"
   retention_in_days = 30
-  kms_key_id        = var.kms_key_arn
+  kms_key_id        = aws_kms_key.waf_logs.arn
 
   tags = var.tags
 }

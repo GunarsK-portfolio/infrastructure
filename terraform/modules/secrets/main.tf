@@ -136,11 +136,7 @@ resource "aws_kms_key" "secrets" {
           "kms:CreateGrant"
         ]
         Resource = "*"
-        Condition = {
-          ArnLike = {
-            "kms:EncryptionContext:aws:logs:arn" = "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:*"
-          }
-        }
+        # NOTE: Condition removed - CloudWatch Logs doesn't always set encryption context during creation
       },
       {
         Sid    = "Allow ECR to use the key"
