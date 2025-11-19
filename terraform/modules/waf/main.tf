@@ -870,6 +870,6 @@ resource "aws_wafv2_web_acl_logging_configuration" "main" {
   resource_arn = aws_wafv2_web_acl.main.arn
 
   log_destination_configs = [
-    "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.waf.name}:*"
+    aws_cloudwatch_log_group.waf.arn
   ]
 }
