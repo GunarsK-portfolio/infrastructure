@@ -340,7 +340,6 @@ resource "aws_cloudtrail" "main" {
   cloud_watch_logs_role_arn  = aws_iam_role.cloudtrail_cloudwatch.arn
 
   # Event selector: Management events only (S3 data events disabled for cost optimization)
-  # S3 object-level logging costs $1000-5000/month for high-traffic file services
   # Management events (CreateBucket, PutBucketPolicy, etc.) are sufficient for security audit
   event_selector {
     read_write_type           = "All"
