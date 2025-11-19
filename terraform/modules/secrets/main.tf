@@ -38,8 +38,43 @@ resource "aws_kms_key" "secrets" {
         Principal = {
           AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
         }
-        Action   = "kms:*"
+        Action = [
+          "kms:Create*",
+          "kms:Describe*",
+          "kms:Enable*",
+          "kms:List*",
+          "kms:Put*",
+          "kms:Update*",
+          "kms:Revoke*",
+          "kms:Get*",
+          "kms:Decrypt",
+          "kms:Encrypt",
+          "kms:GenerateDataKey*",
+          "kms:ReEncrypt*",
+          "kms:CreateGrant",
+          "kms:RetireGrant",
+          "kms:TagResource",
+          "kms:UntagResource"
+        ]
         Resource = "*"
+      },
+      {
+        Sid    = "Deny Dangerous Operations Without MFA"
+        Effect = "Deny"
+        Principal = {
+          AWS = "*"
+        }
+        Action = [
+          "kms:ScheduleKeyDeletion",
+          "kms:DisableKey",
+          "kms:DeleteAlias"
+        ]
+        Resource = "*"
+        Condition = {
+          BoolIfExists = {
+            "aws:MultiFactorAuthPresent" = "false"
+          }
+        }
       },
       {
         Sid    = "Allow Secrets Manager to use the key"
