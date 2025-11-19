@@ -116,6 +116,9 @@ module "ecr" {
   project_name  = var.project_name
   service_names = keys(var.app_runner_services)
 
+  # Use customer-managed KMS key for encryption
+  kms_key_arn = module.secrets.kms_key_arn
+
   tags = local.common_tags
 }
 

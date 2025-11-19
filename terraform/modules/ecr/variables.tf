@@ -15,3 +15,9 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "kms_key_arn" {
+  description = "KMS key ARN for ECR encryption (optional, uses customer-managed key if provided)"
+  type        = string
+  default     = null
+}

@@ -15,7 +15,7 @@ terraform {
 # SNS Topic for alarms
 resource "aws_sns_topic" "alarms" {
   name_prefix       = "${var.project_name}-${var.environment}-alarms-"
-  kms_master_key_id = "alias/aws/sns"
+  kms_master_key_id = var.kms_key_arn
 
   tags = merge(
     var.tags,
