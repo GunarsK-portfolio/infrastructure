@@ -36,6 +36,24 @@ resource "aws_kms_key" "waf_logs" {
         Resource = "*"
       },
       {
+        Sid    = "Deny Dangerous Operations Without MFA"
+        Effect = "Deny"
+        Principal = {
+          AWS = "*"
+        }
+        Action = [
+          "kms:ScheduleKeyDeletion",
+          "kms:DisableKey",
+          "kms:DeleteAlias"
+        ]
+        Resource = "*"
+        Condition = {
+          BoolIfExists = {
+            "aws:MultiFactorAuthPresent" = "false"
+          }
+        }
+      },
+      {
         Sid    = "Allow CloudWatch Logs to use the key"
         Effect = "Allow"
         Principal = {
