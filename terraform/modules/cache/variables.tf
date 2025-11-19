@@ -33,9 +33,9 @@ variable "max_ecpu_per_second" {
 }
 
 variable "snapshot_retention_days" {
-  description = "Number of days to retain snapshots (increased to 7 for ransomware recovery)"
+  description = "Number of days to retain snapshots (30 days for ransomware recovery)"
   type        = number
-  default     = 7
+  default     = 30
 
   validation {
     condition     = var.snapshot_retention_days >= 1 && var.snapshot_retention_days <= 35

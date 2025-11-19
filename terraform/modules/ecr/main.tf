@@ -36,7 +36,7 @@ resource "aws_ecr_repository" "main" {
   )
 }
 
-# Lifecycle policy to keep last 10 images
+# Lifecycle policy to keep last 20 images
 resource "aws_ecr_lifecycle_policy" "main" {
   for_each = aws_ecr_repository.main
 
@@ -46,12 +46,12 @@ resource "aws_ecr_lifecycle_policy" "main" {
     rules = [
       {
         rulePriority = 1
-        description  = "Keep last 10 tagged images"
+        description  = "Keep last 20 tagged images"
         selection = {
           tagStatus     = "tagged"
           tagPrefixList = ["v", "prod", "staging"]
           countType     = "imageCountMoreThan"
-          countNumber   = 10
+          countNumber   = 20
         }
         action = {
           type = "expire"
