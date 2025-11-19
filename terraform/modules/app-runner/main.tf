@@ -181,6 +181,19 @@ resource "aws_iam_role_policy" "secrets_access" {
             "aws:RequestedRegion" = data.aws_region.current.region
           }
         }
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:DescribeKey"
+        ]
+        Resource = var.kms_key_arn
+        Condition = {
+          StringEquals = {
+            "kms:ViaService" = "secretsmanager.${data.aws_region.current.region}.amazonaws.com"
+          }
+        }
       }
     ]
   })

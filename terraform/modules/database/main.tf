@@ -259,8 +259,9 @@ resource "aws_rds_cluster" "main" {
   performance_insights_retention_period = var.enable_performance_insights ? var.performance_insights_retention_days : null
 
   # Aurora Data API for serverless access (Query Editor, Lambda functions)
-  # Requires IAM authentication and security group restrictions
-  # Access is controlled by var.database_security_group_id
+  # Access controlled by: IAM authentication + security group (var.database_security_group_id)
+  # NOTE: Production workloads should use VPC interface endpoints (PrivateLink) for network isolation
+  # See: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/data-api.html#data-api.vpce
   enable_http_endpoint = var.enable_http_endpoint
 
   tags = merge(

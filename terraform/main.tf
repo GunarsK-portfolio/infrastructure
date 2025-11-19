@@ -206,6 +206,9 @@ module "app_runner" {
   # Secrets Manager ARNs
   secrets_arns = module.secrets.secret_arns
 
+  # KMS key for decrypting secrets
+  kms_key_arn = module.secrets.kms_key_arn
+
   # Domain name for service URLs
   domain_name = var.domain_name
 

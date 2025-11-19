@@ -64,6 +64,55 @@ resource "aws_iam_role_policy_attachment" "bastion_ssm" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
+# IAM Policy for KMS decrypt (required for encrypted EBS root volume)
+resource "aws_iam_role_policy" "bastion_kms" {
+  name_prefix = "kms-decrypt-"
+  role        = aws_iam_role.bastion.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:DescribeKey"
+        ]
+        Resource = var.kms_key_arn
+      }
+    ]
+  })
+}
+
+# IAM Policy for CloudWatch Logs (for user-data troubleshooting)
+resource "aws_iam_role_policy" "bastion_cloudwatch" {
+  name_prefix = "cloudwatch-logs-"
+  role        = aws_iam_role.bastion.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:CreateLogGroup"
+        ]
+        Resource = "arn:aws:logs:*:*:log-group:/aws/ec2/bastion/${var.project_name}-${var.environment}:*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameter",
+          "ssm:GetParameters"
+        ]
+        Resource = "arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*"
+      }
+    ]
+  })
+}
+
 # Instance profile
 resource "aws_iam_instance_profile" "bastion" {
   name_prefix = "${var.project_name}-${var.environment}-bastion-"
@@ -80,7 +129,9 @@ resource "aws_security_group" "bastion" {
 
   # Allow HTTPS to SSM endpoints and package repositories (443)
   # Note: 0.0.0.0/0 required for SSM service endpoints and dnf repositories
-  # Consider using VPC endpoints to restrict this further
+  # TODO: Restrict HTTPS egress to VPC endpoint for SSM service once PrivateLink is configured.
+  # Currently uses 0.0.0.0/0 for Session Manager, SSM agent downloads, and dnf repositories.
+  # See: https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-privatelink.html
   egress {
     description = "HTTPS to SSM endpoints and dnf repos"
     from_port   = 443
@@ -150,7 +201,7 @@ resource "aws_instance" "bastion" {
     http_put_response_hop_limit = 1
   }
 
-  # User data to install PostgreSQL client matching Aurora version
+  # User data to install PostgreSQL client and CloudWatch agent
   user_data = base64encode(<<-EOF
     #!/bin/bash
     set -e  # Exit on error
@@ -160,6 +211,34 @@ resource "aws_instance" "bastion" {
     exec 2>&1
 
     echo "Starting bastion initialization..."
+
+    # Install CloudWatch agent
+    dnf install -y amazon-cloudwatch-agent || { echo "CloudWatch agent install failed"; exit 1; }
+
+    # Configure CloudWatch agent to stream user-data logs
+    cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'CWCONFIG'
+{
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/var/log/user-data.log",
+            "log_group_name": "/aws/ec2/bastion/${var.project_name}-${var.environment}",
+            "log_stream_name": "{instance_id}"
+          }
+        ]
+      }
+    }
+  }
+}
+CWCONFIG
+
+    # Start CloudWatch agent
+    /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+      -a fetch-config -m ec2 \
+      -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s || \
+      { echo "CloudWatch agent start failed"; exit 1; }
 
     # Update system
     dnf update -y || { echo "dnf update failed"; exit 1; }
