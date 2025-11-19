@@ -83,8 +83,11 @@ resource "aws_kms_key" "secrets" {
           Service = "secretsmanager.amazonaws.com"
         }
         Action = [
+          "kms:Encrypt",
           "kms:Decrypt",
-          "kms:GenerateDataKey",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey",
           "kms:CreateGrant"
         ]
         Resource = "*"
@@ -131,12 +134,14 @@ resource "aws_kms_key" "secrets" {
           Service = "logs.${data.aws_region.current.region}.amazonaws.com"
         }
         Action = [
+          "kms:Encrypt",
           "kms:Decrypt",
-          "kms:GenerateDataKey",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey",
           "kms:CreateGrant"
         ]
         Resource = "*"
-        # NOTE: Condition removed - CloudWatch Logs doesn't always set encryption context during creation
       },
       {
         Sid    = "Allow ECR to use the key"
@@ -146,8 +151,10 @@ resource "aws_kms_key" "secrets" {
         }
         Action = [
           "kms:Decrypt",
-          "kms:GenerateDataKey",
-          "kms:CreateGrant"
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey",
+          "kms:CreateGrant",
+          "kms:RetireGrant"
         ]
         Resource = "*"
         Condition = {
