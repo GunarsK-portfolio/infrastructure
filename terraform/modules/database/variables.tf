@@ -76,6 +76,17 @@ variable "enable_performance_insights" {
   default     = true
 }
 
+variable "performance_insights_retention_days" {
+  description = "Performance Insights retention period in days"
+  type        = number
+  default     = 31
+
+  validation {
+    condition     = contains([7, 31, 62, 93, 124, 155, 186, 217, 248, 279, 310, 341, 372, 403, 434, 465, 496, 527, 558, 589, 620, 651, 682, 713, 731], var.performance_insights_retention_days)
+    error_message = "Performance Insights retention must be 7 days (free tier) or 31-731 days in monthly increments (long-term retention)."
+  }
+}
+
 variable "enable_enhanced_monitoring" {
   description = "Enable Enhanced Monitoring"
   type        = bool
@@ -97,6 +108,23 @@ variable "alarm_sns_topic_arn" {
   description = "SNS topic ARN for CloudWatch alarms"
   type        = string
   default     = null
+}
+
+variable "enable_cross_region_replica" {
+  description = "Enable cross-region read replica for disaster recovery"
+  type        = bool
+  default     = false
+}
+
+variable "replica_region" {
+  description = "AWS region for cross-region read replica (only used if enable_cross_region_replica = true)"
+  type        = string
+  default     = "us-east-1"
+
+  validation {
+    condition     = can(regex("^[a-z]{2}-[a-z]+-[0-9]{1}$", var.replica_region))
+    error_message = "Replica region must be a valid AWS region format (e.g., us-east-1, eu-central-1)."
+  }
 }
 
 variable "tags" {

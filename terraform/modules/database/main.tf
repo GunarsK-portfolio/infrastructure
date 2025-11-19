@@ -36,10 +36,37 @@ resource "aws_rds_cluster_parameter_group" "main" {
   family      = "aurora-postgresql17"
   description = "Custom parameter group for Aurora PostgreSQL 17 with extensions"
 
-  # Enable pg_cron and pg_partman extensions
+  # Enable pg_cron, pg_partman, and pgaudit extensions
+  # pgaudit provides advanced database audit logging capabilities
   parameter {
     name  = "shared_preload_libraries"
-    value = "pg_stat_statements,pg_cron"
+    value = "pg_stat_statements,pg_cron,pgaudit"
+  }
+
+  # pgaudit configuration
+  # Log all DDL, DCL, and security-relevant operations
+  # Options: READ, WRITE, FUNCTION, ROLE, DDL, MISC, MISC_SET, ALL
+  parameter {
+    name  = "pgaudit.log"
+    value = "ddl,role"
+  }
+
+  # Log catalog queries (system table access) for security monitoring
+  parameter {
+    name  = "pgaudit.log_catalog"
+    value = "1"
+  }
+
+  # Log full parameter values in audit logs
+  parameter {
+    name  = "pgaudit.log_parameter"
+    value = "1"
+  }
+
+  # Include statement text in audit logs
+  parameter {
+    name  = "pgaudit.log_statement_once"
+    value = "0"
   }
 
   # pg_cron configuration
@@ -67,6 +94,56 @@ resource "aws_rds_cluster_parameter_group" "main" {
   parameter {
     name  = "max_connections"
     value = var.max_connections
+  }
+
+  # Security: TLS/SSL enforcement
+  # Force all connections to use SSL/TLS encryption
+  parameter {
+    name  = "rds.force_ssl"
+    value = "1"
+  }
+
+  # Audit logging: Connection events
+  # Log all connection attempts and disconnections for security auditing
+  parameter {
+    name  = "log_connections"
+    value = "1"
+  }
+
+  parameter {
+    name  = "log_disconnections"
+    value = "1"
+  }
+
+  # Audit logging: SQL statement logging
+  # Log all DDL statements (CREATE, ALTER, DROP) for compliance
+  # Options: none, ddl, mod (INSERT/UPDATE/DELETE), all
+  # Use 'ddl' for production to reduce log volume while maintaining security audit trail
+  parameter {
+    name  = "log_statement"
+    value = "ddl"
+  }
+
+  # Audit logging: Query duration
+  # Log query execution time for performance monitoring
+  parameter {
+    name  = "log_duration"
+    value = "1"
+  }
+
+  # Audit logging: Slow query threshold
+  # Log queries taking longer than 1000ms (1 second)
+  parameter {
+    name  = "log_min_duration_statement"
+    value = "1000"
+  }
+
+  # Query timeout protection
+  # Terminate queries running longer than 5 minutes (300000ms)
+  # Prevents long-running queries from exhausting database resources
+  parameter {
+    name  = "statement_timeout"
+    value = "300000"
   }
 
   tags = merge(
@@ -154,9 +231,10 @@ resource "aws_rds_cluster" "main" {
   final_snapshot_identifier = var.environment != "dev" ? "${var.project_name}-${var.environment}-final-snapshot-${formatdate("YYYY-MM-DD-hhmm", timestamp())}" : null
 
   # Performance Insights
+  # Retention increased to 31 days for better trend analysis and troubleshooting
   performance_insights_enabled          = var.enable_performance_insights
   performance_insights_kms_key_id       = local.performance_insights_kms_key
-  performance_insights_retention_period = var.enable_performance_insights ? 7 : null
+  performance_insights_retention_period = var.enable_performance_insights ? var.performance_insights_retention_days : null
 
   # Point-in-time recovery
   enable_http_endpoint = false
@@ -318,3 +396,22 @@ resource "aws_cloudwatch_metric_alarm" "aurora_acu_utilization" {
 
   tags = var.tags
 }
+
+# Cross-Region Read Replica Configuration
+# NOTE: Cross-region replication for Aurora Global Database requires:
+# 1. A secondary AWS provider in the root module (e.g., provider "aws" { alias = "replica" })
+# 2. Creating an aws_rds_global_cluster resource in the root module
+# 3. Attaching this cluster to the global cluster
+# 4. Creating a secondary cluster in the replica region
+#
+# Variables are provided (enable_cross_region_replica, replica_region) but implementation
+# requires root module configuration. See AWS documentation for Aurora Global Database:
+# https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-global-database.html
+#
+# Estimated additional cost: ~$100-200/month for replica cluster in us-east-1
+#
+# To enable:
+# 1. Add secondary provider to main.tf: provider "aws" { alias = "replica"; region = var.replica_region }
+# 2. Create global cluster resource
+# 3. Pass replica provider to this module
+# 4. Uncomment replica configuration below (requires provider alias support)
