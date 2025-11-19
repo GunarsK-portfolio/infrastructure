@@ -89,7 +89,7 @@ locals {
   master_credentials = sensitive(jsondecode(data.aws_secretsmanager_secret_version.master_password.secret_string))
 
   # Performance Insights KMS key (used across cluster and instances)
-  performance_insights_kms_key = var.kms_key_id
+  performance_insights_kms_key = var.kms_key_arn
 }
 
 # Validate username is present and non-empty
@@ -133,7 +133,7 @@ resource "aws_rds_cluster" "main" {
 
   # Encryption
   storage_encrypted = true
-  kms_key_id        = var.kms_key_id
+  kms_key_id        = var.kms_key_arn
 
   # IAM Database Authentication (recommended for production)
   # Provides centralized access management and eliminates long-lived credentials

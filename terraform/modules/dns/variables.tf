@@ -22,7 +22,12 @@ variable "tags" {
 }
 
 variable "kms_key_arn" {
-  description = "KMS key ARN for encrypting CloudWatch logs (optional)"
+  description = "KMS key ARN for encryption"
   type        = string
   default     = null
+
+  validation {
+    condition     = var.kms_key_arn == null || can(regex("^arn:aws:kms:[a-z0-9-]+:\\d{12}:key/[a-f0-9-]+$", var.kms_key_arn))
+    error_message = "KMS key ARN must be a valid ARN format (arn:aws:kms:region:account-id:key/key-id) or null."
+  }
 }

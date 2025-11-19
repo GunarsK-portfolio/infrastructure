@@ -12,6 +12,9 @@ terraform {
   }
 }
 
+# Data source for current region
+data "aws_region" "current" {}
+
 # VPC
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
@@ -316,18 +319,38 @@ resource "aws_iam_role_policy" "flow_logs" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Action = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents",
-          "logs:DescribeLogGroups",
-          "logs:DescribeLogStreams"
-        ]
-        Effect   = "Allow"
-        Resource = "${aws_cloudwatch_log_group.flow_logs[0].arn}:*"
-      }
-    ]
+    Statement = concat(
+      [
+        {
+          Action = [
+            "logs:CreateLogGroup",
+            "logs:CreateLogStream",
+            "logs:PutLogEvents",
+            "logs:DescribeLogGroups",
+            "logs:DescribeLogStreams"
+          ]
+          Effect   = "Allow"
+          Resource = "${aws_cloudwatch_log_group.flow_logs[0].arn}:*"
+        }
+      ],
+      var.kms_key_arn != null ? [
+        {
+          Action = [
+            "kms:Decrypt",
+            "kms:GenerateDataKey",
+            "kms:Encrypt",
+            "kms:ReEncrypt*",
+            "kms:DescribeKey"
+          ]
+          Effect   = "Allow"
+          Resource = var.kms_key_arn
+          Condition = {
+            StringEquals = {
+              "kms:ViaService" = "logs.${data.aws_region.current.region}.amazonaws.com"
+            }
+          }
+        }
+      ] : []
+    )
   })
 }

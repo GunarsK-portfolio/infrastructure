@@ -71,7 +71,7 @@ module "database" {
   master_password_secret_arn = module.secrets.aurora_master_password_arn
 
   # Use customer-managed KMS key for encryption
-  kms_key_id = module.secrets.kms_key_arn
+  kms_key_arn = module.secrets.kms_key_arn
 
   enable_enhanced_monitoring  = var.enable_enhanced_monitoring
   enable_performance_insights = var.enable_performance_insights
@@ -104,7 +104,7 @@ module "storage" {
   bucket_names = var.s3_buckets
 
   # Use customer-managed KMS key for encryption
-  kms_key_id = module.secrets.kms_key_arn
+  kms_key_arn = module.secrets.kms_key_arn
 
   tags = local.common_tags
 }
@@ -115,6 +115,9 @@ module "ecr" {
 
   project_name  = var.project_name
   service_names = keys(var.app_runner_services)
+
+  # Use customer-managed KMS key for encryption
+  kms_key_arn = module.secrets.kms_key_arn
 
   tags = local.common_tags
 }

@@ -1,10 +1,10 @@
 variable "project_name" {
-  description = "Name of the project"
+  description = "Project name"
   type        = string
 }
 
 variable "environment" {
-  description = "Environment name (dev, staging, prod)"
+  description = "Environment name"
   type        = string
 }
 
@@ -19,7 +19,7 @@ variable "account_id" {
 }
 
 variable "tags" {
-  description = "Common tags to apply to all resources"
+  description = "Tags to apply to all resources"
   type        = map(string)
   default     = {}
 }
@@ -58,7 +58,7 @@ variable "sns_topic_arn" {
 }
 
 variable "kms_key_arn" {
-  description = "ARN of KMS key for encryption (S3 bucket and CloudWatch logs)"
+  description = "KMS key ARN for encryption"
   type        = string
   sensitive   = true
 
