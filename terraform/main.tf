@@ -98,6 +98,22 @@ module "cache" {
   tags = local.common_tags
 }
 
+# Bastion Module - SSM-enabled database access
+module "bastion" {
+  source = "./modules/bastion"
+
+  project_name  = var.project_name
+  environment   = var.environment
+  vpc_id        = module.networking.vpc_id
+  subnet_id     = module.networking.public_subnet_ids[0]
+  instance_type = var.bastion_instance_type
+
+  database_security_group_id = module.networking.database_security_group_id
+  kms_key_arn                = module.secrets.kms_key_arn
+
+  tags = local.common_tags
+}
+
 # Storage Module - S3 Buckets
 module "storage" {
   source = "./modules/storage"

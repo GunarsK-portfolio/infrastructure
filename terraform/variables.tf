@@ -59,6 +59,13 @@ variable "availability_zones" {
   }
 }
 
+# Bastion Configuration
+variable "bastion_instance_type" {
+  description = "EC2 instance type for bastion host"
+  type        = string
+  default     = "t3.micro"
+}
+
 # Aurora Serverless v2 Configuration
 variable "aurora_min_capacity" {
   description = "Minimum ACUs for Aurora Serverless v2"

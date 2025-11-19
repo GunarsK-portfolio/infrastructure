@@ -118,7 +118,12 @@ resource "aws_iam_instance_profile" "bastion" {
   name_prefix = "${var.project_name}-${var.environment}-bastion-"
   role        = aws_iam_role.bastion.name
 
-  tags = var.tags
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-bastion-profile"
+    }
+  )
 }
 
 # Security Group for Bastion

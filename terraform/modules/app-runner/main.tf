@@ -16,12 +16,19 @@ terraform {
 data "aws_region" "current" {}
 
 locals {
+  # Map Terraform environment names to portfolio-common expected values
+  environment_map = {
+    "dev"     = "development"
+    "staging" = "staging"
+    "prod"    = "production"
+  }
+
   # Service-specific environment variables
   # Note: DB_USER values are application-level PostgreSQL users created via Flyway migrations
   # These are NOT the RDS master user, but application-specific roles with limited privileges
   service_env_vars = {
     "auth-service" = {
-      ENVIRONMENT        = var.environment
+      ENVIRONMENT        = local.environment_map[var.environment]
       SERVICE_NAME       = "auth-service"
       LOG_LEVEL          = "info"
       LOG_FORMAT         = "json"
@@ -36,7 +43,7 @@ locals {
       ALLOWED_ORIGINS    = "https://admin.${var.domain_name}"
     }
     "admin-api" = {
-      ENVIRONMENT     = var.environment
+      ENVIRONMENT     = local.environment_map[var.environment]
       SERVICE_NAME    = "admin-api"
       LOG_LEVEL       = "info"
       LOG_FORMAT      = "json"
@@ -51,7 +58,7 @@ locals {
       FILES_API_URL = "https://files.${var.domain_name}/api/v1"
     }
     "public-api" = {
-      ENVIRONMENT     = var.environment
+      ENVIRONMENT     = local.environment_map[var.environment]
       SERVICE_NAME    = "public-api"
       LOG_LEVEL       = "info"
       LOG_FORMAT      = "json"
@@ -64,7 +71,7 @@ locals {
       FILES_API_URL = "https://files.${var.domain_name}/api/v1"
     }
     "files-api" = {
-      ENVIRONMENT        = var.environment
+      ENVIRONMENT        = local.environment_map[var.environment]
       SERVICE_NAME       = "files-api"
       LOG_LEVEL          = "info"
       LOG_FORMAT         = "json"
@@ -80,13 +87,13 @@ locals {
       AUTH_SERVICE_URL = "https://${var.project_name}-${var.environment}-auth-service.${data.aws_region.current.region}.awsapprunner.com/api/v1"
     }
     "admin-web" = {
-      ENVIRONMENT  = var.environment
+      ENVIRONMENT  = local.environment_map[var.environment]
       SERVICE_NAME = "admin-web"
       LOG_LEVEL    = "info"
       LOG_FORMAT   = "json"
     }
     "public-web" = {
-      ENVIRONMENT  = var.environment
+      ENVIRONMENT  = local.environment_map[var.environment]
       SERVICE_NAME = "public-web"
       LOG_LEVEL    = "info"
       LOG_FORMAT   = "json"
@@ -188,7 +195,7 @@ resource "aws_iam_role_policy" "secrets_access" {
           "kms:Decrypt",
           "kms:DescribeKey"
         ]
-        Resource = var.kms_key_arn
+        Resource = [var.kms_key_arn]
         Condition = {
           StringEquals = {
             "kms:ViaService" = "secretsmanager.${data.aws_region.current.region}.amazonaws.com"
