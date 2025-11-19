@@ -102,6 +102,7 @@ internal communication.
   - Login (`auth.gunarsk.com/login`): 20 requests (brute-force protection)
   - Token Refresh (`auth.gunarsk.com/refresh`): 100 requests (token abuse prevention)
   - Token Validation (`auth.gunarsk.com/validate`): 300 requests (validation protection)
+  - Logout (`auth.gunarsk.com/*/logout`): 60 requests (logout abuse prevention)
   - Admin API (`admin.gunarsk.com/api/v1/*`): 1200 requests total
     (DELETE: 60, POST: 300, PUT: 300, GET: 600)
   - Public API (`gunarsk.com/api/v1/*`): 600 requests (2 req/sec, reduced from 1800)
@@ -111,7 +112,6 @@ internal communication.
   - Known Bad Inputs (Log4Shell protection)
   - SQL Injection Rule Set
   - IP Reputation List (blocks known malicious IPs)
-  - Bot Control (CAPTCHA challenges for suspicious bots)
   - Linux Rule Set (OS-level exploit protection)
 - **Logging**: CloudWatch Logs, 30-day retention for security forensics
 - **Associated with**: All CloudFront distributions

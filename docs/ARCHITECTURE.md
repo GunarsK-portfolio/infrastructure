@@ -490,8 +490,9 @@ Startup order and dependencies:
 | Login | `auth.gunarsk.com` | `/login` | 20 |
 | Token Refresh | `auth.gunarsk.com` | `/refresh` | 100 |
 | Token Validation | `auth.gunarsk.com` | `/validate` | 300 |
+| Logout | `auth.gunarsk.com` | `*/logout` | 60 |
 | Admin API | `admin.gunarsk.com` | `/api/v1/*` | 1200 |
-| Public API | `gunarsk.com` | `/api/v1/*` | 1800 |
+| Public API | `gunarsk.com` | `/api/v1/*` | 600 |
 | Files API | `files.gunarsk.com` | `/api/v1/*` | 200 |
 
 ## API Documentation
