@@ -28,6 +28,11 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
+# Data source to get master password for PostgreSQL provider
+data "aws_secretsmanager_secret_version" "master_password" {
+  secret_id = module.secrets.aurora_master_password_arn
+}
+
 # Networking Module
 module "networking" {
   source = "./modules/networking"
@@ -81,6 +86,21 @@ module "database" {
   enable_http_endpoint        = var.enable_http_endpoint
 
   tags = local.common_tags
+}
+
+# Database Users Module - Creates PostgreSQL application users
+module "database_users" {
+  source = "./modules/database-users"
+
+  database_name = "portfolio"
+
+  # Reference secrets for user passwords
+  owner_password_secret_arn  = module.secrets.aurora_owner_password_arn
+  admin_password_secret_arn  = module.secrets.aurora_admin_password_arn
+  public_password_secret_arn = module.secrets.aurora_public_password_arn
+
+  # Users must be created after database exists
+  depends_on = [module.database]
 }
 
 # Cache Module - ElastiCache Serverless
