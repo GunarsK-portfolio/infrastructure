@@ -110,20 +110,21 @@ locals {
   }
 
   # Service-specific secrets from AWS Secrets Manager
+  # Format: arn:secret-arn:json-key:: extracts specific JSON field
   service_secrets = {
     "auth-service" = {
-      DB_PASSWORD    = var.secrets_arns["aurora_admin"]
-      REDIS_PASSWORD = var.secrets_arns["redis_auth"]
-      JWT_SECRET     = var.secrets_arns["jwt_secret"]
+      DB_PASSWORD    = "${var.secrets_arns["aurora_admin"]}:password::"
+      REDIS_PASSWORD = "${var.secrets_arns["redis_auth"]}:token::"
+      JWT_SECRET     = "${var.secrets_arns["jwt_secret"]}:secret::"
     }
     "admin-api" = {
-      DB_PASSWORD = var.secrets_arns["aurora_admin"]
+      DB_PASSWORD = "${var.secrets_arns["aurora_admin"]}:password::"
     }
     "public-api" = {
-      DB_PASSWORD = var.secrets_arns["aurora_public"]
+      DB_PASSWORD = "${var.secrets_arns["aurora_public"]}:password::"
     }
     "files-api" = {
-      DB_PASSWORD = var.secrets_arns["aurora_admin"]
+      DB_PASSWORD = "${var.secrets_arns["aurora_admin"]}:password::"
     }
     "admin-web"  = {}
     "public-web" = {}
