@@ -283,32 +283,33 @@ resource "aws_rds_cluster_instance" "writer" {
   )
 }
 
-# Aurora Serverless v2 Instance (Reader)
-resource "aws_rds_cluster_instance" "reader" {
-  identifier         = "${var.project_name}-${var.environment}-aurora-reader"
-  cluster_identifier = aws_rds_cluster.main.id
-  instance_class     = "db.serverless"
-  engine             = aws_rds_cluster.main.engine
-  engine_version     = aws_rds_cluster.main.engine_version
-
-  # Performance Insights
-  performance_insights_enabled    = var.enable_performance_insights
-  performance_insights_kms_key_id = local.performance_insights_kms_key
-
-  # Enhanced Monitoring
-  monitoring_interval = var.enable_enhanced_monitoring ? 60 : 0
-  monitoring_role_arn = var.enable_enhanced_monitoring ? aws_iam_role.enhanced_monitoring[0].arn : null
-
-  publicly_accessible = false
-
-  tags = merge(
-    var.tags,
-    {
-      Name = "${var.project_name}-${var.environment}-aurora-reader"
-      Role = "reader"
-    }
-  )
-}
+# Aurora Serverless v2 Instance (Reader) - Removed for personal portfolio (single admin user)
+# Uncomment for multi-user production environments requiring read replicas
+# resource "aws_rds_cluster_instance" "reader" {
+#   identifier         = "${var.project_name}-${var.environment}-aurora-reader"
+#   cluster_identifier = aws_rds_cluster.main.id
+#   instance_class     = "db.serverless"
+#   engine             = aws_rds_cluster.main.engine
+#   engine_version     = aws_rds_cluster.main.engine_version
+#
+#   # Performance Insights
+#   performance_insights_enabled    = var.enable_performance_insights
+#   performance_insights_kms_key_id = local.performance_insights_kms_key
+#
+#   # Enhanced Monitoring
+#   monitoring_interval = var.enable_enhanced_monitoring ? 60 : 0
+#   monitoring_role_arn = var.enable_enhanced_monitoring ? aws_iam_role.enhanced_monitoring[0].arn : null
+#
+#   publicly_accessible = false
+#
+#   tags = merge(
+#     var.tags,
+#     {
+#       Name = "${var.project_name}-${var.environment}-aurora-reader"
+#       Role = "reader"
+#     }
+#   )
+# }
 
 # IAM Role for Enhanced Monitoring
 resource "aws_iam_role" "enhanced_monitoring" {

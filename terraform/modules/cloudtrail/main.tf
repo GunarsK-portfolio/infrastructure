@@ -84,13 +84,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "cloudtrail" {
     id     = "transition-old-logs"
     status = "Enabled"
 
-    transition {
-      days          = 90
-      storage_class = "GLACIER"
-    }
-
     expiration {
-      days = 365
+      days = 90
     }
 
     noncurrent_version_expiration {
@@ -173,13 +168,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "cloudtrail_logging" {
     id     = "expire-old-logs"
     status = "Enabled"
 
-    transition {
-      days          = 90
-      storage_class = "GLACIER"
-    }
-
     expiration {
-      days = 365
+      days = 90
     }
 
     abort_incomplete_multipart_upload {
@@ -349,16 +339,12 @@ resource "aws_cloudtrail" "main" {
   cloud_watch_logs_group_arn = "${aws_cloudwatch_log_group.cloudtrail.arn}:*"
   cloud_watch_logs_role_arn  = aws_iam_role.cloudtrail_cloudwatch.arn
 
+  # Event selector: Management events only (S3 data events disabled for cost optimization)
+  # S3 object-level logging costs $1000-5000/month for high-traffic file services
+  # Management events (CreateBucket, PutBucketPolicy, etc.) are sufficient for security audit
   event_selector {
     read_write_type           = "All"
     include_management_events = true
-
-    data_resource {
-      type = "AWS::S3::Object"
-      values = [
-        "arn:aws:s3:::${var.project_name}-*/"
-      ]
-    }
   }
 
   tags = merge(

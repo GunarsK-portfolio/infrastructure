@@ -207,13 +207,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "logging" {
 
     filter {}
 
-    transition {
-      days          = 90
-      storage_class = "GLACIER"
-    }
-
     expiration {
-      days = 365
+      days = 90
     }
 
     abort_incomplete_multipart_upload {
