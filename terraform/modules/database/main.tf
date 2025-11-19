@@ -259,7 +259,7 @@ resource "aws_rds_cluster" "main" {
   performance_insights_retention_period = var.enable_performance_insights ? var.performance_insights_retention_days : null
 
   # Point-in-time recovery
-  enable_http_endpoint = false
+  enable_http_endpoint = true
 
   tags = merge(
     var.tags,
