@@ -190,8 +190,10 @@ resource "aws_iam_role_policy" "secrets_access" {
         ]
         # Only grant access to secrets this specific service needs
         # Maps to local.service_secrets[each.key] configuration
+        # Extract base ARN by removing :json-key:: suffix (App Runner format)
         Resource = [
-          for secret_value in values(local.service_secrets[each.key]) : secret_value
+          for secret_value in values(local.service_secrets[each.key]) :
+          regex("^(arn:aws:secretsmanager:[^:]+:[^:]+:secret:[^:]+)", secret_value)[0]
         ]
         Condition = {
           StringEquals = {
