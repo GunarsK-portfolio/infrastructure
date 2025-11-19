@@ -131,7 +131,7 @@ variable "app_runner_services" {
       cpu               = "0.25 vCPU"
       memory            = "0.5 GB"
       port              = 8080
-      min_instances     = 0
+      min_instances     = 1
       max_instances     = 5
       max_concurrency   = 50
       health_check_path = "/health"
@@ -171,7 +171,7 @@ variable "app_runner_services" {
       cpu               = "0.25 vCPU"
       memory            = "0.5 GB"
       port              = 80
-      min_instances     = 0
+      min_instances     = 1
       max_instances     = 5
       max_concurrency   = 50
       health_check_path = "/"
@@ -181,7 +181,7 @@ variable "app_runner_services" {
       cpu               = "0.25 vCPU"
       memory            = "0.5 GB"
       port              = 80
-      min_instances     = 0
+      min_instances     = 1
       max_instances     = 5
       max_concurrency   = 50
       health_check_path = "/"
