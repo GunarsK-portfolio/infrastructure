@@ -121,14 +121,11 @@ services:
     image: redis:8.2-alpine
     container_name: redis
     restart: unless-stopped
+    user: "999:999"
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    cap_add:
-      - SETGID
-      - SETUID
-      - CHOWN
     command: >
       sh -c "redis-server /usr/local/etc/redis/redis.conf --requirepass '${REDIS_PASSWORD}'"
     environment:
