@@ -258,8 +258,10 @@ resource "aws_rds_cluster" "main" {
   performance_insights_kms_key_id       = local.performance_insights_kms_key
   performance_insights_retention_period = var.enable_performance_insights ? var.performance_insights_retention_days : null
 
-  # Point-in-time recovery
-  enable_http_endpoint = true
+  # Aurora Data API for serverless access (Query Editor, Lambda functions)
+  # Requires IAM authentication and security group restrictions
+  # Access is controlled by var.database_security_group_id
+  enable_http_endpoint = var.enable_http_endpoint
 
   tags = merge(
     var.tags,

@@ -245,6 +245,12 @@ variable "enable_enhanced_monitoring" {
   default     = true
 }
 
+variable "enable_http_endpoint" {
+  description = "Enable Aurora Data API HTTP endpoint for serverless access (Query Editor, Lambda)"
+  type        = bool
+  default     = false
+}
+
 variable "enable_performance_insights" {
   description = "Enable Performance Insights for Aurora"
   type        = bool

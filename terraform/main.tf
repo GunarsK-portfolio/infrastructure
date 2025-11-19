@@ -78,6 +78,7 @@ module "database" {
 
   enable_enhanced_monitoring  = var.enable_enhanced_monitoring
   enable_performance_insights = var.enable_performance_insights
+  enable_http_endpoint        = var.enable_http_endpoint
 
   tags = local.common_tags
 }
