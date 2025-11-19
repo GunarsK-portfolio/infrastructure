@@ -237,7 +237,7 @@ resource "aws_iam_role_policy" "s3_access" {
           "s3:DeleteObject"
         ]
         Resource = [
-          for bucket in var.s3_bucket_names : "arn:aws:s3:::${bucket}/*"
+          for bucket in values(var.s3_bucket_names) : "arn:aws:s3:::${bucket}/*"
         ]
         Condition = {
           StringEquals = {
@@ -251,7 +251,7 @@ resource "aws_iam_role_policy" "s3_access" {
           "s3:ListBucket"
         ]
         Resource = [
-          for bucket in var.s3_bucket_names : "arn:aws:s3:::${bucket}"
+          for bucket in values(var.s3_bucket_names) : "arn:aws:s3:::${bucket}"
         ]
         Condition = {
           StringEquals = {

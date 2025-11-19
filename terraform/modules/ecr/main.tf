@@ -15,7 +15,10 @@ terraform {
 resource "aws_ecr_repository" "main" {
   for_each = toset(var.service_names)
 
-  name                 = "${var.project_name}/${each.key}"
+  name = "${var.project_name}/${each.key}"
+  # MUTABLE tags allow "latest" tag updates for rapid iteration
+  # Production deployments should use immutable semantic versions (v1.0.0)
+  # Security: ECR resource policies restrict push permissions to CI/CD roles only
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
@@ -37,6 +40,8 @@ resource "aws_ecr_repository" "main" {
 }
 
 # Lifecycle policy to keep last 20 images
+# Note: "latest" tag included to prevent deletion during rapid iteration
+# Semantic versioned tags (v*, prod*, staging*) represent release candidates
 resource "aws_ecr_lifecycle_policy" "main" {
   for_each = aws_ecr_repository.main
 

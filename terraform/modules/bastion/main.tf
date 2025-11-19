@@ -78,7 +78,7 @@ resource "aws_iam_role_policy" "bastion_kms" {
           "kms:Decrypt",
           "kms:DescribeKey"
         ]
-        Resource = var.kms_key_arn
+        Resource = [var.kms_key_arn]
       }
     ]
   })
@@ -99,7 +99,7 @@ resource "aws_iam_role_policy" "bastion_cloudwatch" {
           "logs:PutLogEvents",
           "logs:CreateLogGroup"
         ]
-        Resource = "arn:aws:logs:*:*:log-group:/aws/ec2/bastion/${var.project_name}-${var.environment}:*"
+        Resource = ["arn:aws:logs:*:*:log-group:/aws/ec2/bastion/${var.project_name}-${var.environment}:*"]
       },
       {
         Effect = "Allow"
@@ -107,7 +107,7 @@ resource "aws_iam_role_policy" "bastion_cloudwatch" {
           "ssm:GetParameter",
           "ssm:GetParameters"
         ]
-        Resource = "arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*"
+        Resource = ["arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*"]
       }
     ]
   })
@@ -207,7 +207,7 @@ resource "aws_instance" "bastion" {
   }
 
   # User data to install PostgreSQL client and CloudWatch agent
-  user_data = base64encode(<<-EOF
+  user_data_base64 = base64encode(<<-EOF
     #!/bin/bash
     set -e  # Exit on error
 

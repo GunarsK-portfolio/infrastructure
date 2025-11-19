@@ -335,6 +335,10 @@ S3_ACCESS_KEY=files-api-user
 S3_SECRET_KEY=files-api-secret-change-in-production
 
 S3_ENDPOINT=http://minio:9000
+# Three separate buckets for content segregation and fine-grained IAM policies:
+# - images: Portfolio project images (public read via CloudFront)
+# - documents: PDFs, CVs, resumes (authenticated access only)
+# - miniatures: Miniature painting photos (public read via CloudFront)
 S3_IMAGES_BUCKET=images
 S3_DOCUMENTS_BUCKET=documents
 S3_MINIATURES_BUCKET=miniatures
