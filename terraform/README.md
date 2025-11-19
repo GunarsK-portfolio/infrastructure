@@ -542,11 +542,12 @@ Approximate monthly costs (low traffic):
 - Aurora Serverless v2: $40-60 (1-16 ACU)
 - ElastiCache Serverless: $20-30
 - CloudFront: $5-10
+- WAF: $5-8 (web ACL + rules, no Bot Control)
 - S3: $1-5
 - Route53: $1
 - Other (CloudWatch, Secrets, ECR): $5-10
 
-**Total**: ~$100-160/month
+**Total**: ~$105-170/month
 
 ## References
 

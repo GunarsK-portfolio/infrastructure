@@ -15,7 +15,7 @@ CloudWatch monitoring with alarms, dashboard, and email notifications.
 | **CloudFront** | Total requests, 5xx error rate | All 4 distributions (public, admin, auth, files) combined |
 <!-- markdownlint-enable MD013 MD058 -->
 
-### Alarms (27 total, email notifications via SNS)
+### Alarms (32 total, email notifications via SNS)
 
 <!-- markdownlint-disable MD013 MD058 -->
 | Service | Alarm Type | Threshold | Evaluation | Action |
