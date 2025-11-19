@@ -299,6 +299,8 @@ cp .env.example .env
 POSTGRES_DB=portfolio
 DB_HOST=postgres
 DB_PORT=5432
+# SSL Mode: disable (local Docker), require (AWS RDS)
+DB_SSLMODE=disable
 
 # PostgreSQL Superuser (for database creation)
 POSTGRES_SUPERUSER=postgres
@@ -333,7 +335,9 @@ S3_ACCESS_KEY=files-api-user
 S3_SECRET_KEY=files-api-secret-change-in-production
 
 S3_ENDPOINT=http://minio:9000
-S3_BUCKET=images
+S3_IMAGES_BUCKET=images
+S3_DOCUMENTS_BUCKET=documents
+S3_MINIATURES_BUCKET=miniatures
 S3_USE_SSL=false
 
 # JWT

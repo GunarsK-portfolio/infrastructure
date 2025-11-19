@@ -36,6 +36,7 @@ locals {
       DB_PORT            = "5432"
       DB_NAME            = "portfolio"
       DB_USER            = "portfolio_admin"
+      DB_SSLMODE         = "require"
       REDIS_HOST         = var.elasticache_endpoint
       REDIS_PORT         = "6379"
       JWT_ACCESS_EXPIRY  = "15m"
@@ -51,6 +52,7 @@ locals {
       DB_PORT         = "5432"
       DB_NAME         = "portfolio"
       DB_USER         = "portfolio_admin"
+      DB_SSLMODE      = "require"
       ALLOWED_ORIGINS = "https://admin.${var.domain_name}"
       # Internal auth validation (fast, no CloudFront)
       AUTH_SERVICE_URL = "https://${var.project_name}-${var.environment}-auth-service.${data.aws_region.current.region}.awsapprunner.com/api/v1"
@@ -66,23 +68,30 @@ locals {
       DB_PORT         = "5432"
       DB_NAME         = "portfolio"
       DB_USER         = "portfolio_public"
+      DB_SSLMODE      = "require"
       ALLOWED_ORIGINS = "https://${var.domain_name}"
       # Public file URL generation (for frontend)
       FILES_API_URL = "https://files.${var.domain_name}/api/v1"
     }
     "files-api" = {
-      ENVIRONMENT        = local.environment_map[var.environment]
-      SERVICE_NAME       = "files-api"
-      LOG_LEVEL          = "info"
-      LOG_FORMAT         = "json"
-      DB_HOST            = var.aurora_endpoint
-      DB_PORT            = "5432"
-      DB_NAME            = "portfolio"
-      DB_USER            = "portfolio_admin"
-      S3_USE_SSL         = "true"
-      MAX_FILE_SIZE      = "10485760"
-      ALLOWED_FILE_TYPES = "image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
-      ALLOWED_ORIGINS    = "https://${var.domain_name},https://admin.${var.domain_name}"
+      ENVIRONMENT  = local.environment_map[var.environment]
+      SERVICE_NAME = "files-api"
+      LOG_LEVEL    = "info"
+      LOG_FORMAT   = "json"
+      DB_HOST      = var.aurora_endpoint
+      DB_PORT      = "5432"
+      DB_NAME      = "portfolio"
+      DB_USER      = "portfolio_admin"
+      DB_SSLMODE   = "require"
+      # S3 configuration - IAM role authentication (no access keys needed)
+      S3_ENDPOINT          = "https://s3.${data.aws_region.current.region}.amazonaws.com"
+      S3_USE_SSL           = "true"
+      S3_IMAGES_BUCKET     = var.s3_bucket_names["images"]
+      S3_DOCUMENTS_BUCKET  = var.s3_bucket_names["documents"]
+      S3_MINIATURES_BUCKET = var.s3_bucket_names["miniatures"]
+      MAX_FILE_SIZE        = "10485760"
+      ALLOWED_FILE_TYPES   = "image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
+      ALLOWED_ORIGINS      = "https://${var.domain_name},https://admin.${var.domain_name}"
       # Internal auth validation (fast, no CloudFront)
       AUTH_SERVICE_URL = "https://${var.project_name}-${var.environment}-auth-service.${data.aws_region.current.region}.awsapprunner.com/api/v1"
     }
