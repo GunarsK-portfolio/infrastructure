@@ -180,14 +180,7 @@ resource "aws_security_group" "database" {
     security_groups = [aws_security_group.app_runner.id]
   }
 
-  # No outbound restrictions (required for AWS managed services)
-  egress {
-    description = "All outbound traffic"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  # No egress rules - deny all outbound traffic (defense-in-depth)
 
   tags = merge(
     var.tags,
@@ -221,13 +214,7 @@ resource "aws_security_group" "cache" {
     security_groups = [aws_security_group.app_runner.id]
   }
 
-  egress {
-    description = "All outbound traffic"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  # No egress rules - deny all outbound traffic (defense-in-depth)
 
   tags = merge(
     var.tags,
