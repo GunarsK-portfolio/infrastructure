@@ -106,30 +106,30 @@ resource "aws_rds_cluster_parameter_group" "main" {
   # For 0.5-16 ACU range: ~87-2782 connections
   # Set conservative limit to prevent connection exhaustion
   parameter {
-    name  = "max_connections"
-    value = var.max_connections
+    name         = "max_connections"
+    value        = var.max_connections
     apply_method = "pending-reboot"
   }
 
   # Security: TLS/SSL enforcement
   # Force all connections to use SSL/TLS encryption
   parameter {
-    name  = "rds.force_ssl"
-    value = "1"
+    name         = "rds.force_ssl"
+    value        = "1"
     apply_method = "pending-reboot"
   }
 
   # Audit logging: Connection events
   # Log all connection attempts and disconnections for security auditing
   parameter {
-    name  = "log_connections"
-    value = "1"
+    name         = "log_connections"
+    value        = "1"
     apply_method = "pending-reboot"
   }
 
   parameter {
-    name  = "log_disconnections"
-    value = "1"
+    name         = "log_disconnections"
+    value        = "1"
     apply_method = "pending-reboot"
   }
 
@@ -138,24 +138,24 @@ resource "aws_rds_cluster_parameter_group" "main" {
   # Options: none, ddl, mod (INSERT/UPDATE/DELETE), all
   # Use 'ddl' for production to reduce log volume while maintaining security audit trail
   parameter {
-    name  = "log_statement"
-    value = "ddl"
+    name         = "log_statement"
+    value        = "ddl"
     apply_method = "pending-reboot"
   }
 
   # Audit logging: Query duration
   # Log query execution time for performance monitoring
   parameter {
-    name  = "log_duration"
-    value = "1"
+    name         = "log_duration"
+    value        = "1"
     apply_method = "pending-reboot"
   }
 
   # Audit logging: Slow query threshold
   # Log queries taking longer than 1000ms (1 second)
   parameter {
-    name  = "log_min_duration_statement"
-    value = "1000"
+    name         = "log_min_duration_statement"
+    value        = "1000"
     apply_method = "pending-reboot"
   }
 
@@ -163,8 +163,8 @@ resource "aws_rds_cluster_parameter_group" "main" {
   # Terminate queries running longer than 5 minutes (300000ms)
   # Prevents long-running queries from exhausting database resources
   parameter {
-    name  = "statement_timeout"
-    value = "300000"
+    name         = "statement_timeout"
+    value        = "300000"
     apply_method = "pending-reboot"
   }
 
