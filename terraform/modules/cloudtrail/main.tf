@@ -227,37 +227,6 @@ resource "aws_s3_bucket_policy" "cloudtrail" {
             "s3:x-amz-acl" = "bucket-owner-full-control"
           }
         }
-      },
-      {
-        Sid       = "DenyInsecureTransport"
-        Effect    = "Deny"
-        Principal = "*"
-        Action    = "s3:*"
-        Resource = [
-          aws_s3_bucket.cloudtrail.arn,
-          "${aws_s3_bucket.cloudtrail.arn}/*"
-        ]
-        Condition = {
-          Bool = {
-            "aws:SecureTransport" = "false"
-          }
-          StringNotEquals = {
-            "aws:PrincipalService" = "cloudtrail.amazonaws.com"
-          }
-        }
-      },
-      {
-        Sid       = "DenyUnencryptedObjectUploads"
-        Effect    = "Deny"
-        Principal = "*"
-        Action    = "s3:PutObject"
-        Resource  = "${aws_s3_bucket.cloudtrail.arn}/*"
-        Condition = {
-          StringNotEquals = {
-            "s3:x-amz-server-side-encryption" = "aws:kms"
-            "aws:PrincipalService"            = "cloudtrail.amazonaws.com"
-          }
-        }
       }
     ]
   })

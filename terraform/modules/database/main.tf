@@ -56,28 +56,28 @@ resource "aws_rds_cluster_parameter_group" "main" {
   parameter {
     name         = "pgaudit.log"
     value        = "ddl,role"
-    apply_method = "immediate"
+    apply_method = "pending-reboot"
   }
 
   # Log catalog queries (system table access) for security monitoring
   parameter {
     name         = "pgaudit.log_catalog"
     value        = "1"
-    apply_method = "immediate"
+    apply_method = "pending-reboot"
   }
 
   # Log full parameter values in audit logs
   parameter {
     name         = "pgaudit.log_parameter"
     value        = "1"
-    apply_method = "immediate"
+    apply_method = "pending-reboot"
   }
 
   # Include statement text in audit logs
   parameter {
     name         = "pgaudit.log_statement_once"
     value        = "0"
-    apply_method = "immediate"
+    apply_method = "pending-reboot"
   }
 
   # pg_cron configuration
