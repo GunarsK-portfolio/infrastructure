@@ -174,6 +174,9 @@ module "waf" {
   domain_name  = var.domain_name
 
   tags = local.common_tags
+
+  # Ensure KMS key is created before CloudWatch log groups
+  depends_on = [module.secrets]
 }
 
 # App Runner Module
