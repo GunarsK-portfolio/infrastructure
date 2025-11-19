@@ -76,6 +76,17 @@ variable "enable_performance_insights" {
   default     = true
 }
 
+variable "performance_insights_retention_days" {
+  description = "Performance Insights retention period in days"
+  type        = number
+  default     = 31
+
+  validation {
+    condition     = contains([7, 31, 62, 93, 124, 155, 186, 217, 248, 279, 310, 341, 372, 403, 434, 465, 496, 527, 558, 589, 620, 651, 682, 713, 731], var.performance_insights_retention_days)
+    error_message = "Performance Insights retention must be 7 days (free tier) or 31-731 days in monthly increments (long-term retention)."
+  }
+}
+
 variable "enable_enhanced_monitoring" {
   description = "Enable Enhanced Monitoring"
   type        = bool
