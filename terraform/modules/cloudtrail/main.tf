@@ -241,6 +241,9 @@ resource "aws_s3_bucket_policy" "cloudtrail" {
           Bool = {
             "aws:SecureTransport" = "false"
           }
+          StringNotEquals = {
+            "aws:PrincipalService" = "cloudtrail.amazonaws.com"
+          }
         }
       },
       {
@@ -252,6 +255,7 @@ resource "aws_s3_bucket_policy" "cloudtrail" {
         Condition = {
           StringNotEquals = {
             "s3:x-amz-server-side-encryption" = "aws:kms"
+            "aws:PrincipalService"            = "cloudtrail.amazonaws.com"
           }
         }
       }

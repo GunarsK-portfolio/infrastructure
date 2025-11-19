@@ -84,7 +84,7 @@ resource "aws_rds_cluster_parameter_group" "main" {
   parameter {
     name         = "cron.database_name"
     value        = var.database_name
-    apply_method = "immediate"
+    apply_method = "pending-reboot"
   }
 
   # pg_stat_statements configuration
@@ -97,7 +97,7 @@ resource "aws_rds_cluster_parameter_group" "main" {
   parameter {
     name         = "pg_stat_statements.max"
     value        = "10000"
-    apply_method = "immediate"
+    apply_method = "pending-reboot"
   }
 
   # Connection pooling limits
