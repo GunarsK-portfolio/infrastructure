@@ -53,26 +53,6 @@ jobs:
           TF_VAR_enable_vpc_flow_logs: ${{ secrets.TF_VAR_enable_vpc_flow_logs || 'true' }}
           TF_VAR_service_image_tags: ${{ vars.TF_VAR_service_image_tags }}
 
-      - name: Apply KMS Keys First
-        run: |
-          terraform apply -auto-approve -input=false \
-            -target=module.secrets.aws_kms_key.secrets \
-            -target=module.secrets.aws_kms_alias.secrets \
-            -target=module.waf.aws_kms_key.waf_logs \
-            -target=module.waf.aws_kms_alias.waf_logs
-        env:
-          TF_VAR_domain_name: ${{ secrets.TF_VAR_domain_name }}
-          TF_VAR_budget_alert_emails: ${{ secrets.TF_VAR_budget_alert_emails }}
-          TF_VAR_alarm_email_addresses: ${{ secrets.TF_VAR_alarm_email_addresses }}
-          TF_VAR_enable_guardduty: ${{ secrets.TF_VAR_enable_guardduty || 'true' }}
-          TF_VAR_enable_budgets: ${{ secrets.TF_VAR_enable_budgets || 'true' }}
-          TF_VAR_monthly_budget_limit: ${{ secrets.TF_VAR_monthly_budget_limit || '100' }}
-          TF_VAR_enable_vpc_flow_logs: ${{ secrets.TF_VAR_enable_vpc_flow_logs || 'true' }}
-          TF_VAR_service_image_tags: ${{ vars.TF_VAR_service_image_tags }}
-
-      - name: Wait for KMS Policy Propagation
-        run: sleep 30
-
       - name: Terraform Apply
         run: terraform apply -auto-approve -input=false
         env:

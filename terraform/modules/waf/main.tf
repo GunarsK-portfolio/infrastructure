@@ -60,8 +60,11 @@ resource "aws_kms_key" "waf_logs" {
           Service = "logs.${data.aws_region.current.region}.amazonaws.com"
         }
         Action = [
+          "kms:Encrypt",
           "kms:Decrypt",
-          "kms:GenerateDataKey",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey",
           "kms:CreateGrant"
         ]
         Resource = "*"
