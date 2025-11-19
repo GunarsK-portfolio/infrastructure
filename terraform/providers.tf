@@ -9,10 +9,6 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 6.21"
     }
-    postgresql = {
-      source  = "cyrilgdn/postgresql"
-      version = "~> 1.23"
-    }
   }
 }
 
@@ -44,17 +40,4 @@ provider "aws" {
       Owner       = var.owner
     }
   }
-}
-
-# PostgreSQL Provider for Database User Management
-# Connects to Aurora cluster to create application users
-provider "postgresql" {
-  host            = module.database.cluster_endpoint
-  port            = 5432
-  database        = "portfolio"
-  username        = jsondecode(data.aws_secretsmanager_secret_version.master_password.secret_string)["username"]
-  password        = jsondecode(data.aws_secretsmanager_secret_version.master_password.secret_string)["password"]
-  sslmode         = "require"
-  connect_timeout = 15
-  superuser       = false
 }
