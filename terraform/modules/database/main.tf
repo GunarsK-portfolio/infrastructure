@@ -91,7 +91,7 @@ resource "aws_rds_cluster_parameter_group" "main" {
   parameter {
     name         = "pg_stat_statements.track"
     value        = "all"
-    apply_method = "immediate"
+    apply_method = "pending-reboot"
   }
 
   parameter {
