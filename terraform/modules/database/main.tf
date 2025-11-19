@@ -396,22 +396,3 @@ resource "aws_cloudwatch_metric_alarm" "aurora_acu_utilization" {
 
   tags = var.tags
 }
-
-# Cross-Region Read Replica Configuration
-# NOTE: Cross-region replication for Aurora Global Database requires:
-# 1. A secondary AWS provider in the root module (e.g., provider "aws" { alias = "replica" })
-# 2. Creating an aws_rds_global_cluster resource in the root module
-# 3. Attaching this cluster to the global cluster
-# 4. Creating a secondary cluster in the replica region
-#
-# Variables are provided (enable_cross_region_replica, replica_region) but implementation
-# requires root module configuration. See AWS documentation for Aurora Global Database:
-# https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-global-database.html
-#
-# Estimated additional cost: ~$100-200/month for replica cluster in us-east-1
-#
-# To enable:
-# 1. Add secondary provider to main.tf: provider "aws" { alias = "replica"; region = var.replica_region }
-# 2. Create global cluster resource
-# 3. Pass replica provider to this module
-# 4. Uncomment replica configuration below (requires provider alias support)

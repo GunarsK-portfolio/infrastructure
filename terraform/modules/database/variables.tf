@@ -110,23 +110,6 @@ variable "alarm_sns_topic_arn" {
   default     = null
 }
 
-variable "enable_cross_region_replica" {
-  description = "Enable cross-region read replica for disaster recovery"
-  type        = bool
-  default     = false
-}
-
-variable "replica_region" {
-  description = "AWS region for cross-region read replica (only used if enable_cross_region_replica = true)"
-  type        = string
-  default     = "us-east-1"
-
-  validation {
-    condition     = can(regex("^[a-z]{2}-[a-z]+-[0-9]{1}$", var.replica_region))
-    error_message = "Replica region must be a valid AWS region format (e.g., us-east-1, eu-central-1)."
-  }
-}
-
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)
