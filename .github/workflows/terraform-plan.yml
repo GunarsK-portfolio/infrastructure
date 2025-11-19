@@ -60,6 +60,7 @@ jobs:
           TF_VAR_enable_budgets: ${{ secrets.TF_VAR_enable_budgets || 'true' }}
           TF_VAR_monthly_budget_limit: ${{ secrets.TF_VAR_monthly_budget_limit || '100' }}
           TF_VAR_enable_vpc_flow_logs: ${{ secrets.TF_VAR_enable_vpc_flow_logs || 'true' }}
+          TF_VAR_service_image_tags: ${{ vars.TF_VAR_service_image_tags }}
 
       - name: Comment PR with results
         uses: actions/github-script@v7

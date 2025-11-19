@@ -206,6 +206,11 @@ resource "aws_iam_role_policy" "s3_access" {
         Resource = [
           for bucket in var.s3_bucket_names : "arn:aws:s3:::${bucket}/*"
         ]
+        Condition = {
+          StringEquals = {
+            "aws:RequestedRegion" = data.aws_region.current.region
+          }
+        }
       },
       {
         Effect = "Allow"
@@ -215,6 +220,11 @@ resource "aws_iam_role_policy" "s3_access" {
         Resource = [
           for bucket in var.s3_bucket_names : "arn:aws:s3:::${bucket}"
         ]
+        Condition = {
+          StringEquals = {
+            "aws:RequestedRegion" = data.aws_region.current.region
+          }
+        }
       }
     ]
   })
