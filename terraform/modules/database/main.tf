@@ -108,6 +108,7 @@ resource "aws_rds_cluster_parameter_group" "main" {
   parameter {
     name  = "max_connections"
     value = var.max_connections
+    apply_method = "pending-reboot"
   }
 
   # Security: TLS/SSL enforcement
@@ -115,6 +116,7 @@ resource "aws_rds_cluster_parameter_group" "main" {
   parameter {
     name  = "rds.force_ssl"
     value = "1"
+    apply_method = "pending-reboot"
   }
 
   # Audit logging: Connection events
@@ -122,11 +124,13 @@ resource "aws_rds_cluster_parameter_group" "main" {
   parameter {
     name  = "log_connections"
     value = "1"
+    apply_method = "pending-reboot"
   }
 
   parameter {
     name  = "log_disconnections"
     value = "1"
+    apply_method = "pending-reboot"
   }
 
   # Audit logging: SQL statement logging
@@ -136,6 +140,7 @@ resource "aws_rds_cluster_parameter_group" "main" {
   parameter {
     name  = "log_statement"
     value = "ddl"
+    apply_method = "pending-reboot"
   }
 
   # Audit logging: Query duration
@@ -143,6 +148,7 @@ resource "aws_rds_cluster_parameter_group" "main" {
   parameter {
     name  = "log_duration"
     value = "1"
+    apply_method = "pending-reboot"
   }
 
   # Audit logging: Slow query threshold
@@ -150,6 +156,7 @@ resource "aws_rds_cluster_parameter_group" "main" {
   parameter {
     name  = "log_min_duration_statement"
     value = "1000"
+    apply_method = "pending-reboot"
   }
 
   # Query timeout protection
@@ -158,6 +165,7 @@ resource "aws_rds_cluster_parameter_group" "main" {
   parameter {
     name  = "statement_timeout"
     value = "300000"
+    apply_method = "pending-reboot"
   }
 
   tags = merge(
