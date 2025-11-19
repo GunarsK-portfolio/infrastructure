@@ -63,7 +63,7 @@ variable "availability_zones" {
 variable "aurora_min_capacity" {
   description = "Minimum ACUs for Aurora Serverless v2"
   type        = number
-  default     = 1
+  default     = 0.5
 
   validation {
     condition     = var.aurora_min_capacity >= 0.5 && var.aurora_min_capacity <= 256
@@ -74,7 +74,7 @@ variable "aurora_min_capacity" {
 variable "aurora_max_capacity" {
   description = "Maximum ACUs for Aurora Serverless v2"
   type        = number
-  default     = 16
+  default     = 4
 
   validation {
     condition     = var.aurora_max_capacity >= 0.5 && var.aurora_max_capacity <= 256
@@ -103,7 +103,7 @@ variable "aurora_backup_retention_days" {
 variable "elasticache_data_storage_gb" {
   description = "Maximum data storage in GB for ElastiCache Serverless"
   type        = number
-  default     = 10
+  default     = 2
 
   validation {
     condition     = var.elasticache_data_storage_gb >= 1 && var.elasticache_data_storage_gb <= 5000
@@ -286,7 +286,7 @@ variable "budget_alert_emails" {
 variable "cloudtrail_log_retention_days" {
   description = "Number of days to retain CloudTrail logs in CloudWatch"
   type        = number
-  default     = 365
+  default     = 90
 
   validation {
     condition = contains([

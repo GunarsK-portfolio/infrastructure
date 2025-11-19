@@ -84,13 +84,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "cloudtrail" {
     id     = "transition-old-logs"
     status = "Enabled"
 
-    transition {
-      days          = 90
-      storage_class = "GLACIER"
-    }
-
     expiration {
-      days = 365
+      days = 90
     }
 
     noncurrent_version_expiration {
@@ -173,13 +168,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "cloudtrail_logging" {
     id     = "expire-old-logs"
     status = "Enabled"
 
-    transition {
-      days          = 90
-      storage_class = "GLACIER"
-    }
-
     expiration {
-      days = 365
+      days = 90
     }
 
     abort_incomplete_multipart_upload {
@@ -349,15 +339,40 @@ resource "aws_cloudtrail" "main" {
   cloud_watch_logs_group_arn = "${aws_cloudwatch_log_group.cloudtrail.arn}:*"
   cloud_watch_logs_role_arn  = aws_iam_role.cloudtrail_cloudwatch.arn
 
-  event_selector {
-    read_write_type           = "All"
-    include_management_events = true
+  # Advanced event selector: Management events + S3 write operations
+  # Logs management events (CreateBucket, PutBucketPolicy, etc.) AND
+  # S3 data events for PutObject/DeleteObject on user content buckets
+  # Read operations (GetObject) excluded for cost optimization
+  # GDPR Article 32 compliance: Audit trail for file uploads/deletions
+  advanced_event_selector {
+    name = "Log management events"
+    field_selector {
+      field  = "eventCategory"
+      equals = ["Management"]
+    }
+  }
 
-    data_resource {
-      type = "AWS::S3::Object"
-      values = [
-        "arn:aws:s3:::${var.project_name}-*/"
+  advanced_event_selector {
+    name = "Log S3 write operations on user content buckets"
+    field_selector {
+      field  = "eventCategory"
+      equals = ["Data"]
+    }
+    field_selector {
+      field  = "resources.type"
+      equals = ["AWS::S3::Object"]
+    }
+    field_selector {
+      field = "resources.ARN"
+      starts_with = [
+        "arn:aws:s3:::${var.project_name}-images-${var.environment}-${var.account_id}/",
+        "arn:aws:s3:::${var.project_name}-documents-${var.environment}-${var.account_id}/",
+        "arn:aws:s3:::${var.project_name}-miniatures-${var.environment}-${var.account_id}/"
       ]
+    }
+    field_selector {
+      field  = "eventName"
+      equals = ["PutObject", "DeleteObject"]
     }
   }
 
