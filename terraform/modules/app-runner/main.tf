@@ -151,6 +151,7 @@ resource "aws_iam_role" "app_runner" {
 }
 
 # IAM Policy for Secrets Manager access (with region restriction)
+# SECURITY: Each service only has access to secrets it actually needs
 resource "aws_iam_role_policy" "secrets_access" {
   for_each = var.services
 
@@ -166,7 +167,11 @@ resource "aws_iam_role_policy" "secrets_access" {
           "secretsmanager:GetSecretValue",
           "secretsmanager:DescribeSecret"
         ]
-        Resource = [for arn in var.secrets_arns : arn]
+        # Only grant access to secrets this specific service needs
+        # Maps to local.service_secrets[each.key] configuration
+        Resource = [
+          for secret_value in values(local.service_secrets[each.key]) : secret_value
+        ]
         Condition = {
           StringEquals = {
             "aws:RequestedRegion" = data.aws_region.current.region
