@@ -16,7 +16,7 @@ AWS serverless infrastructure for production deployment.
 | **WAF** | Security | Web Application Firewall protecting CloudFront with rate limiting, OWASP Top 10 rules, and Log4j protection. |
 | **Route53** | DNS | DNS hosting with DNSSEC, CAA records, query logging, and automatic certificate validation. |
 | **ACM** | Security | SSL/TLS certificates (*.gunarsk.com wildcard) with automatic DNS validation and renewal. |
-| **CloudTrail** | Audit | API activity logging for all AWS services with CloudWatch integration and security event alarms. |
+| **CloudTrail** | Audit | API activity logging for all AWS services with CloudWatch integration and 6 security event alarms (console login failures, IAM/S3 policy changes, KMS operations, network changes, CloudTrail tampering). |
 | **Secrets Manager** | Security | Encrypted storage for database passwords, Redis auth tokens, JWT secrets. Manual rotation required. |
 | **KMS** | Security | Encryption key management for secrets, database, and S3 bucket encryption. |
 | **ECR** | Registry | Container image registry with vulnerability scanning and lifecycle policies (keep last 10 images). |
