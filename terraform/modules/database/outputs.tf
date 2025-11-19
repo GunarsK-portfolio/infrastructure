@@ -42,8 +42,3 @@ output "writer_instance_id" {
   description = "Writer instance identifier"
   value       = aws_rds_cluster_instance.writer.id
 }
-
-output "reader_instance_id" {
-  description = "Reader instance identifier"
-  value       = aws_rds_cluster_instance.reader.id
-}
