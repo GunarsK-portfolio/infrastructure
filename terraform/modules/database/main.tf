@@ -54,43 +54,50 @@ resource "aws_rds_cluster_parameter_group" "main" {
   # Log all DDL, DCL, and security-relevant operations
   # Options: READ, WRITE, FUNCTION, ROLE, DDL, MISC, MISC_SET, ALL
   parameter {
-    name  = "pgaudit.log"
-    value = "ddl,role"
+    name         = "pgaudit.log"
+    value        = "ddl,role"
+    apply_method = "immediate"
   }
 
   # Log catalog queries (system table access) for security monitoring
   parameter {
-    name  = "pgaudit.log_catalog"
-    value = "1"
+    name         = "pgaudit.log_catalog"
+    value        = "1"
+    apply_method = "immediate"
   }
 
   # Log full parameter values in audit logs
   parameter {
-    name  = "pgaudit.log_parameter"
-    value = "1"
+    name         = "pgaudit.log_parameter"
+    value        = "1"
+    apply_method = "immediate"
   }
 
   # Include statement text in audit logs
   parameter {
-    name  = "pgaudit.log_statement_once"
-    value = "0"
+    name         = "pgaudit.log_statement_once"
+    value        = "0"
+    apply_method = "immediate"
   }
 
   # pg_cron configuration
   parameter {
-    name  = "cron.database_name"
-    value = var.database_name
+    name         = "cron.database_name"
+    value        = var.database_name
+    apply_method = "immediate"
   }
 
   # pg_stat_statements configuration
   parameter {
-    name  = "pg_stat_statements.track"
-    value = "all"
+    name         = "pg_stat_statements.track"
+    value        = "all"
+    apply_method = "immediate"
   }
 
   parameter {
-    name  = "pg_stat_statements.max"
-    value = "10000"
+    name         = "pg_stat_statements.max"
+    value        = "10000"
+    apply_method = "immediate"
   }
 
   # Connection pooling limits

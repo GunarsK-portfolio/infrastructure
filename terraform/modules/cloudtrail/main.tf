@@ -257,6 +257,11 @@ resource "aws_s3_bucket_policy" "cloudtrail" {
       }
     ]
   })
+
+  depends_on = [
+    aws_s3_bucket_public_access_block.cloudtrail,
+    aws_s3_bucket_ownership_controls.cloudtrail
+  ]
 }
 
 # CloudWatch Log Group for CloudTrail
