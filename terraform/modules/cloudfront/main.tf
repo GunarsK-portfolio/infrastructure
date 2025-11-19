@@ -49,24 +49,21 @@ resource "aws_cloudfront_response_headers_policy" "security_headers" {
       protection = true
       override   = true
     }
-  }
 
-  # Content Security Policy
-  # SECURITY NOTE: This CSP uses 'unsafe-hashes' (CSP Level 3) for inline styles
-  # Vue @click/@change directives do NOT need unsafe-hashes (they compile to JS)
-  # ACTUAL REASON: Vue :style bindings, v-show directive, and Naive UI runtime styles
-  #   generate inline style attributes that cannot be nonce-protected
-  # RISK: Weaker than nonce-based CSP, but significantly safer than 'unsafe-inline'
-  # TODO (8h): Migrate to nonce-based CSP by refactoring all inline styles to CSS classes
-  custom_headers_config {
-    items {
-      header = "Content-Security-Policy"
+    # Content Security Policy
+    # SECURITY NOTE: This CSP uses 'unsafe-hashes' (CSP Level 3) for inline styles
+    # Vue @click/@change directives do NOT need unsafe-hashes (they compile to JS)
+    # ACTUAL REASON: Vue :style bindings, v-show directive, and Naive UI runtime styles
+    #   generate inline style attributes that cannot be nonce-protected
+    # RISK: Weaker than nonce-based CSP, but significantly safer than 'unsafe-inline'
+    # TODO (8h): Migrate to nonce-based CSP by refactoring all inline styles to CSS classes
+    content_security_policy {
       # CSP Level 3 with unsafe-hashes (not supported in Safari):
       # - Removed 'unsafe-inline' and 'unsafe-eval' for scripts (strict)
       # - Allow 'unsafe-hashes' for Vue :style bindings and Naive UI runtime styles
       # - Script-src does NOT need unsafe-hashes (Vue event directives compile to JS)
       # - Use 'strict-dynamic' when nonce-based CSP is implemented
-      value = join("; ", [
+      content_security_policy = join("; ", [
         "default-src 'self'",
         "script-src 'self'",                # No unsafe-hashes needed for Vue directives
         "style-src 'self' 'unsafe-hashes'", # Required for :style, v-show, Naive UI
@@ -190,7 +187,7 @@ resource "aws_cloudfront_distribution" "public" {
 
   viewer_certificate {
     acm_certificate_arn      = var.certificate_arn
-    minimum_protocol_version = "TLS1.3_2025"
+    minimum_protocol_version = "TLSv1.3_2025"
     ssl_support_method       = "sni-only"
   }
 
@@ -315,7 +312,7 @@ resource "aws_cloudfront_distribution" "admin" {
 
   viewer_certificate {
     acm_certificate_arn      = var.certificate_arn
-    minimum_protocol_version = "TLS1.3_2025"
+    minimum_protocol_version = "TLSv1.3_2025"
     ssl_support_method       = "sni-only"
   }
 
@@ -380,7 +377,7 @@ resource "aws_cloudfront_distribution" "auth" {
 
   viewer_certificate {
     acm_certificate_arn      = var.certificate_arn
-    minimum_protocol_version = "TLS1.3_2025"
+    minimum_protocol_version = "TLSv1.3_2025"
     ssl_support_method       = "sni-only"
   }
 
@@ -445,7 +442,7 @@ resource "aws_cloudfront_distribution" "files" {
 
   viewer_certificate {
     acm_certificate_arn      = var.certificate_arn
-    minimum_protocol_version = "TLS1.3_2025"
+    minimum_protocol_version = "TLSv1.3_2025"
     ssl_support_method       = "sni-only"
   }
 

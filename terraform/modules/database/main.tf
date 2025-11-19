@@ -38,9 +38,11 @@ resource "aws_rds_cluster_parameter_group" "main" {
 
   # Enable pg_cron, pg_partman, and pgaudit extensions
   # pgaudit provides advanced database audit logging capabilities
+  # NOTE: shared_preload_libraries is a static parameter requiring restart
   parameter {
-    name  = "shared_preload_libraries"
-    value = "pg_stat_statements,pg_cron,pgaudit"
+    name         = "shared_preload_libraries"
+    value        = "pg_stat_statements,pg_cron,pgaudit"
+    apply_method = "pending-reboot"
   }
 
   # pgaudit configuration

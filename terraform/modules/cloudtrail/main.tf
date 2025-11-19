@@ -99,20 +99,13 @@ resource "aws_s3_bucket_lifecycle_configuration" "cloudtrail" {
 }
 
 # Bucket ownership controls for CloudTrail bucket
+# BucketOwnerEnforced disables ACLs - all objects owned by bucket owner
 resource "aws_s3_bucket_ownership_controls" "cloudtrail" {
   bucket = aws_s3_bucket.cloudtrail.id
 
   rule {
     object_ownership = "BucketOwnerEnforced"
   }
-}
-
-# Explicit ACL for CloudTrail bucket
-resource "aws_s3_bucket_acl" "cloudtrail" {
-  bucket = aws_s3_bucket.cloudtrail.id
-  acl    = "private"
-
-  depends_on = [aws_s3_bucket_ownership_controls.cloudtrail]
 }
 
 # S3 Bucket for CloudTrail Access Logs
