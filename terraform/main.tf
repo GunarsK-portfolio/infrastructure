@@ -41,6 +41,9 @@ module "networking" {
   kms_key_arn          = module.secrets.kms_key_arn # Use secrets KMS key for flow logs
 
   tags = local.common_tags
+
+  # Ensure KMS key is created before CloudWatch log groups for VPC Flow Logs
+  depends_on = [module.secrets]
 }
 
 # Secrets Manager Module
@@ -174,6 +177,9 @@ module "waf" {
   kms_key_arn = module.secrets.kms_key_arn
 
   tags = local.common_tags
+
+  # Ensure KMS key is created before CloudWatch log groups
+  depends_on = [module.secrets]
 }
 
 # App Runner Module
@@ -273,6 +279,9 @@ module "cloudtrail" {
   kms_key_arn = module.secrets.kms_key_arn
 
   tags = local.common_tags
+
+  # Ensure KMS key is created before CloudWatch log groups
+  depends_on = [module.secrets]
 }
 
 # GuardDuty Module - Threat Detection
@@ -288,6 +297,9 @@ module "guardduty" {
   kms_key_arn = module.secrets.kms_key_arn
 
   tags = local.common_tags
+
+  # Ensure KMS key is created before CloudWatch log groups
+  depends_on = [module.secrets]
 }
 
 # Budgets Module - Cost Control

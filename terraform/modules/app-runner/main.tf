@@ -153,7 +153,11 @@ resource "aws_iam_role" "app_runner" {
 # IAM Policy for Secrets Manager access (with region restriction)
 # SECURITY: Each service only has access to secrets it actually needs
 resource "aws_iam_role_policy" "secrets_access" {
-  for_each = var.services
+  # Only create policy for services that have secrets configured
+  for_each = {
+    for k, v in var.services : k => v
+    if length(local.service_secrets[k]) > 0
+  }
 
   name_prefix = "secrets-access-"
   role        = aws_iam_role.app_runner[each.key].id
