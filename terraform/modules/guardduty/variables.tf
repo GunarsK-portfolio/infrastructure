@@ -19,7 +19,7 @@ variable "enable_guardduty" {
 variable "enable_sns_alerts" {
   description = "Enable SNS notifications for GuardDuty findings"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "finding_publishing_frequency" {
