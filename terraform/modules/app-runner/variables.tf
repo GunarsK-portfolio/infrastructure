@@ -20,6 +20,11 @@ variable "app_runner_security_group_id" {
   type        = string
 }
 
+variable "vpc_id" {
+  description = "VPC ID for VPC Ingress configuration"
+  type        = string
+}
+
 variable "services" {
   description = "Map of service configurations"
   type = map(object({

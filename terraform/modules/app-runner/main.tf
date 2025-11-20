@@ -54,8 +54,8 @@ locals {
       DB_USER         = "portfolio_admin"
       DB_SSLMODE      = "require"
       ALLOWED_ORIGINS = "https://admin.${var.domain_name}"
-      # Auth validation using internal App Runner URL (bypasses CloudFront/NAT Gateway)
-      AUTH_SERVICE_URL = "https://${var.project_name}-${var.environment}-auth-service.${data.aws_region.current.name}.awsapprunner.com/api/v1/auth"
+      # Auth validation using VPC Ingress endpoint (private, internal S2S communication)
+      AUTH_SERVICE_URL = "https://${aws_apprunner_vpc_ingress_connection.main["auth-service"].domain_name}/api/v1"
       # Public file URL generation (for frontend)
       FILES_API_URL = "https://files.${var.domain_name}/api/v1"
     }
@@ -92,8 +92,8 @@ locals {
       MAX_FILE_SIZE        = "10485760"
       ALLOWED_FILE_TYPES   = "image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
       ALLOWED_ORIGINS      = "https://${var.domain_name},https://admin.${var.domain_name}"
-      # Auth validation using internal App Runner URL (bypasses CloudFront/NAT Gateway)
-      AUTH_SERVICE_URL = "https://${var.project_name}-${var.environment}-auth-service.${data.aws_region.current.name}.awsapprunner.com/api/v1/auth"
+      # Auth validation using VPC Ingress endpoint (private, internal S2S communication)
+      AUTH_SERVICE_URL = "https://${aws_apprunner_vpc_ingress_connection.main["auth-service"].domain_name}/api/v1"
     }
     "admin-web" = {
       ENVIRONMENT  = local.environment_map[var.environment]
@@ -398,4 +398,44 @@ resource "aws_apprunner_auto_scaling_configuration_version" "main" {
   min_size                        = each.value.min_instances
 
   tags = var.tags
+}
+
+# VPC Endpoint for App Runner Ingress (makes services private)
+resource "aws_vpc_endpoint" "apprunner" {
+  for_each = var.services
+
+  vpc_id              = var.vpc_id
+  service_name        = "com.amazonaws.vpce.${data.aws_region.current.name}.vpce-svc-apprunner"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = var.private_subnet_ids
+  security_group_ids  = [var.app_runner_security_group_id]
+
+  private_dns_enabled = false
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-${each.key}-vpce"
+    }
+  )
+}
+
+# VPC Ingress Connection (restricts App Runner to VPC-only access)
+resource "aws_apprunner_vpc_ingress_connection" "main" {
+  for_each = var.services
+
+  name        = "${var.project_name}-${var.environment}-${each.key}-ingress"
+  service_arn = aws_apprunner_service.main[each.key].arn
+
+  ingress_vpc_configuration {
+    vpc_id          = var.vpc_id
+    vpc_endpoint_id = aws_vpc_endpoint.apprunner[each.key].id
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-${each.key}-ingress"
+    }
+  )
 }
