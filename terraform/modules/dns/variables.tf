@@ -5,6 +5,18 @@ variable "domain_name" {
   type        = string
 }
 
+variable "create_zone" {
+  description = "Whether to create the hosted zone and base resources (CAA, logging). Set false for records-only mode."
+  type        = bool
+  default     = true
+}
+
+variable "zone_id" {
+  description = "Existing Route53 zone ID (required when create_zone = false)"
+  type        = string
+  default     = null
+}
+
 variable "cloudfront_distributions" {
   description = "Map of CloudFront distribution domain names (optional - records created only if provided)"
   type = object({

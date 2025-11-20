@@ -255,6 +255,8 @@ module "dns_records" {
   source = "./modules/dns"
 
   domain_name = var.domain_name
+  create_zone = false              # Don't recreate the hosted zone
+  zone_id     = module.dns.zone_id # Use existing zone from first module call
 
   # CloudFront distributions - explicit dependency ensures CloudFront is created first
   cloudfront_distributions = {
@@ -264,7 +266,7 @@ module "dns_records" {
     files  = module.cloudfront.files_distribution_domain_name
   }
 
-  # KMS encryption for logs (reuse from first dns module)
+  # KMS encryption for logs (not needed in records-only mode, but required variable)
   kms_key_arn = module.secrets.kms_key_arn
 
   tags = local.common_tags
