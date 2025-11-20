@@ -68,20 +68,8 @@ resource "aws_cloudwatch_dashboard" "main" {
         properties = {
           metrics = flatten([
             for service_name, _ in var.app_runner_service_arns : [
-              {
-                namespace  = "AWS/AppRunner"
-                metricName = "4xxStatusResponses"
-                dimensions = { ServiceName = "${var.project_name}-${var.environment}-${service_name}" }
-                stat       = "Average"
-                label      = "${service_name} 4xx"
-              },
-              {
-                namespace  = "AWS/AppRunner"
-                metricName = "5xxStatusResponses"
-                dimensions = { ServiceName = "${var.project_name}-${var.environment}-${service_name}" }
-                stat       = "Average"
-                label      = "${service_name} 5xx"
-              }
+              ["AWS/AppRunner", "4xxStatusResponses", "ServiceName", "${var.project_name}-${var.environment}-${service_name}", "Average", "${service_name} 4xx"],
+              ["AWS/AppRunner", "5xxStatusResponses", "ServiceName", "${var.project_name}-${var.environment}-${service_name}", "Average", "${service_name} 5xx"]
             ]
           ])
           period = 300
@@ -94,15 +82,11 @@ resource "aws_cloudwatch_dashboard" "main" {
       {
         type = "metric"
         properties = {
-          metrics = [
-            for service_name, _ in var.app_runner_service_arns : {
-              namespace  = "AWS/AppRunner"
-              metricName = "RequestLatency"
-              dimensions = { ServiceName = "${var.project_name}-${var.environment}-${service_name}" }
-              stat       = "p99"
-              label      = service_name
-            }
-          ]
+          metrics = flatten([
+            for service_name, _ in var.app_runner_service_arns : [
+              ["AWS/AppRunner", "RequestLatency", "ServiceName", "${var.project_name}-${var.environment}-${service_name}", "p99", service_name]
+            ]
+          ])
           period = 300
           region = data.aws_region.current.region
           title  = "App Runner - p99 Latency (All Services)"
@@ -113,15 +97,11 @@ resource "aws_cloudwatch_dashboard" "main" {
       {
         type = "metric"
         properties = {
-          metrics = [
-            for service_name, _ in var.app_runner_service_arns : {
-              namespace  = "AWS/AppRunner"
-              metricName = "Requests"
-              dimensions = { ServiceName = "${var.project_name}-${var.environment}-${service_name}" }
-              stat       = "Sum"
-              label      = service_name
-            }
-          ]
+          metrics = flatten([
+            for service_name, _ in var.app_runner_service_arns : [
+              ["AWS/AppRunner", "Requests", "ServiceName", "${var.project_name}-${var.environment}-${service_name}", "Sum", service_name]
+            ]
+          ])
           period = 300
           region = data.aws_region.current.region
           title  = "App Runner - Request Count (All Services)"
@@ -133,13 +113,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         type = "metric"
         properties = {
           metrics = [
-            {
-              namespace  = "AWS/RDS"
-              metricName = "ACUUtilization"
-              dimensions = { DBClusterIdentifier = var.db_cluster_id }
-              stat       = "Average"
-              label      = "ACU Utilization"
-            }
+            ["AWS/RDS", "ACUUtilization", "DBClusterIdentifier", var.db_cluster_id, "Average", "ACU Utilization"]
           ]
           period = 300
           region = data.aws_region.current.region
@@ -152,13 +126,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         type = "metric"
         properties = {
           metrics = [
-            {
-              namespace  = "AWS/RDS"
-              metricName = "DatabaseConnections"
-              dimensions = { DBClusterIdentifier = var.db_cluster_id }
-              stat       = "Average"
-              label      = "Connections"
-            }
+            ["AWS/RDS", "DatabaseConnections", "DBClusterIdentifier", var.db_cluster_id, "Average", "Connections"]
           ]
           period = 300
           region = data.aws_region.current.region
@@ -171,13 +139,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         type = "metric"
         properties = {
           metrics = [
-            {
-              namespace  = "AWS/ElastiCache"
-              metricName = "BytesUsedForCache"
-              dimensions = { CacheClusterId = var.cache_id }
-              stat       = "Average"
-              label      = "Memory Used"
-            }
+            ["AWS/ElastiCache", "BytesUsedForCache", "CacheClusterId", var.cache_id, "Average", "Memory Used"]
           ]
           period = 300
           region = data.aws_region.current.region
@@ -190,13 +152,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         type = "metric"
         properties = {
           metrics = [
-            {
-              namespace  = "AWS/ElastiCache"
-              metricName = "Evictions"
-              dimensions = { CacheClusterId = var.cache_id }
-              stat       = "Sum"
-              label      = "Evictions"
-            }
+            ["AWS/ElastiCache", "Evictions", "CacheClusterId", var.cache_id, "Sum", "Evictions"]
           ]
           period = 60
           region = data.aws_region.current.region
@@ -208,15 +164,11 @@ resource "aws_cloudwatch_dashboard" "main" {
       {
         type = "metric"
         properties = {
-          metrics = [
-            for dist_name, dist_id in var.cloudfront_distribution_ids : {
-              namespace  = "AWS/CloudFront"
-              metricName = "Requests"
-              dimensions = { DistributionId = dist_id, Region = "Global" }
-              stat       = "Sum"
-              label      = dist_name
-            }
-          ]
+          metrics = flatten([
+            for dist_name, dist_id in var.cloudfront_distribution_ids : [
+              ["AWS/CloudFront", "Requests", "DistributionId", dist_id, "Sum", dist_name, "Region", "Global"]
+            ]
+          ])
           period = 300
           region = "us-east-1"
           title  = "CloudFront - Requests (All Distributions)"
@@ -227,15 +179,11 @@ resource "aws_cloudwatch_dashboard" "main" {
       {
         type = "metric"
         properties = {
-          metrics = [
-            for dist_name, dist_id in var.cloudfront_distribution_ids : {
-              namespace  = "AWS/CloudFront"
-              metricName = "5xxErrorRate"
-              dimensions = { DistributionId = dist_id, Region = "Global" }
-              stat       = "Average"
-              label      = dist_name
-            }
-          ]
+          metrics = flatten([
+            for dist_name, dist_id in var.cloudfront_distribution_ids : [
+              ["AWS/CloudFront", "5xxErrorRate", "DistributionId", dist_id, "Average", dist_name, "Region", "Global"]
+            ]
+          ])
           period = 300
           region = "us-east-1"
           title  = "CloudFront - 5xx Error Rate (All Distributions)"
