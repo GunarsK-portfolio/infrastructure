@@ -128,7 +128,7 @@ resource "aws_cloudfront_distribution" "public" {
 
     forwarded_values {
       query_string = true
-      headers      = ["Host", "Origin"]
+      headers      = ["Origin"]
 
       cookies {
         forward = "none"
@@ -151,7 +151,7 @@ resource "aws_cloudfront_distribution" "public" {
 
     forwarded_values {
       query_string = true
-      headers      = ["*"]
+      headers      = ["Accept", "Content-Type", "Origin", "Referer", "User-Agent"]
 
       cookies {
         forward = "all"
@@ -253,7 +253,7 @@ resource "aws_cloudfront_distribution" "admin" {
 
     forwarded_values {
       query_string = true
-      headers      = ["Host", "Origin"]
+      headers      = ["Origin"]
 
       cookies {
         forward = "none"
@@ -276,7 +276,7 @@ resource "aws_cloudfront_distribution" "admin" {
 
     forwarded_values {
       query_string = true
-      headers      = ["*"]
+      headers      = ["Authorization", "Content-Type", "Accept", "Origin", "Referer", "User-Agent", "X-Token-TTL"]
 
       cookies {
         forward = "all"
@@ -363,7 +363,7 @@ resource "aws_cloudfront_distribution" "auth" {
 
     forwarded_values {
       query_string = true
-      headers      = ["*"]
+      headers      = ["Authorization", "Content-Type", "Accept", "Origin", "Referer", "User-Agent"]
 
       cookies {
         forward = "all"
@@ -428,7 +428,7 @@ resource "aws_cloudfront_distribution" "files" {
 
     forwarded_values {
       query_string = true
-      headers      = ["*"]
+      headers      = ["Authorization", "Content-Type", "Accept", "Origin", "Referer", "User-Agent", "Range", "If-Match", "If-None-Match"]
 
       cookies {
         forward = "all"
