@@ -54,8 +54,8 @@ locals {
       DB_USER         = "portfolio_admin"
       DB_SSLMODE      = "require"
       ALLOWED_ORIGINS = "https://admin.${var.domain_name}"
-      # Auth validation via CloudFront (App Runner services can't call each other directly)
-      AUTH_SERVICE_URL = "https://auth.${var.domain_name}/api/v1/auth"
+      # Auth validation using internal App Runner URL (bypasses CloudFront/NAT Gateway)
+      AUTH_SERVICE_URL = "https://${var.project_name}-${var.environment}-auth-service.${data.aws_region.current.name}.awsapprunner.com/api/v1/auth"
       # Public file URL generation (for frontend)
       FILES_API_URL = "https://files.${var.domain_name}/api/v1"
     }
@@ -92,8 +92,8 @@ locals {
       MAX_FILE_SIZE        = "10485760"
       ALLOWED_FILE_TYPES   = "image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
       ALLOWED_ORIGINS      = "https://${var.domain_name},https://admin.${var.domain_name}"
-      # Auth validation via CloudFront (App Runner services can't call each other directly)
-      AUTH_SERVICE_URL = "https://auth.${var.domain_name}/api/v1/auth"
+      # Auth validation using internal App Runner URL (bypasses CloudFront/NAT Gateway)
+      AUTH_SERVICE_URL = "https://${var.project_name}-${var.environment}-auth-service.${data.aws_region.current.name}.awsapprunner.com/api/v1/auth"
     }
     "admin-web" = {
       ENVIRONMENT  = local.environment_map[var.environment]
