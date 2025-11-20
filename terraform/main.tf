@@ -142,11 +142,19 @@ module "ecr" {
   tags = local.common_tags
 }
 
-# Route53 DNS Module - Creates hosted zone only (no CloudFront records yet)
+# Data source to look up existing Route53 hosted zone
+data "aws_route53_zone" "existing" {
+  name         = var.domain_name
+  private_zone = false
+}
+
+# Route53 DNS Module - Use existing Route 53 registrar-created hosted zone
 module "dns" {
   source = "./modules/dns"
 
   domain_name = var.domain_name
+  create_zone = false
+  zone_id     = data.aws_route53_zone.existing.zone_id
 
   # KMS encryption for logs
   kms_key_arn = module.secrets.kms_key_arn
