@@ -68,11 +68,12 @@ resource "aws_cloudwatch_dashboard" "main" {
         properties = {
           metrics = flatten([
             for service_name, _ in var.app_runner_service_arns : [
-              ["AWS/AppRunner", "4xxStatusResponses", "ServiceName", "${var.project_name}-${var.environment}-${service_name}", "Average", "${service_name} 4xx"],
-              ["AWS/AppRunner", "5xxStatusResponses", "ServiceName", "${var.project_name}-${var.environment}-${service_name}", "Average", "${service_name} 5xx"]
+              ["AWS/AppRunner", "4xxStatusResponses", "ServiceName", "${var.project_name}-${var.environment}-${service_name}", { stat = "Average", label = "${service_name} 4xx" }],
+              ["AWS/AppRunner", "5xxStatusResponses", "ServiceName", "${var.project_name}-${var.environment}-${service_name}", { stat = "Average", label = "${service_name} 5xx" }]
             ]
           ])
           period = 300
+          stat   = "Average"
           region = data.aws_region.current.region
           title  = "App Runner - All Services Error Rates"
           yAxis  = { left = { label = "Error Rate %", min = 0 } }
@@ -84,10 +85,11 @@ resource "aws_cloudwatch_dashboard" "main" {
         properties = {
           metrics = flatten([
             for service_name, _ in var.app_runner_service_arns : [
-              ["AWS/AppRunner", "RequestLatency", "ServiceName", "${var.project_name}-${var.environment}-${service_name}", "p99", service_name]
+              ["AWS/AppRunner", "RequestLatency", "ServiceName", "${var.project_name}-${var.environment}-${service_name}", { stat = "p99", label = service_name }]
             ]
           ])
           period = 300
+          stat   = "Average"
           region = data.aws_region.current.region
           title  = "App Runner - p99 Latency (All Services)"
           yAxis  = { left = { label = "Latency (seconds)", min = 0 } }
@@ -99,10 +101,11 @@ resource "aws_cloudwatch_dashboard" "main" {
         properties = {
           metrics = flatten([
             for service_name, _ in var.app_runner_service_arns : [
-              ["AWS/AppRunner", "Requests", "ServiceName", "${var.project_name}-${var.environment}-${service_name}", "Sum", service_name]
+              ["AWS/AppRunner", "Requests", "ServiceName", "${var.project_name}-${var.environment}-${service_name}", { stat = "Sum", label = service_name }]
             ]
           ])
           period = 300
+          stat   = "Average"
           region = data.aws_region.current.region
           title  = "App Runner - Request Count (All Services)"
           yAxis  = { left = { label = "Requests", min = 0 } }
@@ -113,9 +116,10 @@ resource "aws_cloudwatch_dashboard" "main" {
         type = "metric"
         properties = {
           metrics = [
-            ["AWS/RDS", "ACUUtilization", "DBClusterIdentifier", var.db_cluster_id, "Average", "ACU Utilization"]
+            ["AWS/RDS", "ACUUtilization", "DBClusterIdentifier", var.db_cluster_id, { stat = "Average", label = "ACU Utilization" }]
           ]
           period = 300
+          stat   = "Average"
           region = data.aws_region.current.region
           title  = "Aurora ACU Utilization"
           yAxis  = { left = { label = "Utilization %", min = 0, max = 100 } }
@@ -126,9 +130,10 @@ resource "aws_cloudwatch_dashboard" "main" {
         type = "metric"
         properties = {
           metrics = [
-            ["AWS/RDS", "DatabaseConnections", "DBClusterIdentifier", var.db_cluster_id, "Average", "Connections"]
+            ["AWS/RDS", "DatabaseConnections", "DBClusterIdentifier", var.db_cluster_id, { stat = "Average", label = "Connections" }]
           ]
           period = 300
+          stat   = "Average"
           region = data.aws_region.current.region
           title  = "Aurora Database Connections"
           yAxis  = { left = { label = "Connections", min = 0 } }
@@ -139,9 +144,10 @@ resource "aws_cloudwatch_dashboard" "main" {
         type = "metric"
         properties = {
           metrics = [
-            ["AWS/ElastiCache", "BytesUsedForCache", "CacheClusterId", var.cache_id, "Average", "Memory Used"]
+            ["AWS/ElastiCache", "BytesUsedForCache", "CacheClusterId", var.cache_id, { stat = "Average", label = "Memory Used" }]
           ]
           period = 300
+          stat   = "Average"
           region = data.aws_region.current.region
           title  = "ElastiCache Memory Utilization"
           yAxis  = { left = { label = "Bytes", min = 0 } }
@@ -152,9 +158,10 @@ resource "aws_cloudwatch_dashboard" "main" {
         type = "metric"
         properties = {
           metrics = [
-            ["AWS/ElastiCache", "Evictions", "CacheClusterId", var.cache_id, "Sum", "Evictions"]
+            ["AWS/ElastiCache", "Evictions", "CacheClusterId", var.cache_id, { stat = "Sum", label = "Evictions" }]
           ]
           period = 60
+          stat   = "Average"
           region = data.aws_region.current.region
           title  = "ElastiCache Evictions"
           yAxis  = { left = { label = "Evictions", min = 0 } }
@@ -166,10 +173,11 @@ resource "aws_cloudwatch_dashboard" "main" {
         properties = {
           metrics = flatten([
             for dist_name, dist_id in var.cloudfront_distribution_ids : [
-              ["AWS/CloudFront", "Requests", "DistributionId", dist_id, "Sum", dist_name, "Region", "Global"]
+              ["AWS/CloudFront", "Requests", "DistributionId", dist_id, "Region", "Global", { stat = "Sum", label = dist_name }]
             ]
           ])
           period = 300
+          stat   = "Average"
           region = "us-east-1"
           title  = "CloudFront - Requests (All Distributions)"
           yAxis  = { left = { label = "Requests", min = 0 } }
@@ -181,10 +189,11 @@ resource "aws_cloudwatch_dashboard" "main" {
         properties = {
           metrics = flatten([
             for dist_name, dist_id in var.cloudfront_distribution_ids : [
-              ["AWS/CloudFront", "5xxErrorRate", "DistributionId", dist_id, "Average", dist_name, "Region", "Global"]
+              ["AWS/CloudFront", "5xxErrorRate", "DistributionId", dist_id, "Region", "Global", { stat = "Average", label = dist_name }]
             ]
           ])
           period = 300
+          stat   = "Average"
           region = "us-east-1"
           title  = "CloudFront - 5xx Error Rate (All Distributions)"
           yAxis  = { left = { label = "Error Rate %", min = 0 } }
