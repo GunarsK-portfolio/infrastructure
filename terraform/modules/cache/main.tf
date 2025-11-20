@@ -115,8 +115,8 @@ resource "aws_elasticache_user" "main" {
   # Least privilege: Only allow commands needed for session management
   # Commands: GET, SET, DEL, EXPIRE, TTL, EXISTS, PING
   # Blocks: FLUSHALL, CONFIG, SHUTDOWN, FLUSHDB, KEYS, SCAN, and all other unnecessary commands
-  # Explicitly block dangerous, slow, and admin command groups
-  access_string = "on ~* &* +get +set +del +expire +ttl +exists +ping -@dangerous -@slow -@admin"
+  # Explicitly block dangerous, slow, and admin command groups, then re-add needed commands
+  access_string = "on ~* &* -@dangerous -@slow -@admin +get +set +del +expire +ttl +exists +ping"
   engine        = "redis"
 
   authentication_mode {
