@@ -31,6 +31,8 @@ locals {
 
 # A record for root domain (gunarsk.com) pointing to public CloudFront
 resource "aws_route53_record" "root" {
+  count = var.cloudfront_distributions != null ? 1 : 0
+
   zone_id = aws_route53_zone.main.zone_id
   name    = var.domain_name
   type    = "A"
@@ -44,6 +46,8 @@ resource "aws_route53_record" "root" {
 
 # AAAA record for root domain (IPv6)
 resource "aws_route53_record" "root_ipv6" {
+  count = var.cloudfront_distributions != null ? 1 : 0
+
   zone_id = aws_route53_zone.main.zone_id
   name    = var.domain_name
   type    = "AAAA"
@@ -57,6 +61,8 @@ resource "aws_route53_record" "root_ipv6" {
 
 # A record for admin subdomain
 resource "aws_route53_record" "admin" {
+  count = var.cloudfront_distributions != null ? 1 : 0
+
   zone_id = aws_route53_zone.main.zone_id
   name    = "admin.${var.domain_name}"
   type    = "A"
@@ -70,6 +76,8 @@ resource "aws_route53_record" "admin" {
 
 # AAAA record for admin subdomain (IPv6)
 resource "aws_route53_record" "admin_ipv6" {
+  count = var.cloudfront_distributions != null ? 1 : 0
+
   zone_id = aws_route53_zone.main.zone_id
   name    = "admin.${var.domain_name}"
   type    = "AAAA"
@@ -83,6 +91,8 @@ resource "aws_route53_record" "admin_ipv6" {
 
 # A record for auth subdomain
 resource "aws_route53_record" "auth" {
+  count = var.cloudfront_distributions != null ? 1 : 0
+
   zone_id = aws_route53_zone.main.zone_id
   name    = "auth.${var.domain_name}"
   type    = "A"
@@ -96,6 +106,8 @@ resource "aws_route53_record" "auth" {
 
 # AAAA record for auth subdomain (IPv6)
 resource "aws_route53_record" "auth_ipv6" {
+  count = var.cloudfront_distributions != null ? 1 : 0
+
   zone_id = aws_route53_zone.main.zone_id
   name    = "auth.${var.domain_name}"
   type    = "AAAA"
@@ -109,6 +121,8 @@ resource "aws_route53_record" "auth_ipv6" {
 
 # A record for files subdomain
 resource "aws_route53_record" "files" {
+  count = var.cloudfront_distributions != null ? 1 : 0
+
   zone_id = aws_route53_zone.main.zone_id
   name    = "files.${var.domain_name}"
   type    = "A"
@@ -122,6 +136,8 @@ resource "aws_route53_record" "files" {
 
 # AAAA record for files subdomain (IPv6)
 resource "aws_route53_record" "files_ipv6" {
+  count = var.cloudfront_distributions != null ? 1 : 0
+
   zone_id = aws_route53_zone.main.zone_id
   name    = "files.${var.domain_name}"
   type    = "AAAA"

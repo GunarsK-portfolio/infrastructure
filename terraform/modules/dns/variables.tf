@@ -6,13 +6,14 @@ variable "domain_name" {
 }
 
 variable "cloudfront_distributions" {
-  description = "Map of CloudFront distribution domain names"
+  description = "Map of CloudFront distribution domain names (optional - records created only if provided)"
   type = object({
     public = string
     admin  = string
     auth   = string
     files  = string
   })
+  default = null
 }
 
 variable "tags" {

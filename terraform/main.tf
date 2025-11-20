@@ -142,29 +142,21 @@ module "ecr" {
   tags = local.common_tags
 }
 
-# Route53 DNS Module - Creates zone first, records added via depends_on after CloudFront
+# Route53 DNS Module - Creates hosted zone only (no CloudFront records yet)
 module "dns" {
   source = "./modules/dns"
 
   domain_name = var.domain_name
 
-  # CloudFront distributions - explicit dependency ensures CloudFront is created first
-  cloudfront_distributions = {
-    public = module.cloudfront.public_distribution_domain_name
-    admin  = module.cloudfront.admin_distribution_domain_name
-    auth   = module.cloudfront.auth_distribution_domain_name
-    files  = module.cloudfront.files_distribution_domain_name
-  }
-
   # KMS encryption for logs
   kms_key_arn = module.secrets.kms_key_arn
 
   tags = local.common_tags
-
-  depends_on = [module.cloudfront]
 }
 
 # ACM Certificate Module (us-east-1 for CloudFront)
+# Note: zone_id reference creates implicit dependency on dns.zone creation
+# The dns module's A/AAAA records depend on CloudFront, but zone creation doesn't
 module "certificates" {
   source = "./modules/certificates"
 
@@ -253,6 +245,31 @@ module "cloudfront" {
   web_acl_arn = module.waf.web_acl_arn
 
   tags = local.common_tags
+
+  # Ensure certificate is validated before creating CloudFront distributions
+  depends_on = [module.certificates]
+}
+
+# DNS Records Module - Create CloudFront A/AAAA records after distributions exist
+module "dns_records" {
+  source = "./modules/dns"
+
+  domain_name = var.domain_name
+
+  # CloudFront distributions - explicit dependency ensures CloudFront is created first
+  cloudfront_distributions = {
+    public = module.cloudfront.public_distribution_domain_name
+    admin  = module.cloudfront.admin_distribution_domain_name
+    auth   = module.cloudfront.auth_distribution_domain_name
+    files  = module.cloudfront.files_distribution_domain_name
+  }
+
+  # KMS encryption for logs (reuse from first dns module)
+  kms_key_arn = module.secrets.kms_key_arn
+
+  tags = local.common_tags
+
+  depends_on = [module.cloudfront, module.dns]
 }
 
 # Monitoring Module - CloudWatch
