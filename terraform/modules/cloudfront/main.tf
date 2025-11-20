@@ -60,9 +60,10 @@ resource "aws_cloudfront_response_headers_policy" "security_headers" {
     content_security_policy {
       # SECURITY NOTE: Uses 'unsafe-inline' for styles due to Naive UI limitations
       # - Naive UI generates inline styles that cannot be hashed or nonced
-      # - 'unsafe-hashes' (CSP L3) is not supported in Safari and insufficient for Naive UI
+      # - 'unsafe-hashes' (CSP L3) requires Safari 15.4+ (March 2022); legacy Safari lacks support
       # - Scripts remain strict ('self' only, no unsafe-inline/unsafe-eval)
-      # - TODO: Migrate to nonce-based CSP when Naive UI supports it
+      # - MIGRATION TARGET: Q2 2025 - Evaluate nonce-based CSP when Naive UI v3 releases
+      #   or consider migrating to alternative UI framework with better CSP support
       content_security_policy = join("; ", [
         "default-src 'self'",
         "script-src 'self'",                # Strict: no inline scripts

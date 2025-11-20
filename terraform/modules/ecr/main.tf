@@ -80,6 +80,10 @@ resource "aws_ecr_lifecycle_policy" "main" {
 }
 
 # Enhanced scanning
+# COST NOTE: ENHANCED scanning with CONTINUOUS_SCAN incurs additional AWS costs
+# beyond basic scanning. Estimated cost: ~$0.09 per image scan for the first 10k scans/month.
+# With 6 repositories and frequent updates, expect ~$5-15/month in scanning costs.
+# CONTINUOUS_SCAN provides real-time CVE detection as new vulnerabilities are published.
 resource "aws_ecr_registry_scanning_configuration" "main" {
   scan_type = "ENHANCED"
 
