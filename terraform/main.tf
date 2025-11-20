@@ -228,6 +228,9 @@ module "app_runner" {
   # Domain name for service URLs
   domain_name = var.domain_name
 
+  # Observability
+  enable_xray_tracing = var.enable_xray_tracing
+
   tags = local.common_tags
 }
 

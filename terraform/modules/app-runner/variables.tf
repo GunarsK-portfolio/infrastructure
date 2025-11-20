@@ -74,6 +74,12 @@ variable "domain_name" {
   type        = string
 }
 
+variable "enable_xray_tracing" {
+  description = "Enable AWS X-Ray tracing for App Runner services"
+  type        = bool
+  default     = true
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)

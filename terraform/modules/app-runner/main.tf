@@ -181,40 +181,52 @@ resource "aws_iam_role_policy" "secrets_access" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "secretsmanager:GetSecretValue",
-          "secretsmanager:DescribeSecret"
-        ]
-        # Only grant access to secrets this specific service needs
-        # Maps to local.service_secrets[each.key] configuration
-        # Extract base ARN by removing :json-key:: suffix (App Runner format)
-        Resource = [
-          for secret_value in values(local.service_secrets[each.key]) :
-          regex("^(arn:aws:secretsmanager:[^:]+:[^:]+:secret:[^:]+)", secret_value)[0]
-        ]
-        Condition = {
-          StringEquals = {
-            "aws:RequestedRegion" = data.aws_region.current.region
+    Statement = concat(
+      [
+        {
+          Effect = "Allow"
+          Action = [
+            "secretsmanager:GetSecretValue",
+            "secretsmanager:DescribeSecret"
+          ]
+          # Only grant access to secrets this specific service needs
+          # Maps to local.service_secrets[each.key] configuration
+          # Extract base ARN by removing :json-key:: suffix (App Runner format)
+          Resource = [
+            for secret_value in values(local.service_secrets[each.key]) :
+            regex("^(arn:aws:secretsmanager:[^:]+:[^:]+:secret:[^:]+)", secret_value)[0]
+          ]
+          Condition = {
+            StringEquals = {
+              "aws:RequestedRegion" = data.aws_region.current.region
+            }
+          }
+        },
+        {
+          Effect = "Allow"
+          Action = [
+            "kms:Decrypt",
+            "kms:DescribeKey"
+          ]
+          Resource = [var.kms_key_arn]
+          Condition = {
+            StringEquals = {
+              "kms:ViaService" = "secretsmanager.${data.aws_region.current.region}.amazonaws.com"
+            }
           }
         }
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "kms:Decrypt",
-          "kms:DescribeKey"
-        ]
-        Resource = [var.kms_key_arn]
-        Condition = {
-          StringEquals = {
-            "kms:ViaService" = "secretsmanager.${data.aws_region.current.region}.amazonaws.com"
-          }
+      ],
+      var.enable_xray_tracing ? [
+        {
+          Effect = "Allow"
+          Action = [
+            "xray:PutTraceSegments",
+            "xray:PutTelemetryRecords"
+          ]
+          Resource = "*"
         }
-      }
-    ]
+      ] : []
+    )
   })
 }
 
@@ -341,11 +353,37 @@ resource "aws_apprunner_service" "main" {
 
   auto_scaling_configuration_arn = aws_apprunner_auto_scaling_configuration_version.main[each.key].arn
 
+  dynamic "observability_configuration" {
+    for_each = var.enable_xray_tracing ? [1] : []
+    content {
+      observability_enabled           = true
+      observability_configuration_arn = aws_apprunner_observability_configuration.xray[0].arn
+    }
+  }
+
   tags = merge(
     var.tags,
     {
       Name    = "${var.project_name}-${var.environment}-${each.key}"
       Service = each.value.name
+    }
+  )
+}
+
+# X-Ray Observability Configuration
+resource "aws_apprunner_observability_configuration" "xray" {
+  count = var.enable_xray_tracing ? 1 : 0
+
+  observability_configuration_name = "${var.project_name}-${var.environment}-xray"
+
+  trace_configuration {
+    vendor = "AWSXRAY"
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-xray-config"
     }
   )
 }

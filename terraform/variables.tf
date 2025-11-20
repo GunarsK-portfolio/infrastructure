@@ -277,6 +277,12 @@ variable "enable_guardduty" {
   default     = true
 }
 
+variable "enable_xray_tracing" {
+  description = "Enable AWS X-Ray tracing for App Runner services"
+  type        = bool
+  default     = true
+}
+
 variable "enable_budgets" {
   description = "Enable AWS Budgets for cost control"
   type        = bool

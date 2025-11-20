@@ -22,6 +22,7 @@ AWS serverless infrastructure for production deployment.
 | **ECR** | Registry | Container image registry with vulnerability scanning and lifecycle policies (keep last 10 images). |
 | **VPC** | Network | Isolated network with 2 public and 2 private subnets across 2 AZs. VPC Flow Logs enabled. |
 | **CloudWatch** | Monitoring | Log aggregation, metrics collection, dashboards, and alarms for error rates and performance monitoring. |
+| **X-Ray** | Observability | Distributed tracing for App Runner services. Request latency analysis, service map visualization, error tracking across microservices. |
 | **SNS** | Alerting | Email/SMS notifications for critical alarms (errors, latency spikes, resource limits). |
 | **GuardDuty** | Security | Threat detection monitoring for suspicious activity, compromised credentials, and malicious IPs. |
 | **IAM** | Security | Role-based access control with least privilege. OIDC for GitHub Actions, no long-lived credentials. |
@@ -132,15 +133,20 @@ internal communication.
 - **Validation**: DNS (automatic via Route53)
 - **Route53**: DNS hosting, DNSSEC enabled, CAA records, query logging
 
-### Monitoring
+### Monitoring & Observability
 
-- CloudWatch: log groups per service
+- **CloudWatch**: log groups per service
   - Application logs: 7-day retention
   - VPC Flow Logs: 90-day retention (forensic analysis)
   - Route53 Query Logs: 30-day retention (DNS attack analysis)
-- Alarms: error rates, latency, resource utilization
-- SNS notifications for critical events
-- Dashboard: unified metrics view
+- **X-Ray Tracing**: distributed tracing for App Runner services
+  - Service map: visualize dependencies (admin-api → auth-service → Aurora)
+  - Request analysis: end-to-end latency breakdown per request
+  - Error tracking: identify which service is causing failures
+  - Configurable via `enable_xray_tracing` variable (default: enabled)
+- **Alarms**: error rates, latency, resource utilization
+- **SNS notifications** for critical events
+- **Dashboard**: unified metrics view
 
 ### Secrets & Registry
 
@@ -212,6 +218,7 @@ aurora_max_capacity     = 16
 enable_enhanced_monitoring    = true
 enable_performance_insights   = true
 enable_ecr_enhanced_scanning  = true
+enable_xray_tracing           = true  # AWS X-Ray distributed tracing
 ```
 
 ## Deployment
@@ -242,6 +249,15 @@ Required GitHub secrets:
   for budget alerts
 - `TF_VAR_alarm_email_addresses`: JSON array
   `["ops@example.com","oncall@example.com"]` for alarm notifications
+
+Optional GitHub secrets (defaults shown):
+
+- `TF_VAR_enable_guardduty`: `true` - GuardDuty threat detection
+- `TF_VAR_enable_budgets`: `true` - AWS Budgets cost control
+- `TF_VAR_enable_vpc_flow_logs`: `true` - VPC network monitoring
+- `TF_VAR_enable_http_endpoint`: `false` - Aurora Data API
+- `TF_VAR_enable_xray_tracing`: `true` - X-Ray distributed tracing
+- `TF_VAR_monthly_budget_limit`: `100` - Budget limit in USD
 
 #### Application Deployments
 
