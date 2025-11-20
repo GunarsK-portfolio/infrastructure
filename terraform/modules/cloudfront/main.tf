@@ -58,15 +58,15 @@ resource "aws_cloudfront_response_headers_policy" "security_headers" {
     # RISK: Weaker than nonce-based CSP, but significantly safer than 'unsafe-inline'
     # TODO (8h): Migrate to nonce-based CSP by refactoring all inline styles to CSS classes
     content_security_policy {
-      # CSP Level 3 with unsafe-hashes (not supported in Safari):
-      # - Removed 'unsafe-inline' and 'unsafe-eval' for scripts (strict)
-      # - Allow 'unsafe-hashes' for Vue :style bindings and Naive UI runtime styles
-      # - Script-src does NOT need unsafe-hashes (Vue event directives compile to JS)
-      # - Use 'strict-dynamic' when nonce-based CSP is implemented
+      # SECURITY NOTE: Uses 'unsafe-inline' for styles due to Naive UI limitations
+      # - Naive UI generates inline styles that cannot be hashed or nonced
+      # - 'unsafe-hashes' (CSP L3) is not supported in Safari and insufficient for Naive UI
+      # - Scripts remain strict ('self' only, no unsafe-inline/unsafe-eval)
+      # - TODO: Migrate to nonce-based CSP when Naive UI supports it
       content_security_policy = join("; ", [
         "default-src 'self'",
-        "script-src 'self'",                # No unsafe-hashes needed for Vue directives
-        "style-src 'self' 'unsafe-hashes'", # Required for :style, v-show, Naive UI
+        "script-src 'self'",                # Strict: no inline scripts
+        "style-src 'self' 'unsafe-inline'", # Required for Naive UI inline styles
         "img-src 'self' data: https:",      # Allow external images and data URIs
         "font-src 'self' data:",            # Allow web fonts
         "connect-src 'self' https:",        # Allow HTTPS API calls
