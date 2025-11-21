@@ -404,6 +404,8 @@ resource "random_password" "aurora_public" {
 resource "random_password" "redis_auth" {
   length  = 32
   special = true
+  # ElastiCache auth tokens cannot contain @, ", or /
+  override_special = "!#$%&*()-_=+[]{}|;:,.<>?"
 }
 
 resource "random_password" "jwt_secret" {
