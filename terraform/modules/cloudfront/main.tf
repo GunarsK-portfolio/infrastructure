@@ -12,7 +12,7 @@ terraform {
   }
 }
 
-# Response Headers Policy - Security Headers
+# Response Headers Policy - Security Headers (for frontends)
 resource "aws_cloudfront_response_headers_policy" "security_headers" {
   name    = "${var.project_name}-${var.environment}-security-headers"
   comment = "Security headers for ${var.project_name} ${var.environment}"
@@ -76,6 +76,60 @@ resource "aws_cloudfront_response_headers_policy" "security_headers" {
         "upgrade-insecure-requests"         # Upgrade HTTP to HTTPS
       ])
       override = true
+    }
+  }
+}
+
+# Response Headers Policy - API with CORS passthrough
+# Uses origin CORS headers instead of adding new ones (override = false)
+resource "aws_cloudfront_response_headers_policy" "api_cors" {
+  name    = "${var.project_name}-${var.environment}-api-cors"
+  comment = "API security headers with CORS passthrough for ${var.project_name} ${var.environment}"
+
+  # CORS: Pass through origin headers (App Runner handles CORS logic)
+  cors_config {
+    access_control_allow_credentials = true
+
+    access_control_allow_headers {
+      items = ["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"]
+    }
+
+    access_control_allow_methods {
+      items = ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"]
+    }
+
+    access_control_allow_origins {
+      items = ["https://${var.domain_name}", "https://admin.${var.domain_name}"]
+    }
+
+    access_control_max_age_sec = 86400
+
+    # origin_override = false means: only add CORS if origin didn't set them
+    # This lets App Runner's dynamic CORS logic take precedence
+    origin_override = false
+  }
+
+  security_headers_config {
+    strict_transport_security {
+      access_control_max_age_sec = 63072000
+      include_subdomains         = true
+      preload                    = true
+      override                   = true
+    }
+
+    content_type_options {
+      override = true
+    }
+
+    referrer_policy {
+      referrer_policy = "strict-origin-when-cross-origin"
+      override        = true
+    }
+
+    xss_protection {
+      mode_block = true
+      protection = true
+      override   = true
     }
   }
 }
@@ -359,7 +413,7 @@ resource "aws_cloudfront_distribution" "auth" {
     target_origin_id           = "auth-service"
     viewer_protocol_policy     = "redirect-to-https"
     compress                   = true
-    response_headers_policy_id = aws_cloudfront_response_headers_policy.security_headers.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.api_cors.id
 
     forwarded_values {
       query_string = true
@@ -424,7 +478,7 @@ resource "aws_cloudfront_distribution" "files" {
     target_origin_id           = "files-api"
     viewer_protocol_policy     = "redirect-to-https"
     compress                   = true
-    response_headers_policy_id = aws_cloudfront_response_headers_policy.security_headers.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.api_cors.id
 
     forwarded_values {
       query_string = true

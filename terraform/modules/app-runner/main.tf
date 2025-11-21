@@ -191,6 +191,8 @@ resource "aws_iam_role_policy" "secrets_access" {
           # Only grant access to secrets this specific service needs
           # Maps to local.service_secrets[each.key] configuration
           # Extract base ARN by removing :json-key:: suffix (App Runner format)
+          # Input:  arn:aws:secretsmanager:eu-west-1:123456789:secret:my-secret-abc123:password::
+          # Output: arn:aws:secretsmanager:eu-west-1:123456789:secret:my-secret-abc123
           Resource = [
             for secret_value in values(local.service_secrets[each.key]) :
             regex("^(arn:aws:secretsmanager:[^:]+:[^:]+:secret:[^:]+)", secret_value)[0]
@@ -367,6 +369,13 @@ resource "aws_apprunner_service" "main" {
       Service = each.value.name
     }
   )
+
+  # Ignore image_identifier changes - deployments are managed by GitHub Actions
+  lifecycle {
+    ignore_changes = [
+      source_configuration[0].image_repository[0].image_identifier
+    ]
+  }
 }
 
 # X-Ray Observability Configuration

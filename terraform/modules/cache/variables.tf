@@ -20,16 +20,21 @@ variable "cache_security_group_id" {
   type        = string
 }
 
-variable "max_data_storage_gb" {
-  description = "Maximum data storage in GB"
-  type        = number
-  default     = 1
+variable "node_type" {
+  description = "ElastiCache node type (cache.t4g.micro is ~$12/month)"
+  type        = string
+  default     = "cache.t4g.micro"
 }
 
-variable "max_ecpu_per_second" {
-  description = "Maximum ECPU per second"
+variable "num_cache_clusters" {
+  description = "Number of cache clusters (1 = single node, 2+ = HA with replicas)"
   type        = number
-  default     = 5000
+  default     = 1
+
+  validation {
+    condition     = var.num_cache_clusters >= 1 && var.num_cache_clusters <= 6
+    error_message = "num_cache_clusters must be between 1 and 6."
+  }
 }
 
 variable "snapshot_retention_days" {

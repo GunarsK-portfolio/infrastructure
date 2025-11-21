@@ -33,6 +33,14 @@ locals {
   zone_id = var.create_zone ? aws_route53_zone.main[0].zone_id : var.zone_id
 }
 
+# Validate zone configuration
+check "zone_configuration" {
+  assert {
+    condition     = var.create_zone || var.zone_id != null
+    error_message = "When create_zone is false, zone_id must be provided."
+  }
+}
+
 # A record for root domain (gunarsk.com) pointing to public CloudFront
 resource "aws_route53_record" "root" {
   count = var.cloudfront_distributions != null ? 1 : 0

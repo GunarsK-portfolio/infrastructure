@@ -10,7 +10,7 @@ AWS serverless infrastructure for production deployment.
 |---------|------|---------|
 | **App Runner** | Compute | Serverless container runtime for 6 microservices (auth-service, admin-api, public-api, files-api, admin-web, public-web). Auto-scales 1-10 instances per service. |
 | **Aurora Serverless v2** | Database | PostgreSQL 17.4 with auto-scaling (1-16 ACU). Multi-AZ deployment with 30-day backups, encryption, and pg_cron/pg_stat_statements extensions. |
-| **ElastiCache Serverless** | Cache | Redis 7.x for session storage and caching. Dual endpoints (write/read) with cluster mode enabled. |
+| **ElastiCache** | Cache | Valkey 8.2 (Redis-compatible) for session storage. Single cache.t4g.micro node (~$12/month). |
 | **S3** | Storage | Object storage for images, documents, miniatures. Versioning enabled with lifecycle policies and access logging. |
 | **CloudFront** | CDN | 4 distributions (public, admin, auth, files) with path-based routing, TLS 1.2+, HTTP/3, and global edge caching. |
 | **WAF** | Security | Web Application Firewall protecting CloudFront with rate limiting, OWASP Top 10 rules, and Log4j protection. |
@@ -60,10 +60,11 @@ AWS serverless infrastructure for production deployment.
 
 ### Cache
 
-- ElastiCache Serverless Redis 7.x
-- Dual endpoints: write (6379), read (6380)
-- Cluster mode enabled
+- ElastiCache Valkey 8.2 (Redis-compatible OSS fork)
+- Single cache.t4g.micro node (~$12/month vs $90+/month serverless)
+- Port 6379
 - Encryption at rest and in transit
+- AUTH token authentication
 
 ### Storage
 
@@ -162,7 +163,7 @@ modules/
 ├── networking/     VPC, subnets (2 public, 2 private), security groups
 ├── secrets/        Secrets Manager with KMS encryption
 ├── database/       Aurora Serverless v2, subnet groups, security groups
-├── cache/          ElastiCache Serverless, subnet groups
+├── cache/          ElastiCache Valkey (single node), subnet groups
 ├── storage/        S3 buckets with versioning and lifecycle policies
 ├── ecr/            Container registries with image scanning
 ├── certificates/   ACM certificates (us-east-1 for CloudFront)
@@ -554,14 +555,14 @@ Approximate monthly costs (low traffic):
 
 - App Runner: $30-50 (6 services)
 - Aurora Serverless v2: $40-60 (1-16 ACU)
-- ElastiCache Serverless: $20-30
+- ElastiCache Valkey: ~$12 (cache.t4g.micro)
 - CloudFront: $5-10
 - WAF: $5-8 (web ACL + rules, no Bot Control)
 - S3: $1-5
 - Route53: $1
 - Other (CloudWatch, Secrets, ECR): $5-10
 
-**Total**: ~$105-170/month
+**Total**: ~$100-150/month
 
 ## References
 
