@@ -12,8 +12,10 @@ terraform {
   }
 }
 
-# Route53 Hosted Zone
+# Route53 Hosted Zone (only created if create_zone = true)
 resource "aws_route53_zone" "main" {
+  count = var.create_zone ? 1 : 0
+
   name = var.domain_name
 
   tags = merge(
@@ -27,11 +29,23 @@ resource "aws_route53_zone" "main" {
 # CloudFront hosted zone ID (constant for all CloudFront distributions)
 locals {
   cloudfront_zone_id = "Z2FDTNDATAQYW2"
+  # Use created zone or provided zone_id
+  zone_id = var.create_zone ? aws_route53_zone.main[0].zone_id : var.zone_id
+}
+
+# Validate zone configuration
+check "zone_configuration" {
+  assert {
+    condition     = var.create_zone || var.zone_id != null
+    error_message = "When create_zone is false, zone_id must be provided."
+  }
 }
 
 # A record for root domain (gunarsk.com) pointing to public CloudFront
 resource "aws_route53_record" "root" {
-  zone_id = aws_route53_zone.main.zone_id
+  count = var.cloudfront_distributions != null ? 1 : 0
+
+  zone_id = local.zone_id
   name    = var.domain_name
   type    = "A"
 
@@ -44,7 +58,9 @@ resource "aws_route53_record" "root" {
 
 # AAAA record for root domain (IPv6)
 resource "aws_route53_record" "root_ipv6" {
-  zone_id = aws_route53_zone.main.zone_id
+  count = var.cloudfront_distributions != null ? 1 : 0
+
+  zone_id = local.zone_id
   name    = var.domain_name
   type    = "AAAA"
 
@@ -57,7 +73,9 @@ resource "aws_route53_record" "root_ipv6" {
 
 # A record for admin subdomain
 resource "aws_route53_record" "admin" {
-  zone_id = aws_route53_zone.main.zone_id
+  count = var.cloudfront_distributions != null ? 1 : 0
+
+  zone_id = local.zone_id
   name    = "admin.${var.domain_name}"
   type    = "A"
 
@@ -70,7 +88,9 @@ resource "aws_route53_record" "admin" {
 
 # AAAA record for admin subdomain (IPv6)
 resource "aws_route53_record" "admin_ipv6" {
-  zone_id = aws_route53_zone.main.zone_id
+  count = var.cloudfront_distributions != null ? 1 : 0
+
+  zone_id = local.zone_id
   name    = "admin.${var.domain_name}"
   type    = "AAAA"
 
@@ -83,7 +103,9 @@ resource "aws_route53_record" "admin_ipv6" {
 
 # A record for auth subdomain
 resource "aws_route53_record" "auth" {
-  zone_id = aws_route53_zone.main.zone_id
+  count = var.cloudfront_distributions != null ? 1 : 0
+
+  zone_id = local.zone_id
   name    = "auth.${var.domain_name}"
   type    = "A"
 
@@ -96,7 +118,9 @@ resource "aws_route53_record" "auth" {
 
 # AAAA record for auth subdomain (IPv6)
 resource "aws_route53_record" "auth_ipv6" {
-  zone_id = aws_route53_zone.main.zone_id
+  count = var.cloudfront_distributions != null ? 1 : 0
+
+  zone_id = local.zone_id
   name    = "auth.${var.domain_name}"
   type    = "AAAA"
 
@@ -109,7 +133,9 @@ resource "aws_route53_record" "auth_ipv6" {
 
 # A record for files subdomain
 resource "aws_route53_record" "files" {
-  zone_id = aws_route53_zone.main.zone_id
+  count = var.cloudfront_distributions != null ? 1 : 0
+
+  zone_id = local.zone_id
   name    = "files.${var.domain_name}"
   type    = "A"
 
@@ -122,7 +148,9 @@ resource "aws_route53_record" "files" {
 
 # AAAA record for files subdomain (IPv6)
 resource "aws_route53_record" "files_ipv6" {
-  zone_id = aws_route53_zone.main.zone_id
+  count = var.cloudfront_distributions != null ? 1 : 0
+
+  zone_id = local.zone_id
   name    = "files.${var.domain_name}"
   type    = "AAAA"
 
@@ -133,9 +161,11 @@ resource "aws_route53_record" "files_ipv6" {
   }
 }
 
-# CAA records (Certificate Authority Authorization)
+# CAA records (Certificate Authority Authorization) - only when creating zone
 resource "aws_route53_record" "caa" {
-  zone_id = aws_route53_zone.main.zone_id
+  count = var.create_zone ? 1 : 0
+
+  zone_id = local.zone_id
   name    = var.domain_name
   type    = "CAA"
   ttl     = 3600
@@ -146,21 +176,27 @@ resource "aws_route53_record" "caa" {
   ]
 }
 
-# DNSSEC Signing
+# DNSSEC Signing - only when creating zone
 resource "aws_route53_hosted_zone_dnssec" "main" {
-  hosted_zone_id = aws_route53_zone.main.zone_id
+  count = var.create_zone ? 1 : 0
+
+  hosted_zone_id = local.zone_id
 }
 
-# Query Logging
+# Query Logging - only when creating zone
 resource "aws_route53_query_log" "main" {
+  count = var.create_zone ? 1 : 0
+
   depends_on = [aws_cloudwatch_log_resource_policy.route53]
 
-  cloudwatch_log_group_arn = aws_cloudwatch_log_group.route53.arn
-  zone_id                  = aws_route53_zone.main.zone_id
+  cloudwatch_log_group_arn = aws_cloudwatch_log_group.route53[0].arn
+  zone_id                  = local.zone_id
 }
 
-# CloudWatch Log Group for Route53 query logs
+# CloudWatch Log Group for Route53 query logs - only when creating zone
 resource "aws_cloudwatch_log_group" "route53" {
+  count = var.create_zone ? 1 : 0
+
   name              = "/aws/route53/${var.domain_name}"
   retention_in_days = 30
   kms_key_id        = var.kms_key_arn
@@ -168,8 +204,10 @@ resource "aws_cloudwatch_log_group" "route53" {
   tags = var.tags
 }
 
-# CloudWatch Log Resource Policy for Route53
+# CloudWatch Log Resource Policy for Route53 - only when creating zone
 resource "aws_cloudwatch_log_resource_policy" "route53" {
+  count = var.create_zone ? 1 : 0
+
   policy_name = "${var.domain_name}-route53-query-logging"
 
   policy_document = jsonencode({
@@ -184,7 +222,7 @@ resource "aws_cloudwatch_log_resource_policy" "route53" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "${aws_cloudwatch_log_group.route53.arn}:*"
+        Resource = "${aws_cloudwatch_log_group.route53[0].arn}:*"
       }
     ]
   })

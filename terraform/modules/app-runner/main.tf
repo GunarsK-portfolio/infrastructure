@@ -16,12 +16,19 @@ terraform {
 data "aws_region" "current" {}
 
 locals {
+  # Map Terraform environment names to portfolio-common expected values
+  environment_map = {
+    "dev"     = "development"
+    "staging" = "staging"
+    "prod"    = "production"
+  }
+
   # Service-specific environment variables
   # Note: DB_USER values are application-level PostgreSQL users created via Flyway migrations
   # These are NOT the RDS master user, but application-specific roles with limited privileges
   service_env_vars = {
     "auth-service" = {
-      ENVIRONMENT        = var.environment
+      ENVIRONMENT        = local.environment_map[var.environment]
       SERVICE_NAME       = "auth-service"
       LOG_LEVEL          = "info"
       LOG_FORMAT         = "json"
@@ -29,6 +36,7 @@ locals {
       DB_PORT            = "5432"
       DB_NAME            = "portfolio"
       DB_USER            = "portfolio_admin"
+      DB_SSLMODE         = "require"
       REDIS_HOST         = var.elasticache_endpoint
       REDIS_PORT         = "6379"
       JWT_ACCESS_EXPIRY  = "15m"
@@ -36,7 +44,7 @@ locals {
       ALLOWED_ORIGINS    = "https://admin.${var.domain_name}"
     }
     "admin-api" = {
-      ENVIRONMENT     = var.environment
+      ENVIRONMENT     = local.environment_map[var.environment]
       SERVICE_NAME    = "admin-api"
       LOG_LEVEL       = "info"
       LOG_FORMAT      = "json"
@@ -44,14 +52,13 @@ locals {
       DB_PORT         = "5432"
       DB_NAME         = "portfolio"
       DB_USER         = "portfolio_admin"
+      DB_SSLMODE      = "require"
       ALLOWED_ORIGINS = "https://admin.${var.domain_name}"
-      # Internal auth validation (fast, no CloudFront)
-      AUTH_SERVICE_URL = "https://${var.project_name}-${var.environment}-auth-service.${data.aws_region.current.region}.awsapprunner.com/api/v1"
       # Public file URL generation (for frontend)
       FILES_API_URL = "https://files.${var.domain_name}/api/v1"
     }
     "public-api" = {
-      ENVIRONMENT     = var.environment
+      ENVIRONMENT     = local.environment_map[var.environment]
       SERVICE_NAME    = "public-api"
       LOG_LEVEL       = "info"
       LOG_FORMAT      = "json"
@@ -59,34 +66,39 @@ locals {
       DB_PORT         = "5432"
       DB_NAME         = "portfolio"
       DB_USER         = "portfolio_public"
+      DB_SSLMODE      = "require"
       ALLOWED_ORIGINS = "https://${var.domain_name}"
       # Public file URL generation (for frontend)
       FILES_API_URL = "https://files.${var.domain_name}/api/v1"
     }
     "files-api" = {
-      ENVIRONMENT        = var.environment
-      SERVICE_NAME       = "files-api"
-      LOG_LEVEL          = "info"
-      LOG_FORMAT         = "json"
-      DB_HOST            = var.aurora_endpoint
-      DB_PORT            = "5432"
-      DB_NAME            = "portfolio"
-      DB_USER            = "portfolio_admin"
-      S3_USE_SSL         = "true"
-      MAX_FILE_SIZE      = "10485760"
-      ALLOWED_FILE_TYPES = "image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
-      ALLOWED_ORIGINS    = "https://${var.domain_name},https://admin.${var.domain_name}"
-      # Internal auth validation (fast, no CloudFront)
-      AUTH_SERVICE_URL = "https://${var.project_name}-${var.environment}-auth-service.${data.aws_region.current.region}.awsapprunner.com/api/v1"
+      ENVIRONMENT  = local.environment_map[var.environment]
+      SERVICE_NAME = "files-api"
+      LOG_LEVEL    = "info"
+      LOG_FORMAT   = "json"
+      DB_HOST      = var.aurora_endpoint
+      DB_PORT      = "5432"
+      DB_NAME      = "portfolio"
+      DB_USER      = "portfolio_admin"
+      DB_SSLMODE   = "require"
+      # S3 configuration - IAM role authentication (no access keys needed)
+      S3_ENDPOINT          = "https://s3.${data.aws_region.current.region}.amazonaws.com"
+      S3_USE_SSL           = "true"
+      S3_IMAGES_BUCKET     = var.s3_bucket_names["images"]
+      S3_DOCUMENTS_BUCKET  = var.s3_bucket_names["documents"]
+      S3_MINIATURES_BUCKET = var.s3_bucket_names["miniatures"]
+      MAX_FILE_SIZE        = "10485760"
+      ALLOWED_FILE_TYPES   = "image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
+      ALLOWED_ORIGINS      = "https://${var.domain_name},https://admin.${var.domain_name}"
     }
     "admin-web" = {
-      ENVIRONMENT  = var.environment
+      ENVIRONMENT  = local.environment_map[var.environment]
       SERVICE_NAME = "admin-web"
       LOG_LEVEL    = "info"
       LOG_FORMAT   = "json"
     }
     "public-web" = {
-      ENVIRONMENT  = var.environment
+      ENVIRONMENT  = local.environment_map[var.environment]
       SERVICE_NAME = "public-web"
       LOG_LEVEL    = "info"
       LOG_FORMAT   = "json"
@@ -94,20 +106,23 @@ locals {
   }
 
   # Service-specific secrets from AWS Secrets Manager
+  # Format: arn:secret-arn:json-key:: extracts specific JSON field
   service_secrets = {
     "auth-service" = {
-      DB_PASSWORD    = var.secrets_arns["aurora_admin"]
-      REDIS_PASSWORD = var.secrets_arns["redis_auth"]
-      JWT_SECRET     = var.secrets_arns["jwt_secret"]
+      DB_PASSWORD    = "${var.secrets_arns["aurora_admin"]}:password::"
+      REDIS_PASSWORD = "${var.secrets_arns["redis_auth"]}:token::"
+      JWT_SECRET     = "${var.secrets_arns["jwt_secret"]}:secret::"
     }
     "admin-api" = {
-      DB_PASSWORD = var.secrets_arns["aurora_admin"]
+      DB_PASSWORD = "${var.secrets_arns["aurora_admin"]}:password::"
+      JWT_SECRET  = "${var.secrets_arns["jwt_secret"]}:secret::"
     }
     "public-api" = {
-      DB_PASSWORD = var.secrets_arns["aurora_public"]
+      DB_PASSWORD = "${var.secrets_arns["aurora_public"]}:password::"
     }
     "files-api" = {
-      DB_PASSWORD = var.secrets_arns["aurora_admin"]
+      DB_PASSWORD = "${var.secrets_arns["aurora_admin"]}:password::"
+      JWT_SECRET  = "${var.secrets_arns["jwt_secret"]}:secret::"
     }
     "admin-web"  = {}
     "public-web" = {}
@@ -126,6 +141,7 @@ resource "aws_apprunner_vpc_connector" "main" {
       Name = "${var.project_name}-${var.environment}-vpc-connector"
     }
   )
+
 }
 
 # IAM Role for App Runner
@@ -164,25 +180,54 @@ resource "aws_iam_role_policy" "secrets_access" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "secretsmanager:GetSecretValue",
-          "secretsmanager:DescribeSecret"
-        ]
-        # Only grant access to secrets this specific service needs
-        # Maps to local.service_secrets[each.key] configuration
-        Resource = [
-          for secret_value in values(local.service_secrets[each.key]) : secret_value
-        ]
-        Condition = {
-          StringEquals = {
-            "aws:RequestedRegion" = data.aws_region.current.region
+    Statement = concat(
+      [
+        {
+          Effect = "Allow"
+          Action = [
+            "secretsmanager:GetSecretValue",
+            "secretsmanager:DescribeSecret"
+          ]
+          # Only grant access to secrets this specific service needs
+          # Maps to local.service_secrets[each.key] configuration
+          # Extract base ARN by removing :json-key:: suffix (App Runner format)
+          # Input:  arn:aws:secretsmanager:eu-west-1:123456789:secret:my-secret-abc123:password::
+          # Output: arn:aws:secretsmanager:eu-west-1:123456789:secret:my-secret-abc123
+          Resource = [
+            for secret_value in values(local.service_secrets[each.key]) :
+            regex("^(arn:aws:secretsmanager:[^:]+:[^:]+:secret:[^:]+)", secret_value)[0]
+          ]
+          Condition = {
+            StringEquals = {
+              "aws:RequestedRegion" = data.aws_region.current.region
+            }
+          }
+        },
+        {
+          Effect = "Allow"
+          Action = [
+            "kms:Decrypt",
+            "kms:DescribeKey"
+          ]
+          Resource = [var.kms_key_arn]
+          Condition = {
+            StringEquals = {
+              "kms:ViaService" = "secretsmanager.${data.aws_region.current.region}.amazonaws.com"
+            }
           }
         }
-      }
-    ]
+      ],
+      var.enable_xray_tracing ? [
+        {
+          Effect = "Allow"
+          Action = [
+            "xray:PutTraceSegments",
+            "xray:PutTelemetryRecords"
+          ]
+          Resource = "*"
+        }
+      ] : []
+    )
   })
 }
 
@@ -208,7 +253,7 @@ resource "aws_iam_role_policy" "s3_access" {
           "s3:DeleteObject"
         ]
         Resource = [
-          for bucket in var.s3_bucket_names : "arn:aws:s3:::${bucket}/*"
+          for bucket in values(var.s3_bucket_names) : "arn:aws:s3:::${bucket}/*"
         ]
         Condition = {
           StringEquals = {
@@ -222,7 +267,7 @@ resource "aws_iam_role_policy" "s3_access" {
           "s3:ListBucket"
         ]
         Resource = [
-          for bucket in var.s3_bucket_names : "arn:aws:s3:::${bucket}"
+          for bucket in values(var.s3_bucket_names) : "arn:aws:s3:::${bucket}"
         ]
         Condition = {
           StringEquals = {
@@ -309,11 +354,44 @@ resource "aws_apprunner_service" "main" {
 
   auto_scaling_configuration_arn = aws_apprunner_auto_scaling_configuration_version.main[each.key].arn
 
+  dynamic "observability_configuration" {
+    for_each = var.enable_xray_tracing ? [1] : []
+    content {
+      observability_enabled           = true
+      observability_configuration_arn = aws_apprunner_observability_configuration.xray[0].arn
+    }
+  }
+
   tags = merge(
     var.tags,
     {
       Name    = "${var.project_name}-${var.environment}-${each.key}"
       Service = each.value.name
+    }
+  )
+
+  # Ignore image_identifier changes - deployments are managed by GitHub Actions
+  lifecycle {
+    ignore_changes = [
+      source_configuration[0].image_repository[0].image_identifier
+    ]
+  }
+}
+
+# X-Ray Observability Configuration
+resource "aws_apprunner_observability_configuration" "xray" {
+  count = var.enable_xray_tracing ? 1 : 0
+
+  observability_configuration_name = "${var.project_name}-${var.environment}-xray"
+
+  trace_configuration {
+    vendor = "AWSXRAY"
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-xray-config"
     }
   )
 }

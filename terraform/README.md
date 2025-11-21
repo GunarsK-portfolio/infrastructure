@@ -10,7 +10,7 @@ AWS serverless infrastructure for production deployment.
 |---------|------|---------|
 | **App Runner** | Compute | Serverless container runtime for 6 microservices (auth-service, admin-api, public-api, files-api, admin-web, public-web). Auto-scales 1-10 instances per service. |
 | **Aurora Serverless v2** | Database | PostgreSQL 17.4 with auto-scaling (1-16 ACU). Multi-AZ deployment with 30-day backups, encryption, and pg_cron/pg_stat_statements extensions. |
-| **ElastiCache Serverless** | Cache | Redis 7.x for session storage and caching. Dual endpoints (write/read) with cluster mode enabled. |
+| **ElastiCache** | Cache | Valkey 8.2 (Redis-compatible) for session storage. Single cache.t4g.micro node (~$12/month). |
 | **S3** | Storage | Object storage for images, documents, miniatures. Versioning enabled with lifecycle policies and access logging. |
 | **CloudFront** | CDN | 4 distributions (public, admin, auth, files) with path-based routing, TLS 1.2+, HTTP/3, and global edge caching. |
 | **WAF** | Security | Web Application Firewall protecting CloudFront with rate limiting, OWASP Top 10 rules, and Log4j protection. |
@@ -22,6 +22,7 @@ AWS serverless infrastructure for production deployment.
 | **ECR** | Registry | Container image registry with vulnerability scanning and lifecycle policies (keep last 10 images). |
 | **VPC** | Network | Isolated network with 2 public and 2 private subnets across 2 AZs. VPC Flow Logs enabled. |
 | **CloudWatch** | Monitoring | Log aggregation, metrics collection, dashboards, and alarms for error rates and performance monitoring. |
+| **X-Ray** | Observability | Distributed tracing for App Runner services. Request latency analysis, service map visualization, error tracking across microservices. |
 | **SNS** | Alerting | Email/SMS notifications for critical alarms (errors, latency spikes, resource limits). |
 | **GuardDuty** | Security | Threat detection monitoring for suspicious activity, compromised credentials, and malicious IPs. |
 | **IAM** | Security | Role-based access control with least privilege. OIDC for GitHub Actions, no long-lived credentials. |
@@ -59,10 +60,11 @@ AWS serverless infrastructure for production deployment.
 
 ### Cache
 
-- ElastiCache Serverless Redis 7.x
-- Dual endpoints: write (6379), read (6380)
-- Cluster mode enabled
+- ElastiCache Valkey 8.2 (Redis-compatible OSS fork)
+- Single cache.t4g.micro node (~$12/month vs $90+/month serverless)
+- Port 6379
 - Encryption at rest and in transit
+- AUTH token authentication
 
 ### Storage
 
@@ -132,15 +134,20 @@ internal communication.
 - **Validation**: DNS (automatic via Route53)
 - **Route53**: DNS hosting, DNSSEC enabled, CAA records, query logging
 
-### Monitoring
+### Monitoring & Observability
 
-- CloudWatch: log groups per service
+- **CloudWatch**: log groups per service
   - Application logs: 7-day retention
   - VPC Flow Logs: 90-day retention (forensic analysis)
   - Route53 Query Logs: 30-day retention (DNS attack analysis)
-- Alarms: error rates, latency, resource utilization
-- SNS notifications for critical events
-- Dashboard: unified metrics view
+- **X-Ray Tracing**: distributed tracing for App Runner services
+  - Service map: visualize dependencies (admin-api → auth-service → Aurora)
+  - Request analysis: end-to-end latency breakdown per request
+  - Error tracking: identify which service is causing failures
+  - Configurable via `enable_xray_tracing` variable (default: enabled)
+- **Alarms**: error rates, latency, resource utilization
+- **SNS notifications** for critical events
+- **Dashboard**: unified metrics view
 
 ### Secrets & Registry
 
@@ -156,7 +163,7 @@ modules/
 ├── networking/     VPC, subnets (2 public, 2 private), security groups
 ├── secrets/        Secrets Manager with KMS encryption
 ├── database/       Aurora Serverless v2, subnet groups, security groups
-├── cache/          ElastiCache Serverless, subnet groups
+├── cache/          ElastiCache Valkey (single node), subnet groups
 ├── storage/        S3 buckets with versioning and lifecycle policies
 ├── ecr/            Container registries with image scanning
 ├── certificates/   ACM certificates (us-east-1 for CloudFront)
@@ -212,6 +219,7 @@ aurora_max_capacity     = 16
 enable_enhanced_monitoring    = true
 enable_performance_insights   = true
 enable_ecr_enhanced_scanning  = true
+enable_xray_tracing           = true  # AWS X-Ray distributed tracing
 ```
 
 ## Deployment
@@ -242,6 +250,15 @@ Required GitHub secrets:
   for budget alerts
 - `TF_VAR_alarm_email_addresses`: JSON array
   `["ops@example.com","oncall@example.com"]` for alarm notifications
+
+Optional GitHub secrets (defaults shown):
+
+- `TF_VAR_enable_guardduty`: `true` - GuardDuty threat detection
+- `TF_VAR_enable_budgets`: `true` - AWS Budgets cost control
+- `TF_VAR_enable_vpc_flow_logs`: `true` - VPC network monitoring
+- `TF_VAR_enable_http_endpoint`: `false` - Aurora Data API
+- `TF_VAR_enable_xray_tracing`: `true` - X-Ray distributed tracing
+- `TF_VAR_monthly_budget_limit`: `100` - Budget limit in USD
 
 #### Application Deployments
 
@@ -463,16 +480,14 @@ terraform output app_runner_service_urls
 Store these in Secrets Manager for backend-to-backend calls:
 
 ```bash
-# AUTH_SERVICE_URL (used by admin-api, files-api)
-aws secretsmanager create-secret \
-  --name portfolio/prod/app-runner/auth-service-url \
-  --secret-string 'https://xxxxx.eu-west-1.awsapprunner.com'
-
 # FILES_API_URL (used by admin-api, public-api)
 aws secretsmanager create-secret \
   --name portfolio/prod/app-runner/files-api-url \
   --secret-string 'https://yyyyy.eu-west-1.awsapprunner.com'
 ```
+
+Note: admin-api and files-api use JWT_SECRET for local token validation instead of
+calling auth-service. The JWT_SECRET is already stored in Secrets Manager.
 
 Update App Runner environment variables to reference these secrets.
 
@@ -540,14 +555,14 @@ Approximate monthly costs (low traffic):
 
 - App Runner: $30-50 (6 services)
 - Aurora Serverless v2: $40-60 (1-16 ACU)
-- ElastiCache Serverless: $20-30
+- ElastiCache Valkey: ~$12 (cache.t4g.micro)
 - CloudFront: $5-10
 - WAF: $5-8 (web ACL + rules, no Bot Control)
 - S3: $1-5
 - Route53: $1
 - Other (CloudWatch, Secrets, ECR): $5-10
 
-**Total**: ~$105-170/month
+**Total**: ~$100-150/month
 
 ## References
 

@@ -299,6 +299,8 @@ cp .env.example .env
 POSTGRES_DB=portfolio
 DB_HOST=postgres
 DB_PORT=5432
+# SSL Mode: disable (local Docker), require (AWS RDS)
+DB_SSLMODE=disable
 
 # PostgreSQL Superuser (for database creation)
 POSTGRES_SUPERUSER=postgres
@@ -333,7 +335,13 @@ S3_ACCESS_KEY=files-api-user
 S3_SECRET_KEY=files-api-secret-change-in-production
 
 S3_ENDPOINT=http://minio:9000
-S3_BUCKET=images
+# Three separate buckets for content segregation and fine-grained IAM policies:
+# - images: Portfolio project images (public read via CloudFront)
+# - documents: PDFs, CVs, resumes (authenticated access only)
+# - miniatures: Miniature painting photos (public read via CloudFront)
+S3_IMAGES_BUCKET=images
+S3_DOCUMENTS_BUCKET=documents
+S3_MINIATURES_BUCKET=miniatures
 S3_USE_SSL=false
 
 # JWT
@@ -361,7 +369,7 @@ ADMIN_API_PORT=8083
 FILES_API_PORT=8085
 
 # Service URLs (internal Docker network)
-AUTH_SERVICE_URL=http://auth-service:8084
+# Note: admin-api and files-api use JWT_SECRET for local token validation
 FILES_API_URL=http://files-api:8085
 
 # File Upload Configuration

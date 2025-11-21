@@ -93,6 +93,12 @@ variable "enable_enhanced_monitoring" {
   default     = true
 }
 
+variable "enable_http_endpoint" {
+  description = "Enable Aurora Data API HTTP endpoint for serverless access (requires IAM authentication)"
+  type        = bool
+  default     = false
+}
+
 variable "max_connections" {
   description = "Maximum number of database connections (must be appropriate for ACU capacity)"
   type        = number

@@ -402,7 +402,7 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${POSTGRES_DB}
-      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - JWT_SECRET=${JWT_SECRET}
       - FILES_API_URL=${FILES_API_URL}
       # Logging
       - LOG_LEVEL=${LOG_LEVEL}
@@ -487,7 +487,7 @@ services:
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_USE_SSL=${S3_USE_SSL}
-      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - JWT_SECRET=${JWT_SECRET}
       - MAX_FILE_SIZE=${MAX_FILE_SIZE}
       - ALLOWED_FILE_TYPES=${ALLOWED_FILE_TYPES}
       # Logging

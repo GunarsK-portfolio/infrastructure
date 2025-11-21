@@ -12,7 +12,7 @@ terraform {
   }
 }
 
-# Response Headers Policy - Security Headers
+# Response Headers Policy - Security Headers (for frontends)
 resource "aws_cloudfront_response_headers_policy" "security_headers" {
   name    = "${var.project_name}-${var.environment}-security-headers"
   comment = "Security headers for ${var.project_name} ${var.environment}"
@@ -58,15 +58,15 @@ resource "aws_cloudfront_response_headers_policy" "security_headers" {
     # RISK: Weaker than nonce-based CSP, but significantly safer than 'unsafe-inline'
     # TODO (8h): Migrate to nonce-based CSP by refactoring all inline styles to CSS classes
     content_security_policy {
-      # CSP Level 3 with unsafe-hashes (not supported in Safari):
-      # - Removed 'unsafe-inline' and 'unsafe-eval' for scripts (strict)
-      # - Allow 'unsafe-hashes' for Vue :style bindings and Naive UI runtime styles
-      # - Script-src does NOT need unsafe-hashes (Vue event directives compile to JS)
-      # - Use 'strict-dynamic' when nonce-based CSP is implemented
+      # SECURITY NOTE: Uses 'unsafe-inline' for styles due to Naive UI limitations
+      # - Naive UI generates inline styles that cannot be hashed or nonced
+      # - 'unsafe-hashes' (CSP L3) is not supported in Safari and insufficient for Naive UI
+      # - Scripts remain strict ('self' only, no unsafe-inline/unsafe-eval)
+      # - TODO: Migrate to nonce-based CSP when Naive UI supports it
       content_security_policy = join("; ", [
         "default-src 'self'",
-        "script-src 'self'",                # No unsafe-hashes needed for Vue directives
-        "style-src 'self' 'unsafe-hashes'", # Required for :style, v-show, Naive UI
+        "script-src 'self'",                # Strict: no inline scripts
+        "style-src 'self' 'unsafe-inline'", # Required for Naive UI inline styles
         "img-src 'self' data: https:",      # Allow external images and data URIs
         "font-src 'self' data:",            # Allow web fonts
         "connect-src 'self' https:",        # Allow HTTPS API calls
@@ -76,6 +76,60 @@ resource "aws_cloudfront_response_headers_policy" "security_headers" {
         "upgrade-insecure-requests"         # Upgrade HTTP to HTTPS
       ])
       override = true
+    }
+  }
+}
+
+# Response Headers Policy - API with CORS passthrough
+# Uses origin CORS headers instead of adding new ones (override = false)
+resource "aws_cloudfront_response_headers_policy" "api_cors" {
+  name    = "${var.project_name}-${var.environment}-api-cors"
+  comment = "API security headers with CORS passthrough for ${var.project_name} ${var.environment}"
+
+  # CORS: Pass through origin headers (App Runner handles CORS logic)
+  cors_config {
+    access_control_allow_credentials = true
+
+    access_control_allow_headers {
+      items = ["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"]
+    }
+
+    access_control_allow_methods {
+      items = ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"]
+    }
+
+    access_control_allow_origins {
+      items = ["https://${var.domain_name}", "https://admin.${var.domain_name}"]
+    }
+
+    access_control_max_age_sec = 86400
+
+    # origin_override = false means: only add CORS if origin didn't set them
+    # This lets App Runner's dynamic CORS logic take precedence
+    origin_override = false
+  }
+
+  security_headers_config {
+    strict_transport_security {
+      access_control_max_age_sec = 63072000
+      include_subdomains         = true
+      preload                    = true
+      override                   = true
+    }
+
+    content_type_options {
+      override = true
+    }
+
+    referrer_policy {
+      referrer_policy = "strict-origin-when-cross-origin"
+      override        = true
+    }
+
+    xss_protection {
+      mode_block = true
+      protection = true
+      override   = true
     }
   }
 }
@@ -100,7 +154,7 @@ resource "aws_cloudfront_distribution" "public" {
       http_port              = 80
       https_port             = 443
       origin_protocol_policy = "https-only"
-      origin_ssl_protocols   = ["TLSv1.3"]
+      origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
 
@@ -113,7 +167,7 @@ resource "aws_cloudfront_distribution" "public" {
       http_port              = 80
       https_port             = 443
       origin_protocol_policy = "https-only"
-      origin_ssl_protocols   = ["TLSv1.3"]
+      origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
 
@@ -128,7 +182,7 @@ resource "aws_cloudfront_distribution" "public" {
 
     forwarded_values {
       query_string = true
-      headers      = ["Host", "Origin"]
+      headers      = ["Origin"]
 
       cookies {
         forward = "none"
@@ -151,7 +205,7 @@ resource "aws_cloudfront_distribution" "public" {
 
     forwarded_values {
       query_string = true
-      headers      = ["*"]
+      headers      = ["Accept", "Content-Type", "Origin", "Referer", "User-Agent"]
 
       cookies {
         forward = "all"
@@ -225,7 +279,7 @@ resource "aws_cloudfront_distribution" "admin" {
       http_port              = 80
       https_port             = 443
       origin_protocol_policy = "https-only"
-      origin_ssl_protocols   = ["TLSv1.3"]
+      origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
 
@@ -238,7 +292,7 @@ resource "aws_cloudfront_distribution" "admin" {
       http_port              = 80
       https_port             = 443
       origin_protocol_policy = "https-only"
-      origin_ssl_protocols   = ["TLSv1.3"]
+      origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
 
@@ -253,7 +307,7 @@ resource "aws_cloudfront_distribution" "admin" {
 
     forwarded_values {
       query_string = true
-      headers      = ["Host", "Origin"]
+      headers      = ["Origin"]
 
       cookies {
         forward = "none"
@@ -276,7 +330,7 @@ resource "aws_cloudfront_distribution" "admin" {
 
     forwarded_values {
       query_string = true
-      headers      = ["*"]
+      headers      = ["Authorization", "Content-Type", "Accept", "Origin", "Referer", "User-Agent", "X-Token-TTL"]
 
       cookies {
         forward = "all"
@@ -349,7 +403,7 @@ resource "aws_cloudfront_distribution" "auth" {
       http_port              = 80
       https_port             = 443
       origin_protocol_policy = "https-only"
-      origin_ssl_protocols   = ["TLSv1.3"]
+      origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
 
@@ -359,11 +413,11 @@ resource "aws_cloudfront_distribution" "auth" {
     target_origin_id           = "auth-service"
     viewer_protocol_policy     = "redirect-to-https"
     compress                   = true
-    response_headers_policy_id = aws_cloudfront_response_headers_policy.security_headers.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.api_cors.id
 
     forwarded_values {
       query_string = true
-      headers      = ["*"]
+      headers      = ["Authorization", "Content-Type", "Accept", "Origin", "Referer", "User-Agent"]
 
       cookies {
         forward = "all"
@@ -414,7 +468,7 @@ resource "aws_cloudfront_distribution" "files" {
       http_port              = 80
       https_port             = 443
       origin_protocol_policy = "https-only"
-      origin_ssl_protocols   = ["TLSv1.3"]
+      origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
 
@@ -424,11 +478,11 @@ resource "aws_cloudfront_distribution" "files" {
     target_origin_id           = "files-api"
     viewer_protocol_policy     = "redirect-to-https"
     compress                   = true
-    response_headers_policy_id = aws_cloudfront_response_headers_policy.security_headers.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.api_cors.id
 
     forwarded_values {
       query_string = true
-      headers      = ["*"]
+      headers      = ["Authorization", "Content-Type", "Accept", "Origin", "Referer", "User-Agent", "Range", "If-Match", "If-None-Match"]
 
       cookies {
         forward = "all"

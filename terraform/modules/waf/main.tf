@@ -858,7 +858,7 @@ resource "aws_wafv2_web_acl" "main" {
 # CloudWatch Log Group for WAF logs (30 days for security forensics)
 # Uses local KMS key (us-east-1) instead of main secrets KMS key (eu-west-1)
 resource "aws_cloudwatch_log_group" "waf" {
-  name              = "wafv2-${var.project_name}-${var.environment}" # valid name
+  name              = "aws-waf-logs-${var.project_name}-${var.environment}"
   retention_in_days = 30
   kms_key_id        = aws_kms_key.waf_logs.arn
 
@@ -869,7 +869,5 @@ resource "aws_cloudwatch_log_group" "waf" {
 resource "aws_wafv2_web_acl_logging_configuration" "main" {
   resource_arn = aws_wafv2_web_acl.main.arn
 
-  log_destination_configs = [
-    "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.waf.name}"
-  ]
+  log_destination_configs = [aws_cloudwatch_log_group.waf.arn]
 }

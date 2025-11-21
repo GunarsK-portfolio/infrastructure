@@ -1,5 +1,6 @@
 # Cache Module
-# ElastiCache Serverless for Redis
+# ElastiCache Valkey - Single node for cost optimization
+# Valkey is Redis OSS fork, fully compatible but actively maintained
 
 terraform {
   required_version = ">= 1.13.0"
@@ -20,7 +21,7 @@ terraform {
 resource "aws_elasticache_subnet_group" "main" {
   name        = "${var.project_name}-${var.environment}-redis-subnet-group"
   subnet_ids  = var.private_subnet_ids
-  description = "Subnet group for ElastiCache Serverless Redis"
+  description = "Subnet group for ElastiCache Valkey"
 
   tags = merge(
     var.tags,
@@ -63,88 +64,73 @@ resource "null_resource" "validate_auth_token" {
   }
 }
 
-# ElastiCache Serverless Cache
-resource "aws_elasticache_serverless_cache" "main" {
-  name        = "${var.project_name}-${var.environment}-redis"
-  description = "ElastiCache Serverless for Redis"
-  engine      = "redis"
+# Parameter group for Valkey 8.2
+resource "aws_elasticache_parameter_group" "main" {
+  name        = "${var.project_name}-${var.environment}-valkey82"
+  family      = "valkey8"
+  description = "Valkey 8.2 parameter group for ${var.project_name}"
 
-  # Security configuration
-  security_group_ids = [var.cache_security_group_id]
-  subnet_ids         = var.private_subnet_ids
-
-  # Cache configuration
-  cache_usage_limits {
-    data_storage {
-      maximum = var.max_data_storage_gb
-      unit    = "GB"
-    }
-
-    ecpu_per_second {
-      maximum = var.max_ecpu_per_second
-    }
+  # Session-optimized settings
+  parameter {
+    name  = "maxmemory-policy"
+    value = "volatile-lru"
   }
 
-  # Encryption and authentication
-  # Note: ElastiCache Serverless has the following security features enabled by default:
-  # - Data at rest encryption: Automatically enabled (cannot be disabled)
-  # - Data in transit encryption (TLS): Automatically enabled and enforced (cannot be disabled)
-  # - All client connections must use TLS 1.2 or higher
-  # Reference: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/serverless-encryption.html
-  user_group_id = aws_elasticache_user_group.main.id
+  tags = var.tags
+}
 
-  # Daily snapshot time
-  daily_snapshot_time = "03:00"
+# ElastiCache Replication Group (single node for cost optimization)
+# Using cache.t4g.micro: ~$12/month vs Serverless minimum ~$90/month
+resource "aws_elasticache_replication_group" "main" {
+  replication_group_id = "${var.project_name}-${var.environment}-valkey"
+  description          = "Valkey for ${var.project_name} ${var.environment}"
 
-  # Maintenance window
-  # Format: ddd:hh24:mi-ddd:hh24:mi
-  snapshot_retention_limit = var.snapshot_retention_days
+  # Engine configuration - Valkey is Redis-compatible OSS fork
+  engine               = "valkey"
+  engine_version       = "8.2"
+  node_type            = var.node_type
+  parameter_group_name = aws_elasticache_parameter_group.main.name
+
+  # Single node (no replicas) for cost optimization
+  # Set num_cache_clusters = 2 for HA in production
+  num_cache_clusters = var.num_cache_clusters
+  port               = 6379
+
+  # Network configuration
+  subnet_group_name  = aws_elasticache_subnet_group.main.name
+  security_group_ids = [var.cache_security_group_id]
+
+  # Security - encryption and authentication
+  at_rest_encryption_enabled = true
+  transit_encryption_enabled = true
+  auth_token                 = local.auth_token
+
+  # Maintenance and backups
+  maintenance_window         = "sun:03:00-sun:04:00"
+  snapshot_window            = "02:00-03:00"
+  snapshot_retention_limit   = var.snapshot_retention_days
+  auto_minor_version_upgrade = true
+
+  # Apply changes immediately (for portfolio; use false for production)
+  apply_immediately = true
 
   tags = merge(
     var.tags,
     {
-      Name = "${var.project_name}-${var.environment}-redis-serverless"
+      Name = "${var.project_name}-${var.environment}-valkey"
     }
   )
-}
-
-# Redis User (for authentication with restricted commands for security)
-resource "aws_elasticache_user" "main" {
-  user_id   = "${var.project_name}-${var.environment}-redis-user"
-  user_name = "default"
-  # Least privilege: Only allow commands needed for session management
-  # Commands: GET, SET, DEL, EXPIRE, TTL, EXISTS, PING
-  # Blocks: FLUSHALL, CONFIG, SHUTDOWN, FLUSHDB, KEYS, SCAN, and all other unnecessary commands
-  # Explicitly block dangerous, slow, and admin command groups
-  access_string = "on ~* &* +get +set +del +expire +ttl +exists +ping -@dangerous -@slow -@admin"
-  engine        = "redis"
-
-  authentication_mode {
-    type      = "password"
-    passwords = [local.auth_token]
-  }
-
-  tags = var.tags
 
   depends_on = [null_resource.validate_auth_token]
 
   lifecycle {
-    ignore_changes = [authentication_mode]
+    ignore_changes = [auth_token]
   }
 }
 
-# Redis User Group
-resource "aws_elasticache_user_group" "main" {
-  user_group_id = "${var.project_name}-${var.environment}-redis-ug"
-  engine        = "redis"
-  user_ids      = [aws_elasticache_user.main.user_id]
-
-  tags = var.tags
-}
-
 # CloudWatch Alarms for ElastiCache
-resource "aws_cloudwatch_metric_alarm" "redis_cpu" {
-  alarm_name          = "${var.project_name}-${var.environment}-redis-high-cpu"
+resource "aws_cloudwatch_metric_alarm" "valkey_cpu" {
+  alarm_name          = "${var.project_name}-${var.environment}-valkey-high-cpu"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2
   metric_name         = "EngineCPUUtilization"
@@ -152,30 +138,30 @@ resource "aws_cloudwatch_metric_alarm" "redis_cpu" {
   period              = 300
   statistic           = "Average"
   threshold           = 80
-  alarm_description   = "Redis CPU utilization above 80%"
+  alarm_description   = "Valkey CPU utilization above 80%"
   alarm_actions       = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
 
   dimensions = {
-    CacheClusterId = aws_elasticache_serverless_cache.main.name
+    CacheClusterId = "${aws_elasticache_replication_group.main.id}-001"
   }
 
   tags = var.tags
 }
 
-resource "aws_cloudwatch_metric_alarm" "redis_throttled_commands" {
-  alarm_name          = "${var.project_name}-${var.environment}-redis-throttled-commands"
+resource "aws_cloudwatch_metric_alarm" "valkey_memory" {
+  alarm_name          = "${var.project_name}-${var.environment}-valkey-high-memory"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2
-  metric_name         = "ThrottledCmds"
+  metric_name         = "DatabaseMemoryUsagePercentage"
   namespace           = "AWS/ElastiCache"
   period              = 300
-  statistic           = "Sum"
-  threshold           = 100
-  alarm_description   = "Redis throttled commands above threshold"
+  statistic           = "Average"
+  threshold           = 80
+  alarm_description   = "Valkey memory usage above 80%"
   alarm_actions       = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
 
   dimensions = {
-    CacheClusterId = aws_elasticache_serverless_cache.main.name
+    CacheClusterId = "${aws_elasticache_replication_group.main.id}-001"
   }
 
   tags = var.tags

@@ -51,6 +51,8 @@ jobs:
           TF_VAR_enable_budgets: ${{ secrets.TF_VAR_enable_budgets || 'true' }}
           TF_VAR_monthly_budget_limit: ${{ secrets.TF_VAR_monthly_budget_limit || '100' }}
           TF_VAR_enable_vpc_flow_logs: ${{ secrets.TF_VAR_enable_vpc_flow_logs || 'true' }}
+          TF_VAR_enable_http_endpoint: ${{ secrets.TF_VAR_enable_http_endpoint || 'false' }}
+          TF_VAR_enable_xray_tracing: ${{ secrets.TF_VAR_enable_xray_tracing || 'true' }}
           TF_VAR_service_image_tags: ${{ vars.TF_VAR_service_image_tags }}
 
       - name: Terraform Apply
@@ -63,6 +65,8 @@ jobs:
           TF_VAR_enable_budgets: ${{ secrets.TF_VAR_enable_budgets || 'true' }}
           TF_VAR_monthly_budget_limit: ${{ secrets.TF_VAR_monthly_budget_limit || '100' }}
           TF_VAR_enable_vpc_flow_logs: ${{ secrets.TF_VAR_enable_vpc_flow_logs || 'true' }}
+          TF_VAR_enable_http_endpoint: ${{ secrets.TF_VAR_enable_http_endpoint || 'false' }}
+          TF_VAR_enable_xray_tracing: ${{ secrets.TF_VAR_enable_xray_tracing || 'true' }}
           TF_VAR_service_image_tags: ${{ vars.TF_VAR_service_image_tags }}
 
       - name: Save Terraform Outputs

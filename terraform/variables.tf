@@ -59,6 +59,13 @@ variable "availability_zones" {
   }
 }
 
+# Bastion Configuration
+variable "bastion_instance_type" {
+  description = "EC2 instance type for bastion host"
+  type        = string
+  default     = "t4g.nano"
+}
+
 # Aurora Serverless v2 Configuration
 variable "aurora_min_capacity" {
   description = "Minimum ACUs for Aurora Serverless v2"
@@ -245,6 +252,12 @@ variable "enable_enhanced_monitoring" {
   default     = true
 }
 
+variable "enable_http_endpoint" {
+  description = "Enable Aurora Data API HTTP endpoint for serverless access (Query Editor, Lambda)"
+  type        = bool
+  default     = false
+}
+
 variable "enable_performance_insights" {
   description = "Enable Performance Insights for Aurora"
   type        = bool
@@ -260,6 +273,12 @@ variable "enable_vpc_flow_logs" {
 
 variable "enable_guardduty" {
   description = "Enable GuardDuty threat detection"
+  type        = bool
+  default     = true
+}
+
+variable "enable_xray_tracing" {
+  description = "Enable AWS X-Ray tracing for App Runner services"
   type        = bool
   default     = true
 }

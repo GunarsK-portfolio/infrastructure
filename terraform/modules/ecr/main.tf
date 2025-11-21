@@ -15,7 +15,9 @@ terraform {
 resource "aws_ecr_repository" "main" {
   for_each = toset(var.service_names)
 
-  name                 = "${var.project_name}/${each.key}"
+  name = "${var.project_name}/${each.key}"
+  # IMMUTABLE tags prevent overwrites - each deployment uses unique semantic versions (v1.0.0)
+  # This ensures deployment rollbacks always reference the exact original image
   image_tag_mutability = "IMMUTABLE"
 
   image_scanning_configuration {
@@ -37,6 +39,7 @@ resource "aws_ecr_repository" "main" {
 }
 
 # Lifecycle policy to keep last 20 images
+# Semantic versioned tags (v*, prod*, staging*) are kept for rollback capability
 resource "aws_ecr_lifecycle_policy" "main" {
   for_each = aws_ecr_repository.main
 

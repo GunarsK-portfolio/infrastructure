@@ -64,9 +64,20 @@ variable "secrets_arns" {
   type        = map(string)
 }
 
+variable "kms_key_arn" {
+  description = "KMS key ARN for decrypting secrets"
+  type        = string
+}
+
 variable "domain_name" {
   description = "Primary domain name (e.g., gunarsk.com). Subdomains: admin.*, auth.*, files.*"
   type        = string
+}
+
+variable "enable_xray_tracing" {
+  description = "Enable AWS X-Ray tracing for App Runner services"
+  type        = bool
+  default     = true
 }
 
 variable "tags" {

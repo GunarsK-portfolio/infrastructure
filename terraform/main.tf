@@ -78,6 +78,7 @@ module "database" {
 
   enable_enhanced_monitoring  = var.enable_enhanced_monitoring
   enable_performance_insights = var.enable_performance_insights
+  enable_http_endpoint        = var.enable_http_endpoint
 
   tags = local.common_tags
 }
@@ -93,6 +94,22 @@ module "cache" {
 
   # Reference auth token from Secrets Manager
   auth_token_secret_arn = module.secrets.redis_auth_token_arn
+
+  tags = local.common_tags
+}
+
+# Bastion Module - SSM-enabled database access
+module "bastion" {
+  source = "./modules/bastion"
+
+  project_name  = var.project_name
+  environment   = var.environment
+  vpc_id        = module.networking.vpc_id
+  subnet_id     = module.networking.public_subnet_ids[0]
+  instance_type = var.bastion_instance_type
+
+  database_security_group_id = module.networking.database_security_group_id
+  kms_key_arn                = module.secrets.kms_key_arn
 
   tags = local.common_tags
 }
@@ -125,29 +142,29 @@ module "ecr" {
   tags = local.common_tags
 }
 
-# Route53 DNS Module - Creates zone first, records added via depends_on after CloudFront
+# Data source to look up existing Route53 hosted zone
+data "aws_route53_zone" "existing" {
+  name         = var.domain_name
+  private_zone = false
+}
+
+# Route53 DNS Module - Use existing Route 53 registrar-created hosted zone
 module "dns" {
   source = "./modules/dns"
 
   domain_name = var.domain_name
-
-  # CloudFront distributions - explicit dependency ensures CloudFront is created first
-  cloudfront_distributions = {
-    public = module.cloudfront.public_distribution_domain_name
-    admin  = module.cloudfront.admin_distribution_domain_name
-    auth   = module.cloudfront.auth_distribution_domain_name
-    files  = module.cloudfront.files_distribution_domain_name
-  }
+  create_zone = false
+  zone_id     = data.aws_route53_zone.existing.zone_id
 
   # KMS encryption for logs
   kms_key_arn = module.secrets.kms_key_arn
 
   tags = local.common_tags
-
-  depends_on = [module.cloudfront]
 }
 
 # ACM Certificate Module (us-east-1 for CloudFront)
+# Note: zone_id reference creates implicit dependency on dns.zone creation
+# The dns module's A/AAAA records depend on CloudFront, but zone creation doesn't
 module "certificates" {
   source = "./modules/certificates"
 
@@ -188,7 +205,7 @@ module "app_runner" {
   services           = var.app_runner_services
   service_image_tags = var.service_image_tags
 
-  # VPC connector for private resource access
+  # VPC connector for private resource access (Aurora, ElastiCache, S3)
   private_subnet_ids           = module.networking.private_subnet_ids
   app_runner_security_group_id = module.networking.app_runner_security_group_id
 
@@ -205,8 +222,14 @@ module "app_runner" {
   # Secrets Manager ARNs
   secrets_arns = module.secrets.secret_arns
 
+  # KMS key for decrypting secrets
+  kms_key_arn = module.secrets.kms_key_arn
+
   # Domain name for service URLs
   domain_name = var.domain_name
+
+  # Observability
+  enable_xray_tracing = var.enable_xray_tracing
 
   tags = local.common_tags
 }
@@ -230,6 +253,33 @@ module "cloudfront" {
   web_acl_arn = module.waf.web_acl_arn
 
   tags = local.common_tags
+
+  # Ensure certificate is validated before creating CloudFront distributions
+  depends_on = [module.certificates]
+}
+
+# DNS Records Module - Create CloudFront A/AAAA records after distributions exist
+module "dns_records" {
+  source = "./modules/dns"
+
+  domain_name = var.domain_name
+  create_zone = false              # Don't recreate the hosted zone
+  zone_id     = module.dns.zone_id # Use existing zone from first module call
+
+  # CloudFront distributions - explicit dependency ensures CloudFront is created first
+  cloudfront_distributions = {
+    public = module.cloudfront.public_distribution_domain_name
+    admin  = module.cloudfront.admin_distribution_domain_name
+    auth   = module.cloudfront.auth_distribution_domain_name
+    files  = module.cloudfront.files_distribution_domain_name
+  }
+
+  # KMS encryption for logs (not needed in records-only mode, but required variable)
+  kms_key_arn = module.secrets.kms_key_arn
+
+  tags = local.common_tags
+
+  depends_on = [module.cloudfront, module.dns]
 }
 
 # Monitoring Module - CloudWatch
