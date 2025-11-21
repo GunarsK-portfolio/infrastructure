@@ -816,6 +816,62 @@ resource "aws_wafv2_web_acl" "main" {
     }
   }
 
+  # Restore 8KB body size limit for non-files endpoints
+  # Since SizeRestrictions_BODY is set to count globally, this enforces 8KB for other hosts
+  rule {
+    name     = "non-files-body-size-limit"
+    priority = 17
+
+    action {
+      block {}
+    }
+
+    statement {
+      and_statement {
+        statement {
+          not_statement {
+            statement {
+              byte_match_statement {
+                field_to_match {
+                  single_header {
+                    name = "host"
+                  }
+                }
+                positional_constraint = "STARTS_WITH"
+                search_string         = "files.${var.domain_name}"
+                text_transformation {
+                  priority = 0
+                  type     = "LOWERCASE"
+                }
+              }
+            }
+          }
+        }
+        statement {
+          size_constraint_statement {
+            field_to_match {
+              body {
+                oversize_handling = "MATCH"
+              }
+            }
+            comparison_operator = "GT"
+            size                = 8192 # 8KB - same as AWS managed rule default
+            text_transformation {
+              priority = 0
+              type     = "NONE"
+            }
+          }
+        }
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "NonFilesBodySizeLimit"
+      sampled_requests_enabled   = true
+    }
+  }
+
   # AWS Managed Rules - Known Bad Inputs (Log4Shell, etc.)
   rule {
     name     = "aws-managed-known-bad-inputs"
