@@ -23,7 +23,7 @@ variable "cache_security_group_id" {
 variable "max_data_storage_gb" {
   description = "Maximum data storage in GB"
   type        = number
-  default     = 10
+  default     = 1
 }
 
 variable "max_ecpu_per_second" {

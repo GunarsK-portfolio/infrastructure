@@ -369,7 +369,7 @@ ADMIN_API_PORT=8083
 FILES_API_PORT=8085
 
 # Service URLs (internal Docker network)
-AUTH_SERVICE_URL=http://auth-service:8084
+# Note: admin-api and files-api use JWT_SECRET for local token validation
 FILES_API_URL=http://files-api:8085
 
 # File Upload Configuration

@@ -205,7 +205,7 @@ module "app_runner" {
   services           = var.app_runner_services
   service_image_tags = var.service_image_tags
 
-  # VPC connector for private resource access
+  # VPC connector for private resource access (Aurora, ElastiCache, S3)
   private_subnet_ids           = module.networking.private_subnet_ids
   app_runner_security_group_id = module.networking.app_runner_security_group_id
 

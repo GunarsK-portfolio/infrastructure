@@ -479,16 +479,14 @@ terraform output app_runner_service_urls
 Store these in Secrets Manager for backend-to-backend calls:
 
 ```bash
-# AUTH_SERVICE_URL (used by admin-api, files-api)
-aws secretsmanager create-secret \
-  --name portfolio/prod/app-runner/auth-service-url \
-  --secret-string 'https://xxxxx.eu-west-1.awsapprunner.com'
-
 # FILES_API_URL (used by admin-api, public-api)
 aws secretsmanager create-secret \
   --name portfolio/prod/app-runner/files-api-url \
   --secret-string 'https://yyyyy.eu-west-1.awsapprunner.com'
 ```
+
+Note: admin-api and files-api use JWT_SECRET for local token validation instead of
+calling auth-service. The JWT_SECRET is already stored in Secrets Manager.
 
 Update App Runner environment variables to reference these secrets.
 
