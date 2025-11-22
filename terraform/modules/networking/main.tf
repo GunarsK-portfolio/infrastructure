@@ -165,6 +165,22 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private[count.index].id
 }
 
+# S3 Gateway VPC Endpoint
+# Required for App Runner services with VPC egress to access S3
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${data.aws_region.current.region}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = aws_route_table.private[*].id
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-s3-endpoint"
+    }
+  )
+}
+
 # Security Group for Aurora Database
 resource "aws_security_group" "database" {
   name        = "${var.project_name}-${var.environment}-aurora-sg"
