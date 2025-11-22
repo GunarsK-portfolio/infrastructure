@@ -133,7 +133,7 @@ services:
   # NOTE: Promtail is deprecated and enters EOL on March 2, 2026
   # Consider migrating to Grafana Alloy for new deployments
   promtail:
-    image: grafana/promtail:3.6.0
+    image: grafana/promtail:3.6.1
     container_name: promtail
     restart: unless-stopped
     command: -config.file=/etc/promtail/promtail.yml
