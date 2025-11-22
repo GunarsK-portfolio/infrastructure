@@ -118,7 +118,7 @@ services:
 
   # Redis Cache
   redis:
-    image: redis:8.2-alpine
+    image: redis:8.4-alpine
     container_name: redis
     restart: unless-stopped
     user: "999:999"
