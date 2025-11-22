@@ -732,8 +732,8 @@ resource "aws_wafv2_web_acl" "main" {
   }
 
   # AWS Managed Rules - Core Rule Set (OWASP Top 10)
-  # SizeRestrictions_BODY excluded only for files.gunarsk.com to allow file uploads up to 10MB
-  # Other hosts still get the default 8KB body size protection
+  # Override SizeRestrictions_BODY to count mode globally
+  # Custom body size limits are enforced by separate rules below
   rule {
     name     = "aws-managed-core-rule-set"
     priority = 11
@@ -747,7 +747,8 @@ resource "aws_wafv2_web_acl" "main" {
         vendor_name = "AWS"
         name        = "AWSManagedRulesCommonRuleSet"
 
-        # Exclude body size rule only for files API (file uploads need > 8KB)
+        # Override SizeRestrictions_BODY to count instead of block
+        # This allows file uploads > 8KB to pass through
         rule_action_override {
           name = "SizeRestrictions_BODY"
           action_to_use {
@@ -765,7 +766,7 @@ resource "aws_wafv2_web_acl" "main" {
   }
 
   # Custom body size limit for files API (10MB max)
-  # Blocks requests > 10MB to files.gunarsk.com
+  # Blocks file upload requests > 10MB to files.gunarsk.com
   rule {
     name     = "files-api-body-size-limit"
     priority = 16
@@ -799,7 +800,7 @@ resource "aws_wafv2_web_acl" "main" {
               }
             }
             comparison_operator = "GT"
-            size                = 10485760 # 10MB
+            size                = 10485760 # 10MB - matches MAX_FILE_SIZE
             text_transformation {
               priority = 0
               type     = "NONE"
@@ -817,7 +818,7 @@ resource "aws_wafv2_web_acl" "main" {
   }
 
   # Restore 8KB body size limit for non-files endpoints
-  # Since SizeRestrictions_BODY is set to count globally, this enforces 8KB for other hosts
+  # Since SizeRestrictions_BODY is disabled globally, enforce 8KB for other endpoints
   rule {
     name     = "non-files-body-size-limit"
     priority = 17
@@ -855,7 +856,7 @@ resource "aws_wafv2_web_acl" "main" {
               }
             }
             comparison_operator = "GT"
-            size                = 8192 # 8KB - same as AWS managed rule default
+            size                = 8192 # 8KB - AWS managed rule default
             text_transformation {
               priority = 0
               type     = "NONE"

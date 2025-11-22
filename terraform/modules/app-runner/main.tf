@@ -274,6 +274,19 @@ resource "aws_iam_role_policy" "s3_access" {
             "aws:RequestedRegion" = data.aws_region.current.region
           }
         }
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey"
+        ]
+        Resource = var.kms_key_arn
+        Condition = {
+          StringEquals = {
+            "aws:RequestedRegion" = data.aws_region.current.region
+          }
+        }
       }
     ]
   })
