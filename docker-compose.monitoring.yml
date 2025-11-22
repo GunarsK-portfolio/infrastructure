@@ -27,7 +27,7 @@ volumes:
 services:
   # OpenTelemetry Collector - Receives telemetry from Claude Code
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.139.0
+    image: otel/opentelemetry-collector-contrib:0.140.1
     container_name: otel-collector
     restart: unless-stopped
     command: ["--config=/etc/otel-collector-config.yml"]
