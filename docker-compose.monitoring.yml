@@ -27,7 +27,7 @@ volumes:
 services:
   # OpenTelemetry Collector - Receives telemetry from Claude Code
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.139.0
+    image: otel/opentelemetry-collector-contrib:0.140.1
     container_name: otel-collector
     restart: unless-stopped
     command: ["--config=/etc/otel-collector-config.yml"]
@@ -101,7 +101,7 @@ services:
   # NOTE: Ephemeral storage (/tmp/loki) used due to volume permission issues
   # Logs will not persist across container restarts (acceptable for dev environment)
   loki:
-    image: grafana/loki:3.6.0
+    image: grafana/loki:3.6.1
     container_name: loki
     restart: unless-stopped
     ports:
@@ -133,7 +133,7 @@ services:
   # NOTE: Promtail is deprecated and enters EOL on March 2, 2026
   # Consider migrating to Grafana Alloy for new deployments
   promtail:
-    image: grafana/promtail:3.6.0
+    image: grafana/promtail:3.6.1
     container_name: promtail
     restart: unless-stopped
     command: -config.file=/etc/promtail/promtail.yml
@@ -165,7 +165,7 @@ services:
 
   # Grafana - Visualization and dashboards
   grafana:
-    image: grafana/grafana:12.2.1
+    image: grafana/grafana:12.3.0
     container_name: grafana
     restart: unless-stopped
     ports:

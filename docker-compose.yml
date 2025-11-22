@@ -1,7 +1,7 @@
 services:
   # Traefik Reverse Proxy
   traefik:
-    image: traefik:v3.6.1
+    image: traefik:v3.6.2
     container_name: traefik
     restart: unless-stopped
     security_opt:
@@ -118,7 +118,7 @@ services:
 
   # Redis Cache
   redis:
-    image: redis:8.2-alpine
+    image: redis:8.4-alpine
     container_name: redis
     restart: unless-stopped
     user: "999:999"
@@ -205,7 +205,7 @@ services:
 
   # Database Migrations (Flyway)
   flyway:
-    image: flyway/flyway:11.1.0
+    image: flyway/flyway:11.17.1
     container_name: flyway
     restart: "no"
     command: migrate
