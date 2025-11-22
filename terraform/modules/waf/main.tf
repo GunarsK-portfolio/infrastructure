@@ -732,8 +732,8 @@ resource "aws_wafv2_web_acl" "main" {
   }
 
   # AWS Managed Rules - Core Rule Set (OWASP Top 10)
-  # Override SizeRestrictions_BODY to count mode globally
-  # Custom body size limits are enforced by separate rules below
+  # Override SizeRestrictions_BODY to count mode - allows file uploads > 8KB
+  # Application enforces MAX_FILE_SIZE validation (10MB limit in files-api)
   rule {
     name     = "aws-managed-core-rule-set"
     priority = 11
@@ -761,114 +761,6 @@ resource "aws_wafv2_web_acl" "main" {
     visibility_config {
       cloudwatch_metrics_enabled = true
       metric_name                = "AWSManagedCoreRuleSet"
-      sampled_requests_enabled   = true
-    }
-  }
-
-  # Custom body size limit for files API (10MB max)
-  # Blocks file upload requests > 10MB to files.gunarsk.com
-  rule {
-    name     = "files-api-body-size-limit"
-    priority = 16
-
-    action {
-      block {}
-    }
-
-    statement {
-      and_statement {
-        statement {
-          byte_match_statement {
-            field_to_match {
-              single_header {
-                name = "host"
-              }
-            }
-            positional_constraint = "STARTS_WITH"
-            search_string         = "files.${var.domain_name}"
-            text_transformation {
-              priority = 0
-              type     = "LOWERCASE"
-            }
-          }
-        }
-        statement {
-          size_constraint_statement {
-            field_to_match {
-              body {
-                oversize_handling = "MATCH"
-              }
-            }
-            comparison_operator = "GT"
-            size                = 10485760 # 10MB - matches MAX_FILE_SIZE
-            text_transformation {
-              priority = 0
-              type     = "NONE"
-            }
-          }
-        }
-      }
-    }
-
-    visibility_config {
-      cloudwatch_metrics_enabled = true
-      metric_name                = "FilesAPIBodySizeLimit"
-      sampled_requests_enabled   = true
-    }
-  }
-
-  # Restore 8KB body size limit for non-files endpoints
-  # Since SizeRestrictions_BODY is disabled globally, enforce 8KB for other endpoints
-  rule {
-    name     = "non-files-body-size-limit"
-    priority = 17
-
-    action {
-      block {}
-    }
-
-    statement {
-      and_statement {
-        statement {
-          not_statement {
-            statement {
-              byte_match_statement {
-                field_to_match {
-                  single_header {
-                    name = "host"
-                  }
-                }
-                positional_constraint = "STARTS_WITH"
-                search_string         = "files.${var.domain_name}"
-                text_transformation {
-                  priority = 0
-                  type     = "LOWERCASE"
-                }
-              }
-            }
-          }
-        }
-        statement {
-          size_constraint_statement {
-            field_to_match {
-              body {
-                oversize_handling = "MATCH"
-              }
-            }
-            comparison_operator = "GT"
-            size                = 8192 # 8KB - AWS managed rule default
-            text_transformation {
-              priority = 0
-              type     = "NONE"
-            }
-          }
-        }
-      }
-    }
-
-    visibility_config {
-      cloudwatch_metrics_enabled = true
-      metric_name                = "NonFilesBodySizeLimit"
       sampled_requests_enabled   = true
     }
   }
