@@ -445,16 +445,20 @@ services:
       - "environment=${ENVIRONMENT}"
       # Traefik
       - "traefik.enable=true"
+      # Rate limiting middleware (30 req/min per IP)
+      - "traefik.http.middlewares.admin-ratelimit.ratelimit.average=30"
+      - "traefik.http.middlewares.admin-ratelimit.ratelimit.period=1m"
+      - "traefik.http.middlewares.admin-ratelimit.ratelimit.burst=50"
       # HTTP router - rewrite /admin-api/v1/* to /api/v1/*
       - "traefik.http.routers.admin-api.rule=PathPrefix(`/admin-api/`)"
       - "traefik.http.routers.admin-api.entrypoints=admin"
-      - "traefik.http.routers.admin-api.middlewares=admin-api-rewrite"
+      - "traefik.http.routers.admin-api.middlewares=admin-ratelimit,admin-api-rewrite"
       - "traefik.http.routers.admin-api.priority=100"
       - "traefik.http.routers.admin-api.service=admin-api"
       # HTTPS router
       - "traefik.http.routers.admin-api-secure.rule=PathPrefix(`/admin-api/`)"
       - "traefik.http.routers.admin-api-secure.entrypoints=adminsecure"
-      - "traefik.http.routers.admin-api-secure.middlewares=admin-api-rewrite"
+      - "traefik.http.routers.admin-api-secure.middlewares=admin-ratelimit,admin-api-rewrite"
       - "traefik.http.routers.admin-api-secure.priority=100"
       - "traefik.http.routers.admin-api-secure.tls=true"
       - "traefik.http.routers.admin-api-secure.service=admin-api"
