@@ -8,11 +8,11 @@ AWS serverless infrastructure for production deployment.
 
 | Service | Type | Purpose |
 |---------|------|---------|
-| **App Runner** | Compute | Serverless container runtime for 6 microservices (auth-service, admin-api, public-api, files-api, admin-web, public-web). Auto-scales 1-10 instances per service. |
+| **App Runner** | Compute | Serverless container runtime for 7 microservices (auth-service, admin-api, public-api, files-api, messaging-api, admin-web, public-web). Auto-scales 1-10 instances per service. |
 | **Aurora Serverless v2** | Database | PostgreSQL 17.4 with auto-scaling (1-16 ACU). Multi-AZ deployment with 30-day backups, encryption, and pg_cron/pg_stat_statements extensions. |
 | **ElastiCache** | Cache | Valkey 8.2 (Redis-compatible) for session storage. Single cache.t4g.micro node (~$12/month). |
 | **S3** | Storage | Object storage for images, documents, miniatures. Versioning enabled with lifecycle policies and access logging. |
-| **CloudFront** | CDN | 4 distributions (public, admin, auth, files) with path-based routing, TLS 1.2+, HTTP/3, and global edge caching. |
+| **CloudFront** | CDN | 5 distributions (public, admin, auth, files, message) with path-based routing, TLS 1.2+, HTTP/3, and global edge caching. |
 | **WAF** | Security | Web Application Firewall protecting CloudFront with rate limiting, OWASP Top 10 rules, and Log4j protection. |
 | **Route53** | DNS | DNS hosting with DNSSEC, CAA records, query logging, and automatic certificate validation. |
 | **ACM** | Security | SSL/TLS certificates (*.gunarsk.com wildcard) with automatic DNS validation and renewal. |
@@ -37,6 +37,7 @@ AWS serverless infrastructure for production deployment.
 | `admin.gunarsk.com` | Admin panel | admin-web (/) + admin-api (/api/v1/*) |
 | `auth.gunarsk.com` | Authentication API | auth-service |
 | `files.gunarsk.com` | File upload/download API | files-api |
+| `message.gunarsk.com` | Contact form API | messaging-api |
 
 **Note**: Public API is read-only (GET, HEAD, OPTIONS only).
 
@@ -44,7 +45,8 @@ AWS serverless infrastructure for production deployment.
 
 ### Compute
 
-- AWS App Runner: 6 services (auth, admin-api, public-api, files-api, webs)
+- AWS App Runner: 7 services (auth, admin-api, public-api, files-api,
+  messaging-api, webs)
 - Auto-scaling: 1-10 instances per service
 - Instance config: 1 vCPU, 2 GB RAM
 - VPC connector for private resource access
@@ -77,7 +79,7 @@ AWS serverless infrastructure for production deployment.
 
 #### CloudFront
 
-- **4 separate distributions**: public, admin, auth, files
+- **5 separate distributions**: public, admin, auth, files, message
 - **Path-based routing**: / → frontend, /api/v1/* → backend
 - **TLS**: TLS 1.3 only with post-quantum cryptography (TLSv1.3_2025), HTTP/3 enabled
 - **IPv6**: Enabled
@@ -153,7 +155,7 @@ internal communication.
 
 - Secrets Manager: database passwords, Redis auth, JWT secret
 - KMS encryption for secrets
-- ECR: 6 repositories with enhanced scanning
+- ECR: 7 repositories with enhanced scanning
 - Lifecycle policy: keep last 10 images
 
 ## Module Structure
@@ -167,10 +169,10 @@ modules/
 ├── storage/        S3 buckets with versioning and lifecycle policies
 ├── ecr/            Container registries with image scanning
 ├── certificates/   ACM certificates (us-east-1 for CloudFront)
-├── dns/            Route53 hosted zone and DNS records (A/AAAA for 4 distributions)
+├── dns/            Route53 hosted zone and DNS records (A/AAAA for 5 distributions)
 ├── waf/            WAF Web ACL with rate limiting rules
-├── cloudfront/     4 CloudFront distributions (public, admin, auth, files)
-├── app-runner/     6 App Runner services with VPC connector
+├── cloudfront/     5 CloudFront distributions (public, admin, auth, files, message)
+├── app-runner/     7 App Runner services with VPC connector
 └── monitoring/     CloudWatch log groups, alarms, dashboard, SNS topic
 ```
 

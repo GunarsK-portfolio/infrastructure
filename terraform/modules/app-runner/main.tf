@@ -91,6 +91,18 @@ locals {
       ALLOWED_FILE_TYPES   = "image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
       ALLOWED_ORIGINS      = "https://${var.domain_name},https://admin.${var.domain_name}"
     }
+    "messaging-api" = {
+      ENVIRONMENT     = local.environment_map[var.environment]
+      SERVICE_NAME    = "messaging-api"
+      LOG_LEVEL       = "info"
+      LOG_FORMAT      = "json"
+      DB_HOST         = var.aurora_endpoint
+      DB_PORT         = "5432"
+      DB_NAME         = "portfolio"
+      DB_USER         = "portfolio_messaging"
+      DB_SSLMODE      = "require"
+      ALLOWED_ORIGINS = "https://${var.domain_name}"
+    }
     "admin-web" = {
       ENVIRONMENT  = local.environment_map[var.environment]
       SERVICE_NAME = "admin-web"
@@ -122,6 +134,10 @@ locals {
     }
     "files-api" = {
       DB_PASSWORD = "${var.secrets_arns["aurora_admin"]}:password::"
+      JWT_SECRET  = "${var.secrets_arns["jwt_secret"]}:secret::"
+    }
+    "messaging-api" = {
+      DB_PASSWORD = "${var.secrets_arns["aurora_messaging"]}:password::"
       JWT_SECRET  = "${var.secrets_arns["jwt_secret"]}:secret::"
     }
     "admin-web"  = {}

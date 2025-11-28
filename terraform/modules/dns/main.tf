@@ -161,6 +161,36 @@ resource "aws_route53_record" "files_ipv6" {
   }
 }
 
+# A record for message subdomain
+resource "aws_route53_record" "message" {
+  count = var.cloudfront_distributions != null ? 1 : 0
+
+  zone_id = local.zone_id
+  name    = "message.${var.domain_name}"
+  type    = "A"
+
+  alias {
+    name                   = var.cloudfront_distributions.message
+    zone_id                = local.cloudfront_zone_id
+    evaluate_target_health = false
+  }
+}
+
+# AAAA record for message subdomain (IPv6)
+resource "aws_route53_record" "message_ipv6" {
+  count = var.cloudfront_distributions != null ? 1 : 0
+
+  zone_id = local.zone_id
+  name    = "message.${var.domain_name}"
+  type    = "AAAA"
+
+  alias {
+    name                   = var.cloudfront_distributions.message
+    zone_id                = local.cloudfront_zone_id
+    evaluate_target_health = false
+  }
+}
+
 # CAA records (Certificate Authority Authorization) - only when creating zone
 resource "aws_route53_record" "caa" {
   count = var.create_zone ? 1 : 0

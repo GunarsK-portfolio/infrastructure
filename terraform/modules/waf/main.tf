@@ -731,12 +731,71 @@ resource "aws_wafv2_web_acl" "main" {
     }
   }
 
+  # Rate limiting for messaging API (contact form)
+  # Matches: message.gunarsk.com/api/v1/*
+  # Stricter limit: 10 requests per 5 minutes per IP (anti-spam)
+  rule {
+    name     = "rate-limit-messaging-api"
+    priority = 11
+
+    action {
+      block {}
+    }
+
+    statement {
+      rate_based_statement {
+        limit                 = 10
+        aggregate_key_type    = "IP"
+        evaluation_window_sec = 300
+
+        scope_down_statement {
+          and_statement {
+            statement {
+              byte_match_statement {
+                field_to_match {
+                  single_header {
+                    name = "host"
+                  }
+                }
+                positional_constraint = "STARTS_WITH"
+                search_string         = "message.${var.domain_name}"
+                text_transformation {
+                  priority = 0
+                  type     = "LOWERCASE"
+                }
+              }
+            }
+            statement {
+              byte_match_statement {
+                field_to_match {
+                  uri_path {}
+                }
+                positional_constraint = "STARTS_WITH"
+                search_string         = "/api/v1"
+                text_transformation {
+                  priority = 0
+                  type     = "LOWERCASE"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "RateLimitMessagingAPI"
+      sampled_requests_enabled   = true
+    }
+  }
+
   # AWS Managed Rules - Core Rule Set (OWASP Top 10)
   # Override SizeRestrictions_BODY to count mode - allows file uploads > 8KB
   # Application enforces MAX_FILE_SIZE validation (10MB limit in files-api)
   rule {
     name     = "aws-managed-core-rule-set"
-    priority = 11
+    priority = 12
 
     override_action {
       none {}
@@ -768,7 +827,7 @@ resource "aws_wafv2_web_acl" "main" {
   # AWS Managed Rules - Known Bad Inputs (Log4Shell, etc.)
   rule {
     name     = "aws-managed-known-bad-inputs"
-    priority = 12
+    priority = 13
 
     override_action {
       none {}
@@ -791,7 +850,7 @@ resource "aws_wafv2_web_acl" "main" {
   # AWS Managed Rules - SQL Injection Protection
   rule {
     name     = "aws-managed-sqli-rule-set"
-    priority = 13
+    priority = 14
 
     override_action {
       none {}
@@ -814,7 +873,7 @@ resource "aws_wafv2_web_acl" "main" {
   # AWS Managed Rules - IP Reputation List (Known Bad IPs)
   rule {
     name     = "aws-managed-ip-reputation-list"
-    priority = 14
+    priority = 15
 
     override_action {
       none {}
@@ -837,7 +896,7 @@ resource "aws_wafv2_web_acl" "main" {
   # AWS Managed Rules - Linux Operating System Protection
   rule {
     name     = "aws-managed-linux-rule-set"
-    priority = 15
+    priority = 16
 
     override_action {
       none {}

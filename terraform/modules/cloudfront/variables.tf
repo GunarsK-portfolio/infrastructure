@@ -26,10 +26,10 @@ variable "app_runner_urls" {
 
   validation {
     condition = alltrue([
-      for required_key in ["public-web", "public-api", "admin-web", "admin-api", "auth-service", "files-api"] :
+      for required_key in ["public-web", "public-api", "admin-web", "admin-api", "auth-service", "files-api", "messaging-api"] :
       contains(keys(var.app_runner_urls), required_key)
     ])
-    error_message = "app_runner_urls must contain all required service keys: public-web, public-api, admin-web, admin-api, auth-service, files-api"
+    error_message = "app_runner_urls must contain all required service keys: public-web, public-api, admin-web, admin-api, auth-service, files-api, messaging-api"
   }
 }
 

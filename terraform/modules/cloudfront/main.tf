@@ -513,3 +513,68 @@ resource "aws_cloudfront_distribution" "files" {
     }
   )
 }
+
+# Messaging API CloudFront Distribution (message.gunarsk.com)
+# Single origin: messaging-api
+resource "aws_cloudfront_distribution" "message" {
+  enabled             = true
+  is_ipv6_enabled     = true
+  comment             = "${var.project_name} ${var.environment} Messaging API Distribution"
+  default_root_object = ""
+  price_class         = "PriceClass_100"
+  aliases             = ["message.${var.domain_name}"]
+  web_acl_id          = var.web_acl_arn
+
+  origin {
+    domain_name = var.app_runner_urls["messaging-api"]
+    origin_id   = "messaging-api"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  default_cache_behavior {
+    allowed_methods            = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    cached_methods             = ["GET", "HEAD"]
+    target_origin_id           = "messaging-api"
+    viewer_protocol_policy     = "redirect-to-https"
+    compress                   = true
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.api_cors.id
+
+    forwarded_values {
+      query_string = true
+      headers      = ["Authorization", "Content-Type", "Content-Length", "Accept", "Origin", "Referer", "User-Agent"]
+
+      cookies {
+        forward = "all"
+      }
+    }
+
+    min_ttl     = 0
+    default_ttl = 0
+    max_ttl     = 0
+  }
+
+  viewer_certificate {
+    acm_certificate_arn      = var.certificate_arn
+    minimum_protocol_version = "TLSv1.3_2025"
+    ssl_support_method       = "sni-only"
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-message"
+    }
+  )
+}

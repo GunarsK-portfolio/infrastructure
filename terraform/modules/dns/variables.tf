@@ -25,10 +25,11 @@ variable "zone_id" {
 variable "cloudfront_distributions" {
   description = "Map of CloudFront distribution domain names (optional - records created only if provided)"
   type = object({
-    public = string
-    admin  = string
-    auth   = string
-    files  = string
+    public  = string
+    admin   = string
+    auth    = string
+    files   = string
+    message = string
   })
   default = null
 }

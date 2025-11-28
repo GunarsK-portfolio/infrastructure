@@ -64,6 +64,7 @@ services:
       - admin-api
       - auth-service
       - files-api
+      - messaging-api
     deploy:
       resources:
         limits:
@@ -94,6 +95,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_USER_READONLY: ${DB_USER_READONLY}
       DB_PASSWORD_READONLY: ${DB_PASSWORD_READONLY}
+      DB_USER_MESSAGING: ${DB_USER_MESSAGING}
+      DB_PASSWORD_MESSAGING: ${DB_PASSWORD_MESSAGING}
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
@@ -558,6 +561,98 @@ services:
       - "traefik.http.routers.files-swagger.middlewares=files-swagger-strip"
       - "traefik.http.middlewares.files-swagger-strip.stripprefix.prefixes=/files"
 
+  # Messaging API
+  messaging-api:
+    build:
+      context: ../messaging-api
+      dockerfile: Dockerfile
+    container_name: messaging-api
+    restart: unless-stopped
+    environment:
+      - PORT=${MESSAGING_API_PORT}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      # Use portfolio_messaging for messaging API (owns messaging schema)
+      - DB_USER=${DB_USER_MESSAGING}
+      - DB_PASSWORD=${DB_PASSWORD_MESSAGING}
+      - DB_NAME=${POSTGRES_DB}
+      - JWT_SECRET=${JWT_SECRET}
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_FORMAT=${LOG_FORMAT}
+      - LOG_SOURCE=${LOG_SOURCE}
+      - ENVIRONMENT=${ENVIRONMENT}
+      - GIN_MODE=release
+      # CORS
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS_MESSAGING}
+    ports:
+      - "8086:8086"
+    networks:
+      - network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8086/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    labels:
+      # Promtail logging
+      - "logging=promtail"
+      - "environment=${ENVIRONMENT}"
+      # Traefik
+      - "traefik.enable=true"
+      # Rate limiting middleware (10 req/min per IP for contact form)
+      - "traefik.http.middlewares.messaging-ratelimit.ratelimit.average=10"
+      - "traefik.http.middlewares.messaging-ratelimit.ratelimit.period=1m"
+      - "traefik.http.middlewares.messaging-ratelimit.ratelimit.burst=20"
+      # Public message endpoint - rewrite /message/* to /api/*
+      - "traefik.http.routers.messaging-public.rule=PathPrefix(`/message/`)"
+      - "traefik.http.routers.messaging-public.entrypoints=web"
+      - "traefik.http.routers.messaging-public.middlewares=messaging-ratelimit,messaging-public-rewrite"
+      - "traefik.http.routers.messaging-public.priority=100"
+      - "traefik.http.routers.messaging-public.service=messaging-api"
+      # Public message HTTPS router
+      - "traefik.http.routers.messaging-public-secure.rule=PathPrefix(`/message/`)"
+      - "traefik.http.routers.messaging-public-secure.entrypoints=websecure"
+      - "traefik.http.routers.messaging-public-secure.middlewares=messaging-ratelimit,messaging-public-rewrite"
+      - "traefik.http.routers.messaging-public-secure.priority=100"
+      - "traefik.http.routers.messaging-public-secure.tls=true"
+      - "traefik.http.routers.messaging-public-secure.service=messaging-api"
+      - "traefik.http.middlewares.messaging-public-rewrite.replacepathregex.regex=^/message/(.*)"
+      - "traefik.http.middlewares.messaging-public-rewrite.replacepathregex.replacement=/api/$$1"
+      # Admin messaging endpoints - rewrite /messaging-api/v1/* to /api/v1/*
+      - "traefik.http.routers.messaging-admin.rule=PathPrefix(`/messaging-api/`)"
+      - "traefik.http.routers.messaging-admin.entrypoints=admin"
+      - "traefik.http.routers.messaging-admin.middlewares=messaging-ratelimit,messaging-admin-rewrite"
+      - "traefik.http.routers.messaging-admin.priority=100"
+      - "traefik.http.routers.messaging-admin.service=messaging-api"
+      # Admin messaging HTTPS router
+      - "traefik.http.routers.messaging-admin-secure.rule=PathPrefix(`/messaging-api/`)"
+      - "traefik.http.routers.messaging-admin-secure.entrypoints=adminsecure"
+      - "traefik.http.routers.messaging-admin-secure.middlewares=messaging-ratelimit,messaging-admin-rewrite"
+      - "traefik.http.routers.messaging-admin-secure.priority=100"
+      - "traefik.http.routers.messaging-admin-secure.tls=true"
+      - "traefik.http.routers.messaging-admin-secure.service=messaging-api"
+      - "traefik.http.middlewares.messaging-admin-rewrite.replacepathregex.regex=^/messaging-api/(.*)"
+      - "traefik.http.middlewares.messaging-admin-rewrite.replacepathregex.replacement=/api/$$1"
+      - "traefik.http.services.messaging-api.loadbalancer.server.port=8086"
+      # Swagger docs
+      - "traefik.http.routers.messaging-swagger.rule=PathPrefix(`/messaging/`)"
+      - "traefik.http.routers.messaging-swagger.entrypoints=swagger"
+      - "traefik.http.routers.messaging-swagger.middlewares=messaging-swagger-strip"
+      - "traefik.http.middlewares.messaging-swagger-strip.stripprefix.prefixes=/messaging"
+
   # Public Web
   public-web:
     build:
@@ -565,6 +660,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_PUBLIC_API_URL}
+        VITE_MESSAGE_API_URL: ${VITE_PUBLIC_MESSAGE_API_URL}
         VITE_USE_MOCK_DATA: ${VITE_PUBLIC_USE_MOCK_DATA}
     container_name: public-web
     restart: unless-stopped

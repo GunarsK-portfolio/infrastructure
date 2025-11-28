@@ -328,6 +328,33 @@ resource "aws_secretsmanager_secret_version" "aurora_public_password" {
   }
 }
 
+# Aurora Messaging User Password
+resource "aws_secretsmanager_secret" "aurora_messaging_password" {
+  name_prefix             = "${var.project_name}-${var.environment}-aurora-messaging-"
+  description             = "Aurora messaging user password (CRUD on messaging schema only)"
+  kms_key_id              = aws_kms_key.secrets.id
+  recovery_window_in_days = 30
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-aurora-messaging-password"
+    }
+  )
+}
+
+resource "aws_secretsmanager_secret_version" "aurora_messaging_password" {
+  secret_id = aws_secretsmanager_secret.aurora_messaging_password.id
+  secret_string = jsonencode({
+    username = "portfolio_messaging"
+    password = random_password.aurora_messaging.result
+  })
+
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
+}
+
 # Redis AUTH Token
 resource "aws_secretsmanager_secret" "redis_auth_token" {
   name_prefix             = "${var.project_name}-${var.environment}-redis-auth-"
@@ -397,6 +424,11 @@ resource "random_password" "aurora_admin" {
 }
 
 resource "random_password" "aurora_public" {
+  length  = 32
+  special = true
+}
+
+resource "random_password" "aurora_messaging" {
   length  = 32
   special = true
 }
