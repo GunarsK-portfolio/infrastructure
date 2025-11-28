@@ -268,10 +268,11 @@ module "dns_records" {
 
   # CloudFront distributions - explicit dependency ensures CloudFront is created first
   cloudfront_distributions = {
-    public = module.cloudfront.public_distribution_domain_name
-    admin  = module.cloudfront.admin_distribution_domain_name
-    auth   = module.cloudfront.auth_distribution_domain_name
-    files  = module.cloudfront.files_distribution_domain_name
+    public  = module.cloudfront.public_distribution_domain_name
+    admin   = module.cloudfront.admin_distribution_domain_name
+    auth    = module.cloudfront.auth_distribution_domain_name
+    files   = module.cloudfront.files_distribution_domain_name
+    message = module.cloudfront.message_distribution_domain_name
   }
 
   # KMS encryption for logs (not needed in records-only mode, but required variable)

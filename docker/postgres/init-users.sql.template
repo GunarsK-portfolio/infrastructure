@@ -65,17 +65,35 @@ $$;
 GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO ${DB_USER_READONLY};
 COMMENT ON ROLE ${DB_USER_READONLY} IS 'Public API user - SELECT only';
 
+-- MESSAGING USER (for messaging-api - CRUD on messaging schema only)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${DB_USER_MESSAGING}') THEN
+        CREATE ROLE ${DB_USER_MESSAGING} WITH LOGIN PASSWORD '${DB_PASSWORD_MESSAGING}';
+        RAISE NOTICE 'Created role ${DB_USER_MESSAGING}';
+    ELSE
+        RAISE NOTICE 'Role ${DB_USER_MESSAGING} already exists';
+    END IF;
+END
+$$;
+
+GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO ${DB_USER_MESSAGING};
+COMMENT ON ROLE ${DB_USER_MESSAGING} IS 'Messaging API user - CRUD on messaging schema only';
+
 -- =============================================================================
 -- EXTENSION PERMISSIONS
 -- =============================================================================
--- Extensions are automatically created by postgres-image's init-extensions.sql
--- Here we grant necessary permissions to application users
+-- Ensure extensions exist and grant necessary permissions to application users
 
--- Grant pg_cron schema access to portfolio_owner (needed for scheduling jobs)
+-- Ensure pg_cron extension exists and grant access
+CREATE EXTENSION IF NOT EXISTS pg_cron;
 GRANT USAGE ON SCHEMA cron TO ${FLYWAY_USER};
 GRANT ALL ON ALL TABLES IN SCHEMA cron TO ${FLYWAY_USER};
 
--- Grant pg_partman schema access to portfolio_owner (needed for partition management)
+-- Ensure pg_partman extension exists and grant access
+CREATE SCHEMA IF NOT EXISTS partman;
+CREATE EXTENSION IF NOT EXISTS pg_partman SCHEMA partman;
+
 -- Transfer ownership of partman schema and all objects to allow partition management
 ALTER SCHEMA partman OWNER TO ${FLYWAY_USER};
 GRANT ALL ON SCHEMA partman TO ${FLYWAY_USER};

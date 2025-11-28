@@ -731,6 +731,65 @@ resource "aws_wafv2_web_acl" "main" {
     }
   }
 
+  # Rate limiting for messaging API (contact form)
+  # Matches: message.gunarsk.com/api/v1/*
+  # Stricter limit: 10 requests per 5 minutes per IP (anti-spam)
+  rule {
+    name     = "rate-limit-messaging-api"
+    priority = 9
+
+    action {
+      block {}
+    }
+
+    statement {
+      rate_based_statement {
+        limit                 = 10
+        aggregate_key_type    = "IP"
+        evaluation_window_sec = 300
+
+        scope_down_statement {
+          and_statement {
+            statement {
+              byte_match_statement {
+                field_to_match {
+                  single_header {
+                    name = "host"
+                  }
+                }
+                positional_constraint = "STARTS_WITH"
+                search_string         = "message.${var.domain_name}"
+                text_transformation {
+                  priority = 0
+                  type     = "LOWERCASE"
+                }
+              }
+            }
+            statement {
+              byte_match_statement {
+                field_to_match {
+                  uri_path {}
+                }
+                positional_constraint = "STARTS_WITH"
+                search_string         = "/api/v1"
+                text_transformation {
+                  priority = 0
+                  type     = "LOWERCASE"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "RateLimitMessagingAPI"
+      sampled_requests_enabled   = true
+    }
+  }
+
   # AWS Managed Rules - Core Rule Set (OWASP Top 10)
   # Override SizeRestrictions_BODY to count mode - allows file uploads > 8KB
   # Application enforces MAX_FILE_SIZE validation (10MB limit in files-api)

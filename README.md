@@ -17,6 +17,7 @@ reverse proxy setup for running all portfolio services together.
 - **public-api** - Public API service (read-only)
 - **admin-api** - Admin API service (full CRUD)
 - **files-api** - File upload/download service
+- **messaging-api** - Contact form service
 - **public-web** - Public frontend (Vue.js + Naive UI)
 - **admin-web** - Admin frontend (Vue.js + Naive UI)
 
@@ -62,6 +63,7 @@ portfolio/
 ├── public-api/         # Public API repo
 ├── admin-api/          # Admin API repo
 ├── files-api/          # Files API repo
+├── messaging-api/      # Messaging API repo
 ├── public-web/         # Public web repo
 ├── admin-web/          # Admin web repo
 ├── database/           # Database repo
@@ -119,6 +121,7 @@ task monitoring:up
 | - Admin API Docs | <http://localhost:82/admin/> | - |
 | - Auth API Docs | <http://localhost:82/auth/> | - |
 | - Files API Docs | <http://localhost:82/files/> | - |
+| - Messaging API Docs | <http://localhost:82/messaging/> | - |
 | Traefik Dashboard | <http://localhost:9002> | - |
 | MinIO Console | <http://localhost:9001> | minioadmin / minioadmin |
 | **Grafana** | <http://localhost:3000> | admin / admin |
@@ -164,6 +167,12 @@ task files-api:stop      # Stop files API service
 task files-api:restart   # Restart files API service
 task files-api:rebuild   # Rebuild and restart files API
 task files-api:ci        # Run CI checks in files-api repo
+
+task messaging-api:logs      # View messaging API logs
+task messaging-api:stop      # Stop messaging API service
+task messaging-api:restart   # Restart messaging API service
+task messaging-api:rebuild   # Rebuild and restart messaging API
+task messaging-api:ci        # Run CI checks in messaging-api repo
 
 task public-api:logs     # View public API logs
 task public-api:stop     # Stop public API service
@@ -237,6 +246,7 @@ docker-compose up -d --build [service]  # Rebuild service
 | 8083 | Admin API |
 | 8084 | Auth Service |
 | 8085 | Files API |
+| 8086 | Messaging API |
 
 ### Infrastructure Ports
 
@@ -379,6 +389,7 @@ ALLOWED_FILE_TYPES=image/jpeg,image/jpg,image/png,image/gif,image/webp,applicati
 # Web Frontend Build Args
 # Public Web
 VITE_PUBLIC_API_URL=https://localhost/api/v1
+VITE_PUBLIC_MESSAGE_API_URL=https://localhost/message/v1
 VITE_PUBLIC_USE_MOCK_DATA=false
 
 # Admin Web
