@@ -318,10 +318,11 @@ resource "aws_wafv2_web_acl" "main" {
     }
   }
 
-  # Rate limiting for admin API - DELETE operations (most restrictive)
-  # Matches: admin.gunarsk.com/api/v1/* + DELETE method
+  # Rate limiting for admin API - all methods combined
+  # Matches: admin.gunarsk.com/api/v1/*
+  # Single consolidated rule (300 req/5min) - admin is authenticated, no need for per-method limits
   rule {
-    name     = "rate-limit-admin-api-delete"
+    name     = "rate-limit-admin-api"
     priority = 5
 
     action {
@@ -330,76 +331,6 @@ resource "aws_wafv2_web_acl" "main" {
 
     statement {
       rate_based_statement {
-        limit              = 60
-        aggregate_key_type = "IP"
-
-        scope_down_statement {
-          and_statement {
-            statement {
-              byte_match_statement {
-                field_to_match {
-                  single_header {
-                    name = "host"
-                  }
-                }
-                positional_constraint = "STARTS_WITH"
-                search_string         = "admin.${var.domain_name}"
-                text_transformation {
-                  priority = 0
-                  type     = "LOWERCASE"
-                }
-              }
-            }
-            statement {
-              byte_match_statement {
-                field_to_match {
-                  uri_path {}
-                }
-                positional_constraint = "STARTS_WITH"
-                search_string         = "/api/v1"
-                text_transformation {
-                  priority = 0
-                  type     = "LOWERCASE"
-                }
-              }
-            }
-            statement {
-              byte_match_statement {
-                field_to_match {
-                  method {}
-                }
-                positional_constraint = "EXACTLY"
-                search_string         = "delete"
-                text_transformation {
-                  priority = 0
-                  type     = "LOWERCASE"
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    visibility_config {
-      cloudwatch_metrics_enabled = true
-      metric_name                = "RateLimitAdminAPIDelete"
-      sampled_requests_enabled   = true
-    }
-  }
-
-  # Rate limiting for admin API - POST operations (create operations)
-  # Matches: admin.gunarsk.com/api/v1/* + POST method
-  rule {
-    name     = "rate-limit-admin-api-post"
-    priority = 6
-
-    action {
-      block {}
-    }
-
-    statement {
-      rate_based_statement {
         limit              = 300
         aggregate_key_type = "IP"
 
@@ -433,19 +364,6 @@ resource "aws_wafv2_web_acl" "main" {
                 }
               }
             }
-            statement {
-              byte_match_statement {
-                field_to_match {
-                  method {}
-                }
-                positional_constraint = "EXACTLY"
-                search_string         = "post"
-                text_transformation {
-                  priority = 0
-                  type     = "LOWERCASE"
-                }
-              }
-            }
           }
         }
       }
@@ -453,147 +371,7 @@ resource "aws_wafv2_web_acl" "main" {
 
     visibility_config {
       cloudwatch_metrics_enabled = true
-      metric_name                = "RateLimitAdminAPIPost"
-      sampled_requests_enabled   = true
-    }
-  }
-
-  # Rate limiting for admin API - PUT operations (update operations)
-  # Matches: admin.gunarsk.com/api/v1/* + PUT method
-  rule {
-    name     = "rate-limit-admin-api-put"
-    priority = 7
-
-    action {
-      block {}
-    }
-
-    statement {
-      rate_based_statement {
-        limit              = 300
-        aggregate_key_type = "IP"
-
-        scope_down_statement {
-          and_statement {
-            statement {
-              byte_match_statement {
-                field_to_match {
-                  single_header {
-                    name = "host"
-                  }
-                }
-                positional_constraint = "STARTS_WITH"
-                search_string         = "admin.${var.domain_name}"
-                text_transformation {
-                  priority = 0
-                  type     = "LOWERCASE"
-                }
-              }
-            }
-            statement {
-              byte_match_statement {
-                field_to_match {
-                  uri_path {}
-                }
-                positional_constraint = "STARTS_WITH"
-                search_string         = "/api/v1"
-                text_transformation {
-                  priority = 0
-                  type     = "LOWERCASE"
-                }
-              }
-            }
-            statement {
-              byte_match_statement {
-                field_to_match {
-                  method {}
-                }
-                positional_constraint = "EXACTLY"
-                search_string         = "put"
-                text_transformation {
-                  priority = 0
-                  type     = "LOWERCASE"
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    visibility_config {
-      cloudwatch_metrics_enabled = true
-      metric_name                = "RateLimitAdminAPIPut"
-      sampled_requests_enabled   = true
-    }
-  }
-
-  # Rate limiting for admin API - GET operations (read operations)
-  # Matches: admin.gunarsk.com/api/v1/* + GET method
-  rule {
-    name     = "rate-limit-admin-api-get"
-    priority = 8
-
-    action {
-      block {}
-    }
-
-    statement {
-      rate_based_statement {
-        limit              = 600
-        aggregate_key_type = "IP"
-
-        scope_down_statement {
-          and_statement {
-            statement {
-              byte_match_statement {
-                field_to_match {
-                  single_header {
-                    name = "host"
-                  }
-                }
-                positional_constraint = "STARTS_WITH"
-                search_string         = "admin.${var.domain_name}"
-                text_transformation {
-                  priority = 0
-                  type     = "LOWERCASE"
-                }
-              }
-            }
-            statement {
-              byte_match_statement {
-                field_to_match {
-                  uri_path {}
-                }
-                positional_constraint = "STARTS_WITH"
-                search_string         = "/api/v1"
-                text_transformation {
-                  priority = 0
-                  type     = "LOWERCASE"
-                }
-              }
-            }
-            statement {
-              byte_match_statement {
-                field_to_match {
-                  method {}
-                }
-                positional_constraint = "EXACTLY"
-                search_string         = "get"
-                text_transformation {
-                  priority = 0
-                  type     = "LOWERCASE"
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    visibility_config {
-      cloudwatch_metrics_enabled = true
-      metric_name                = "RateLimitAdminAPIGet"
+      metric_name                = "RateLimitAdminAPI"
       sampled_requests_enabled   = true
     }
   }
@@ -602,7 +380,7 @@ resource "aws_wafv2_web_acl" "main" {
   # Matches: gunarsk.com/api/v1/* (read-only public API)
   rule {
     name     = "rate-limit-public-api"
-    priority = 9
+    priority = 6
 
     action {
       block {}
@@ -678,7 +456,7 @@ resource "aws_wafv2_web_acl" "main" {
   # Matches: files.gunarsk.com/api/v1/files/*
   rule {
     name     = "rate-limit-files-api"
-    priority = 10
+    priority = 7
 
     action {
       block {}
@@ -736,7 +514,7 @@ resource "aws_wafv2_web_acl" "main" {
   # Stricter limit: 10 requests per 5 minutes per IP (anti-spam)
   rule {
     name     = "rate-limit-messaging-api"
-    priority = 11
+    priority = 8
 
     action {
       block {}
@@ -795,7 +573,7 @@ resource "aws_wafv2_web_acl" "main" {
   # Application enforces MAX_FILE_SIZE validation (10MB limit in files-api)
   rule {
     name     = "aws-managed-core-rule-set"
-    priority = 12
+    priority = 9
 
     override_action {
       none {}
@@ -827,7 +605,7 @@ resource "aws_wafv2_web_acl" "main" {
   # AWS Managed Rules - Known Bad Inputs (Log4Shell, etc.)
   rule {
     name     = "aws-managed-known-bad-inputs"
-    priority = 13
+    priority = 10
 
     override_action {
       none {}
@@ -850,7 +628,7 @@ resource "aws_wafv2_web_acl" "main" {
   # AWS Managed Rules - SQL Injection Protection
   rule {
     name     = "aws-managed-sqli-rule-set"
-    priority = 14
+    priority = 11
 
     override_action {
       none {}
@@ -873,7 +651,7 @@ resource "aws_wafv2_web_acl" "main" {
   # AWS Managed Rules - IP Reputation List (Known Bad IPs)
   rule {
     name     = "aws-managed-ip-reputation-list"
-    priority = 15
+    priority = 12
 
     override_action {
       none {}
@@ -896,7 +674,7 @@ resource "aws_wafv2_web_acl" "main" {
   # AWS Managed Rules - Linux Operating System Protection
   rule {
     name     = "aws-managed-linux-rule-set"
-    priority = 16
+    priority = 13
 
     override_action {
       none {}

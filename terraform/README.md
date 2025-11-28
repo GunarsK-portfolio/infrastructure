@@ -103,14 +103,14 @@ internal communication.
 #### WAF
 
 - **Rate limiting** (per IP, per 5 minutes, filters by Host header + path):
-  - Login (`auth.gunarsk.com/login`): 20 requests (brute-force protection)
+  - Login (`auth.gunarsk.com/login`): 10 requests (brute-force protection)
   - Token Refresh (`auth.gunarsk.com/refresh`): 100 requests (token abuse prevention)
-  - Token Validation (`auth.gunarsk.com/validate`): 300 requests (validation protection)
-  - Logout (`auth.gunarsk.com/*/logout`): 60 requests (logout abuse prevention)
-  - Admin API (`admin.gunarsk.com/api/v1/*`): 1200 requests total
-    (DELETE: 60, POST: 300, PUT: 300, GET: 600)
-  - Public API (`gunarsk.com/api/v1/*`): 600 requests (2 req/sec, reduced from 1800)
-  - Files API (`files.gunarsk.com/api/v1/*`): 200 requests (file upload/download)
+  - Token Validation (`auth.gunarsk.com/validate`): 600 requests (validation protection)
+  - Logout (`auth.gunarsk.com/logout`): 60 requests (logout abuse prevention)
+  - Admin API (`admin.gunarsk.com/api/v1/*`): 300 requests (authenticated admin users)
+  - Public API (`gunarsk.com/api/v1/*`): 600 requests (public read-only)
+  - Files API (`files.gunarsk.com/api/v1/*`): 120 requests (file upload/download)
+  - Messaging API (`message.gunarsk.com/api/v1/*`): 10 requests (contact form anti-spam)
 - **AWS Managed Rules**:
   - Core Rule Set (OWASP Top 10)
   - Known Bad Inputs (Log4Shell protection)
