@@ -208,7 +208,7 @@ services:
 
   # Database Migrations (Flyway)
   flyway:
-    image: flyway/flyway:11.17.1
+    image: flyway/flyway:11.18.0
     container_name: flyway
     restart: "no"
     command: migrate
