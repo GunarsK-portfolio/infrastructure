@@ -558,6 +558,13 @@ resource "aws_cloudfront_distribution" "files" {
     }
   }
 
+  # Enable access logging for debugging
+  logging_config {
+    include_cookies = false
+    bucket          = aws_s3_bucket.cloudfront_logs.bucket_regional_domain_name
+    prefix          = "files/"
+  }
+
   tags = merge(
     var.tags,
     {
@@ -629,4 +636,49 @@ resource "aws_cloudfront_distribution" "message" {
       Name = "${var.project_name}-message"
     }
   )
+}
+
+# S3 Bucket for CloudFront Access Logs
+resource "aws_s3_bucket" "cloudfront_logs" {
+  bucket = "${var.project_name}-${var.environment}-cloudfront-logs"
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-cloudfront-logs"
+    }
+  )
+}
+
+# Block public access to logs bucket
+resource "aws_s3_bucket_public_access_block" "cloudfront_logs" {
+  bucket = aws_s3_bucket.cloudfront_logs.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# Enable bucket ownership controls for CloudFront logging
+resource "aws_s3_bucket_ownership_controls" "cloudfront_logs" {
+  bucket = aws_s3_bucket.cloudfront_logs.id
+
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+# Lifecycle rule to delete old logs (30 days)
+resource "aws_s3_bucket_lifecycle_configuration" "cloudfront_logs" {
+  bucket = aws_s3_bucket.cloudfront_logs.id
+
+  rule {
+    id     = "delete-old-logs"
+    status = "Enabled"
+
+    expiration {
+      days = 30
+    }
+  }
 }
