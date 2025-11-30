@@ -677,8 +677,69 @@ resource "aws_s3_bucket_lifecycle_configuration" "cloudfront_logs" {
     id     = "delete-old-logs"
     status = "Enabled"
 
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+
     expiration {
       days = 30
     }
+  }
+}
+
+# Get current AWS account ID
+data "aws_caller_identity" "current" {}
+
+# KMS Key for CloudFront logs encryption
+resource "aws_kms_key" "cloudfront_logs" {
+  description             = "${var.project_name}-${var.environment}-cloudfront-logs-key"
+  deletion_window_in_days = 30
+  enable_key_rotation     = true
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      },
+      {
+        Sid    = "Allow CloudFront to use the key for log delivery"
+        Effect = "Allow"
+        Principal = {
+          Service = "delivery.logs.amazonaws.com"
+        }
+        Action = [
+          "kms:GenerateDataKey*",
+          "kms:Decrypt"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+
+  tags = var.tags
+}
+
+resource "aws_kms_alias" "cloudfront_logs" {
+  name          = "alias/${var.project_name}-${var.environment}-cloudfront-logs"
+  target_key_id = aws_kms_key.cloudfront_logs.key_id
+}
+
+# Enable server-side encryption for logs bucket (KMS)
+resource "aws_s3_bucket_server_side_encryption_configuration" "cloudfront_logs" {
+  bucket = aws_s3_bucket.cloudfront_logs.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.cloudfront_logs.arn
+    }
+    bucket_key_enabled = true
   }
 }
