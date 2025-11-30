@@ -4,6 +4,13 @@
 
 Docker Compose orchestration for the portfolio project microservices.
 
+## Architecture
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for architecture diagrams:
+
+- Local development (Docker Compose + Traefik)
+- Production (AWS App Runner, Aurora, ElastiCache, CloudFront)
+
 ## Overview
 
 This repository contains the Docker Compose configuration and Traefik
