@@ -277,6 +277,12 @@ resource "aws_cloudfront_distribution" "public" {
     }
   }
 
+  logging_config {
+    include_cookies = false
+    bucket          = aws_s3_bucket.cloudfront_logs.bucket_regional_domain_name
+    prefix          = "public/"
+  }
+
   tags = merge(
     var.tags,
     {
@@ -428,6 +434,12 @@ resource "aws_cloudfront_distribution" "admin" {
     }
   }
 
+  logging_config {
+    include_cookies = false
+    bucket          = aws_s3_bucket.cloudfront_logs.bucket_regional_domain_name
+    prefix          = "admin/"
+  }
+
   tags = merge(
     var.tags,
     {
@@ -491,6 +503,12 @@ resource "aws_cloudfront_distribution" "auth" {
     geo_restriction {
       restriction_type = "none"
     }
+  }
+
+  logging_config {
+    include_cookies = false
+    bucket          = aws_s3_bucket.cloudfront_logs.bucket_regional_domain_name
+    prefix          = "auth/"
   }
 
   tags = merge(
@@ -558,6 +576,13 @@ resource "aws_cloudfront_distribution" "files" {
     }
   }
 
+  # Enable access logging for debugging
+  logging_config {
+    include_cookies = false
+    bucket          = aws_s3_bucket.cloudfront_logs.bucket_regional_domain_name
+    prefix          = "files/"
+  }
+
   tags = merge(
     var.tags,
     {
@@ -623,10 +648,122 @@ resource "aws_cloudfront_distribution" "message" {
     }
   }
 
+  logging_config {
+    include_cookies = false
+    bucket          = aws_s3_bucket.cloudfront_logs.bucket_regional_domain_name
+    prefix          = "message/"
+  }
+
   tags = merge(
     var.tags,
     {
       Name = "${var.project_name}-message"
     }
   )
+}
+
+# S3 Bucket for CloudFront Access Logs
+resource "aws_s3_bucket" "cloudfront_logs" {
+  bucket = "${var.project_name}-${var.environment}-cloudfront-logs"
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-cloudfront-logs"
+    }
+  )
+}
+
+# Block public access to logs bucket
+resource "aws_s3_bucket_public_access_block" "cloudfront_logs" {
+  bucket = aws_s3_bucket.cloudfront_logs.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# Enable bucket ownership controls for CloudFront logging
+resource "aws_s3_bucket_ownership_controls" "cloudfront_logs" {
+  bucket = aws_s3_bucket.cloudfront_logs.id
+
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+# Lifecycle rule to delete old logs (30 days)
+resource "aws_s3_bucket_lifecycle_configuration" "cloudfront_logs" {
+  bucket = aws_s3_bucket.cloudfront_logs.id
+
+  rule {
+    id     = "delete-old-logs"
+    status = "Enabled"
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+
+    expiration {
+      days = 30
+    }
+  }
+}
+
+# Get current AWS account ID
+data "aws_caller_identity" "current" {}
+
+# KMS Key for CloudFront logs encryption
+resource "aws_kms_key" "cloudfront_logs" {
+  description             = "${var.project_name}-${var.environment}-cloudfront-logs-key"
+  deletion_window_in_days = 30
+  enable_key_rotation     = true
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      },
+      {
+        Sid    = "Allow CloudFront to use the key for log delivery"
+        Effect = "Allow"
+        Principal = {
+          Service = "delivery.logs.amazonaws.com"
+        }
+        Action = [
+          "kms:GenerateDataKey*",
+          "kms:Decrypt"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+
+  tags = var.tags
+}
+
+resource "aws_kms_alias" "cloudfront_logs" {
+  name          = "alias/${var.project_name}-${var.environment}-cloudfront-logs"
+  target_key_id = aws_kms_key.cloudfront_logs.key_id
+}
+
+# Enable server-side encryption for logs bucket (KMS)
+resource "aws_s3_bucket_server_side_encryption_configuration" "cloudfront_logs" {
+  bucket = aws_s3_bucket.cloudfront_logs.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.cloudfront_logs.arn
+    }
+    bucket_key_enabled = true
+  }
 }

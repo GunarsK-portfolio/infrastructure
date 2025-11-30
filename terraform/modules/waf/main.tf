@@ -464,7 +464,7 @@ resource "aws_wafv2_web_acl" "main" {
 
     statement {
       rate_based_statement {
-        limit              = 120
+        limit              = 300
         aggregate_key_type = "IP"
 
         scope_down_statement {
@@ -509,12 +509,77 @@ resource "aws_wafv2_web_acl" "main" {
     }
   }
 
+  # Allow files-api uploads to bypass XSS body checks
+  # Binary image data triggers false positives in XSS detection
+  # Files-api validates content-type and file extensions server-side
+  # Priority 8: runs before managed rules (priority 9+)
+  rule {
+    name     = "allow-files-api-uploads"
+    priority = 8
+
+    action {
+      allow {}
+    }
+
+    statement {
+      and_statement {
+        statement {
+          byte_match_statement {
+            field_to_match {
+              single_header {
+                name = "host"
+              }
+            }
+            positional_constraint = "STARTS_WITH"
+            search_string         = "files.${var.domain_name}"
+            text_transformation {
+              priority = 0
+              type     = "LOWERCASE"
+            }
+          }
+        }
+        statement {
+          byte_match_statement {
+            field_to_match {
+              uri_path {}
+            }
+            positional_constraint = "EXACTLY"
+            search_string         = "/api/v1/files"
+            text_transformation {
+              priority = 0
+              type     = "LOWERCASE"
+            }
+          }
+        }
+        statement {
+          byte_match_statement {
+            field_to_match {
+              method {}
+            }
+            positional_constraint = "EXACTLY"
+            search_string         = "POST"
+            text_transformation {
+              priority = 0
+              type     = "NONE"
+            }
+          }
+        }
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "AllowFilesAPIUploads"
+      sampled_requests_enabled   = true
+    }
+  }
+
   # Rate limiting for messaging API (contact form)
   # Matches: message.gunarsk.com/api/v1/*
   # Stricter limit: 10 requests per 5 minutes per IP (anti-spam)
   rule {
     name     = "rate-limit-messaging-api"
-    priority = 8
+    priority = 9
 
     action {
       block {}
@@ -573,7 +638,7 @@ resource "aws_wafv2_web_acl" "main" {
   # Application enforces MAX_FILE_SIZE validation (10MB limit in files-api)
   rule {
     name     = "aws-managed-core-rule-set"
-    priority = 9
+    priority = 10
 
     override_action {
       none {}
@@ -605,7 +670,7 @@ resource "aws_wafv2_web_acl" "main" {
   # AWS Managed Rules - Known Bad Inputs (Log4Shell, etc.)
   rule {
     name     = "aws-managed-known-bad-inputs"
-    priority = 10
+    priority = 11
 
     override_action {
       none {}
@@ -628,7 +693,7 @@ resource "aws_wafv2_web_acl" "main" {
   # AWS Managed Rules - SQL Injection Protection
   rule {
     name     = "aws-managed-sqli-rule-set"
-    priority = 11
+    priority = 12
 
     override_action {
       none {}
@@ -651,7 +716,7 @@ resource "aws_wafv2_web_acl" "main" {
   # AWS Managed Rules - IP Reputation List (Known Bad IPs)
   rule {
     name     = "aws-managed-ip-reputation-list"
-    priority = 12
+    priority = 13
 
     override_action {
       none {}
@@ -674,7 +739,7 @@ resource "aws_wafv2_web_acl" "main" {
   # AWS Managed Rules - Linux Operating System Protection
   rule {
     name     = "aws-managed-linux-rule-set"
-    priority = 13
+    priority = 14
 
     override_action {
       none {}
