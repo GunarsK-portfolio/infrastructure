@@ -202,6 +202,43 @@ flowchart TB
 | Audit | CloudTrail | API logging, 90-day retention |
 | Threats | GuardDuty | Automated threat detection |
 
+### Disaster Recovery
+
+| Component | Strategy | Details |
+|-----------|----------|---------|
+| Aurora | Automated backups | 30-day retention, point-in-time recovery |
+| Aurora | Single AZ | Writer instance only (cost optimization) |
+| ElastiCache | Single node | 30-day snapshot retention |
+| S3 | Versioning | Enabled, 90-day noncurrent version expiration |
+| S3 | Cross-region | Not configured (single-region deployment) |
+
+**Recovery Targets (estimated):**
+
+- RPO: ~5 minutes (Aurora continuous backup)
+- RTO: ~30-60 minutes (Aurora restore + App Runner restart)
+
+**Backup Windows:**
+
+- Aurora: Daily 03:00-04:00 UTC
+- ElastiCache: Daily 02:00-03:00 UTC
+
+**Note:** Current configuration prioritizes cost over high availability.
+For production HA, consider adding Aurora reader instance and ElastiCache replica.
+
+### App Runner Health Checks
+
+| Setting | Value |
+|---------|-------|
+| Endpoint | Service-specific (e.g., `/health`) |
+| Protocol | HTTP |
+| Interval | 10 seconds |
+| Timeout | 5 seconds |
+| Healthy threshold | 2 consecutive successes |
+| Unhealthy threshold | 3 consecutive failures |
+
+Unhealthy instances are replaced automatically. See
+[app-runner module](../terraform/modules/app-runner/main.tf) for paths.
+
 ---
 
 ## Data Flow
@@ -262,9 +299,28 @@ Public Page Request
 
 ## Security Layers
 
+### WAF Rate Limits
+
+All limits are per IP address per 5-minute window:
+
+| Endpoint | Limit | Rationale |
+|----------|-------|-----------|
+| Login (`/login`) | 10 | Brute-force prevention |
+| Refresh (`/refresh`) | 100 | Token refresh cycles |
+| Validate (`/validate`) | 600 | Internal service calls |
+| Logout (`/logout`) | 60 | Session cleanup |
+| Admin API | 300 | Authenticated CRUD operations |
+| Public API | 600 | Read-only public data |
+| Files API | 300 | Upload/download operations |
+| Messaging | 10 | Contact form spam prevention |
+
+**Note:** Thresholds are operational estimates, not load-tested.
+Monitor WAF block metrics in CloudWatch and adjust based on real-world patterns.
+See [waf module](../terraform/modules/waf/main.tf) for complete rule configuration.
+
 ```text
 Layer 1: WAF
-├── Rate limiting per endpoint
+├── Rate limiting per endpoint (see table above)
 ├── OWASP Core Rule Set
 ├── SQL injection protection
 ├── Known bad inputs
