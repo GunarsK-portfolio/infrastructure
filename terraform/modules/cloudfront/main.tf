@@ -277,6 +277,12 @@ resource "aws_cloudfront_distribution" "public" {
     }
   }
 
+  logging_config {
+    include_cookies = false
+    bucket          = aws_s3_bucket.cloudfront_logs.bucket_regional_domain_name
+    prefix          = "public/"
+  }
+
   tags = merge(
     var.tags,
     {
@@ -428,6 +434,12 @@ resource "aws_cloudfront_distribution" "admin" {
     }
   }
 
+  logging_config {
+    include_cookies = false
+    bucket          = aws_s3_bucket.cloudfront_logs.bucket_regional_domain_name
+    prefix          = "admin/"
+  }
+
   tags = merge(
     var.tags,
     {
@@ -491,6 +503,12 @@ resource "aws_cloudfront_distribution" "auth" {
     geo_restriction {
       restriction_type = "none"
     }
+  }
+
+  logging_config {
+    include_cookies = false
+    bucket          = aws_s3_bucket.cloudfront_logs.bucket_regional_domain_name
+    prefix          = "auth/"
   }
 
   tags = merge(
@@ -628,6 +646,12 @@ resource "aws_cloudfront_distribution" "message" {
     geo_restriction {
       restriction_type = "none"
     }
+  }
+
+  logging_config {
+    include_cookies = false
+    bucket          = aws_s3_bucket.cloudfront_logs.bucket_regional_domain_name
+    prefix          = "message/"
   }
 
   tags = merge(
