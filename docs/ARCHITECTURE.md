@@ -1,528 +1,398 @@
-# Portfolio Project Architecture
+# Portfolio Architecture
 
 ## Overview
 
-This document describes the architecture of the portfolio project,
-a microservices-based application with separate public and admin
-portals.
+The portfolio project uses a microservices architecture with 5 Go backend services
+and 2 Vue.js frontends. Infrastructure differs between local development
+(Docker Compose) and production (AWS).
 
-## System Architecture Diagram
+---
 
-```text
-                         ┌─────────────────────┐
-                         │   Traefik Proxy     │
-                         │   :80, :443, :81    │
-                         │   :8443, :82, :9002 │
-                         │   + SSL/TLS         │
-                         │   + Path Routing    │
-                         └──────────┬──────────┘
-                                    │
-         ┌──────────────────────────┼──────────────────────────┐
-         │                          │                           │
-┌────────▼────────┐      ┌─────────▼──────────┐    ┌──────────▼───────────┐
-│ Public Web      │      │  Admin Web         │    │  API Documentation   │
-│ (Vue 3)         │      │  (Vue 3 + Auth)    │    │  (Swagger)           │
-│ Port: :8080     │      │  Port: :8081       │    │  Port: :82           │
-└────────┬────────┘      └─────────┬──────────┘    └──────────────────────┘
-         │                         │
-         │ /api/v1/*               │ /api/v1/* & /auth/v1/* & /files/*
-         │                         │
-┌────────▼────────────────┬────────▼────────────┬─────────────────────────┐
-│  Public API (Go)        │  Admin API (Go)     │  Files API (Go)         │
-│  Internal: :8082        │  Internal: :8083    │  Internal: :8085        │
-│  + Read-only (SELECT)   │  + Full CRUD        │  + File Upload/Download │
-│  + Swagger Docs         │  + Validates JWT    │  + Validates JWT        │
-└────────┬────────────────┴────────┬────────────┴─────────┬───────────────┘
-         │                         │                       │
-         │              ┌──────────▼───────────────────────▼────┐
-         │              │  Auth Service (Go)                    │
-         │              │  Internal: :8084                      │
-         │              │  + JWT Signing & Validation           │
-         │              │  + Access Tokens (15m)                │
-         │              │  + Refresh Tokens (7d)                │
-         │              └──────────┬────────────────────────────┘
-         │                         │
-┌────────▼─────────────────────────▼───────────────────┐
-│              Data & Cache Layer                      │
-├──────────────────────────┬───────────────────────────┤
-│  PostgreSQL 18           │  Redis 8.2                │
-│  Port: :5432             │  Port: :6379              │
-│  + Flyway Migrations     │  + Session Storage        │
-│  + Role-based Access:    │  + Token Blacklist        │
-│    - portfolio_owner     │                           │
-│    - portfolio_admin     │                           │
-│    - portfolio_public    │                           │
-└──────────────────────────┴───────────────────────────┘
-                           │
-┌──────────────────────────▼───────────────────────────┐
-│              Storage Layer                           │
-│  MinIO (S3-compatible)                               │
-│  Port: :9000 (API), :9001 (Console)                  │
-│  + File Storage (images, documents)                  │
-│  + Bucket: images                                    │
-└──────────────────────────────────────────────────────┘
+## Service Inventory
+
+| Service | Port | Purpose | Database User |
+|---------|------|---------|---------------|
+| auth-service | 8084 | JWT authentication, sessions | portfolio_admin |
+| public-api | 8082 | Read-only public data | portfolio_public |
+| admin-api | 8083 | Admin CRUD operations | portfolio_admin |
+| files-api | 8085 | File upload/download | portfolio_admin |
+| messaging-api | 8086 | Contact form | portfolio_messaging |
+| public-web | 80 | Public Vue.js frontend | - |
+| admin-web | 80 | Admin Vue.js frontend | - |
+
+---
+
+## Local Development Architecture
+
+```mermaid
+flowchart LR
+    subgraph Browser
+        PUB[":443"]
+        ADM[":8443"]
+    end
+
+    subgraph Traefik
+        T[Reverse Proxy]
+    end
+
+    subgraph Public
+        PW[public-web]
+        PA[public-api]
+        MA[messaging-api]
+    end
+
+    subgraph Admin
+        AW[admin-web]
+        AUTH[auth-service]
+        AA[admin-api]
+        FA[files-api]
+    end
+
+    subgraph Data
+        PG[(PostgreSQL)]
+        REDIS[(Redis)]
+        MINIO[(MinIO)]
+    end
+
+    PUB --> T
+    ADM --> T
+
+    T --> PW
+    T --> AW
+
+    PW --> PA
+    PW --> MA
+    PW --> FA
+    AW --> AUTH
+    AW --> AA
+    AW --> FA
+
+    PA --> PG
+    MA --> PG
+    AUTH --> PG
+    AUTH --> REDIS
+    AA --> PG
+    FA --> PG
+    FA --> MINIO
 ```
 
-## Component Details
+### Data Flows
 
-### Reverse Proxy Layer
+| Flow | Path |
+|------|------|
+| Portfolio data | public-web → public-api → PostgreSQL |
+| Contact form | public-web → messaging-api → PostgreSQL |
+| Public images | public-web → files-api → PostgreSQL + MinIO |
+| Login/sessions | admin-web → auth-service → PostgreSQL + Redis |
+| Admin CRUD | admin-web → admin-api → PostgreSQL |
+| File uploads | admin-web → files-api → PostgreSQL + MinIO |
 
-#### Traefik
+### Traefik Routing
 
-- **Ports**: 80 (HTTP), 443 (HTTPS), 81 (Admin HTTP), 8443 (Admin
-  HTTPS), 82 (Swagger), 9002 (Dashboard)
-- **Purpose**: Reverse proxy, load balancer, SSL/TLS termination
-- **Features**:
-  - Path-based routing
-  - Automatic service discovery via Docker labels
-  - Multiple entrypoints (public, admin, docs)
-  - Self-signed certificates (dev) / Let's Encrypt (prod)
-  - Dashboard for monitoring
+| Entrypoint | Path | Routes To |
+|------------|------|-----------|
+| :443 | `/*` | public-web |
+| :443 | `/api/*` | public-api |
+| :443 | `/message/*` | messaging-api |
+| :8443 | `/*` | admin-web |
+| :8443 | `/auth/v1/*` | auth-service |
+| :8443 | `/admin-api/*` | admin-api |
+| :8443 | `/files-api/*` | files-api |
 
-### Frontend Layer
+### Service → Data Store Connections
 
-#### Public Web
+| Service | PostgreSQL Role | Redis | MinIO |
+|---------|-----------------|-------|-------|
+| public-api | portfolio_public (SELECT only) | - | - |
+| messaging-api | portfolio_messaging | - | - |
+| auth-service | portfolio_admin | ✓ | - |
+| admin-api | portfolio_admin | - | - |
+| files-api | portfolio_admin | - | ✓ |
 
-- **Technology**: Vue 3, Vite, Naive UI, Pinia, Vue Router, Axios
-- **Port**: 8080 (internal), 80/443 (external via Traefik)
-- **Purpose**: Public-facing portfolio website
-- **Features**:
-  - Browse projects and miniatures
-  - View skills, experience, certifications
-  - Responsive design
-  - Mock data mode for development
-  - Static content display
+Docker Network: `infrastructure_network`
+Volumes: `postgres_data`, `redis_data`, `minio_data`
 
-#### Admin Web
+### Local Service URLs
 
-- **Technology**: Vue 3, Vite, Naive UI, Pinia, Vue Router, Axios
-- **Port**: 8081 (internal), 81/8443 (external via Traefik)
-- **Purpose**: Admin panel for content management
-- **Features**:
-  - User authentication (login/logout)
-  - Protected routes with navigation guards
-  - Full CRUD operations
-  - File upload via Files API
-  - Token refresh handling
+| Service | URL |
+|---------|-----|
+| Public Site | <https://localhost> |
+| Admin Panel | <https://localhost:8443> |
+| Swagger Docs | <http://localhost:82> |
+| Traefik Dashboard | <http://localhost:9002> |
+| MinIO Console | <http://localhost:9001> |
 
-### Backend Layer
+---
 
-#### Public API
+## Production Architecture (AWS)
 
-- **Technology**: Go 1.25, Gin, GORM
-- **Port**: 8082
-- **Purpose**: Serve public portfolio content (read-only)
-- **Database User**: portfolio_public (SELECT only)
-- **Authentication**: None
-- **Endpoints**:
-  - GET /health
-  - GET /api/v1/profile
-  - GET /api/v1/projects
-  - GET /api/v1/skills
-  - GET /api/v1/experience
-  - GET /api/v1/certifications
-  - GET /api/v1/miniatures
-- **Integration**: PostgreSQL for data, Files API for file URLs
+```mermaid
+flowchart TB
+    subgraph Internet
+        USER[User]
+    end
 
-#### Admin API
+    subgraph Edge["Edge (us-east-1)"]
+        R53[Route 53]
+        WAF[WAF v2]
+        subgraph CloudFront["CloudFront (5 distributions)"]
+            CF_PUB[gunarsk.dev]
+            CF_ADM[admin.*]
+            CF_AUTH[auth.*]
+            CF_FILES[files.*]
+            CF_MSG[message.*]
+        end
+    end
 
-- **Technology**: Go 1.25, Gin, GORM
-- **Port**: 8083
-- **Purpose**: Manage portfolio content (full CRUD)
-- **Database User**: portfolio_admin (full CRUD)
-- **Authentication**: JWT validation via Auth Service
-- **Endpoints**:
-  - GET /health
-  - Full CRUD for projects, skills, experience, certifications,
-    miniatures
-- **Integration**: PostgreSQL for data, MinIO for S3 uploads,
-  Auth Service for JWT validation
+    subgraph AppRunner["App Runner (eu-west-1)"]
+        PW[public-web]
+        AW[admin-web]
+        PA[public-api]
+        AA[admin-api]
+        AUTH[auth-service]
+        FA[files-api]
+        MA[messaging-api]
+    end
 
-#### Files API
+    subgraph VPC["VPC (Private Subnets)"]
+        AURORA[(Aurora PostgreSQL)]
+        REDIS[(ElastiCache Valkey)]
+        S3[(S3 Buckets)]
+    end
 
-- **Technology**: Go 1.25, Gin, GORM, MinIO SDK
-- **Port**: 8085
-- **Purpose**: File upload/download service
-- **Database User**: portfolio_admin (write access to storage.files)
-- **Authentication**: JWT validation via Auth Service (upload/delete only)
-- **Endpoints**:
-  - GET /api/v1/health
-  - GET /api/v1/files/:fileType/*key (public download)
-  - POST /api/v1/files (protected upload)
-  - DELETE /api/v1/files/:id (protected delete)
-- **File Types**: portfolio-image, miniature-image,
-  document
-- **Max Upload**: 10MB (configurable)
-- **Allowed Types**: JPEG, PNG, GIF, WebP, PDF
-- **Integration**: PostgreSQL for metadata, MinIO for storage,
-  Auth Service for JWT validation
+    USER --> R53
+    R53 --> WAF
+    WAF --> CloudFront
 
-#### Auth Service
+    CF_PUB --> PW
+    CF_ADM --> AW
+    CF_AUTH --> AUTH
+    CF_FILES --> FA
+    CF_MSG --> MA
 
-- **Technology**: Go 1.25, Gin, GORM, JWT, bcrypt
-- **Port**: 8084
-- **Purpose**: User authentication and token management
-- **Database User**: portfolio_admin (access to auth.users)
-- **Endpoints**:
-  - POST /api/v1/auth/register
-  - POST /api/v1/auth/login
-  - POST /api/v1/auth/refresh
-  - POST /api/v1/auth/logout
-  - POST /api/v1/auth/validate (for other services)
-- **Features**:
-  - JWT access tokens (15min expiry, configurable)
-  - JWT refresh tokens (168h/7 days expiry, configurable)
-  - Bcrypt password hashing
-  - Redis session storage
-  - Token blacklisting
-  - Centralized JWT validation endpoint
+    PW --> PA
+    PW --> MA
+    PW --> FA
+    AW --> AUTH
+    AW --> AA
+    AW --> FA
 
-### Data Layer
-
-#### PostgreSQL
-
-- **Version**: 18-alpine
-- **Port**: 5432
-- **Purpose**: Primary relational database
-- **Database Users (Role-based Access Control)**:
-  - **postgres** - Superuser (database creation)
-  - **portfolio_owner** - DDL operations (CREATE, ALTER, DROP) -
-    used by Flyway
-  - **portfolio_admin** - CRUD operations (SELECT, INSERT, UPDATE,
-    DELETE) - used by APIs
-  - **portfolio_public** - SELECT only - used by Public API
-    (extra security)
-- **Schemas**:
-  - **auth** - User authentication (users table)
-  - **portfolio** - Portfolio content (profile, work_experience,
-    certifications, portfolio_projects, skills)
-  - **miniatures** - Miniature painting projects (miniature_themes,
-    miniature_projects, miniature_paints, etc.)
-  - **storage** - File metadata (files table)
-  - **audit** - Change tracking (change_log, query_stats)
-- **Migration**: Flyway (automatic on startup, versioned + repeatable)
-
-#### Redis
-
-- **Version**: 8.2-alpine
-- **Port**: 6379
-- **Purpose**: Cache and session store
-- **Usage**:
-  - Auth tokens and sessions
-  - Token blacklist (logout)
-  - Future: API response caching
-
-#### MinIO
-
-- **Version**: Latest (S3-compatible)
-- **Port**: 9000 (API), 9001 (Console)
-- **Purpose**: S3-compatible object storage
-- **Bucket**: images (for portfolio and miniature images)
-- **Usage**:
-  - Portfolio project images
-  - Miniature painting photos
-  - Document storage (PDFs, CVs)
-- **Credentials**: Configurable via environment variables (change for production)
-
-## Data Flow Diagrams
-
-### Public Content Access Flow
-
-```text
-┌──────┐      ┌─────────┐      ┌────────┐      ┌──────────┐      ┌──────────┐
-│ User │─────►│ Traefik │─────►│ Public │─────►│ Public   │─────►│PostgreSQL│
-│      │      │         │      │  Web   │      │   API    │      │(SELECT)  │
-└──────┘      └─────────┘      └────────┘      └────┬─────┘      └──────────┘
-                                                     │
-                                                     │ (file URLs)
-                                                     ▼
-                                               ┌──────────┐      ┌──────────┐
-                                               │  Files   │─────►│  MinIO   │
-                                               │   API    │      │(download)│
-                                               └──────────┘      └──────────┘
+    PA --> AURORA
+    MA --> AURORA
+    AUTH --> AURORA
+    AUTH --> REDIS
+    AA --> AURORA
+    FA --> AURORA
+    FA --> S3
 ```
 
-### Admin Content Management Flow
+### AWS Resource Summary
 
-```text
-┌──────┐   ┌─────────┐   ┌────────┐   ┌──────────┐   ┌──────────┐
-│Admin │──►│ Traefik │──►│ Admin  │──►│   Auth   │──►│  Redis   │
-│ User │   │         │   │  Web   │   │ Service  │   │(sessions)│
-└──────┘   └─────────┘   └────┬───┘   └────┬─────┘   └──────────┘
-                              │            │
-                              │ (JWT)      │ (returns JWT)
-                              ▼            │
-                         ┌──────────┐      │
-                         │  Admin   │◄─────┘ (validates JWT)
-                         │   API    │
-                         └────┬─────┘
-                              │
-                              ▼
-                        ┌──────────┐
-                        │PostgreSQL│
-                        │  (CRUD)  │
-                        └──────────┘
+| Resource | Service | Configuration |
+|----------|---------|---------------|
+| Compute | App Runner | 7 services, auto-scaling 1-4 |
+| Database | Aurora Serverless v2 | PostgreSQL 17, 0.5-4 ACU |
+| Cache | ElastiCache Serverless | Valkey 8.x |
+| CDN | CloudFront | 5 distributions, TLS 1.3 |
+| DNS | Route53 | A/AAAA records → CloudFront |
+| WAF | WAF v2 | OWASP rules, rate limiting |
+| Storage | S3 | 3 buckets, KMS encrypted |
+| Secrets | Secrets Manager | DB passwords, JWT secret, Redis token |
+| Monitoring | CloudWatch | Dashboards, alarms, SNS alerts |
+| Audit | CloudTrail | API logging, 90-day retention |
+| Threats | GuardDuty | Automated threat detection |
 
-### File Upload/Download Flow
-┌──────┐   ┌─────────┐   ┌────────┐   ┌──────────┐   ┌──────────┐
-│Admin │──►│ Traefik │──►│ Admin  │──►│  Files   │──►│   Auth   │
-│ User │   │         │   │  Web   │   │   API    │   │ Service  │
-└──────┘   └─────────┘   └────────┘   └────┬─────┘   └────┬─────┘
-                                            │              │
-                                            │◄─────────────┘ (validates JWT)
-                                            │
-                              ┌─────────────┴──────────────┐
-                              ▼                            ▼
-                        ┌──────────┐                 ┌──────────┐
-                        │PostgreSQL│                 │  MinIO   │
-                        │(metadata)│                 │(storage) │
-                        └──────────┘                 └──────────┘
-```
+---
+
+## Data Flow
 
 ### Authentication Flow
 
 ```text
-1. Login Request
-   Admin Web → Auth Service → PostgreSQL (verify user)
-                            → Redis (create session)
-                            → Admin Web (return JWT access + refresh tokens)
-
-2. API Request with Auth (Admin API or Files API)
-   Admin Web → Admin/Files API (with JWT header)
-              → Auth Service /api/v1/auth/validate (validate JWT)
-              → Auth Service validates JWT signature
-              → Admin/Files API (if valid, proceed)
-              → PostgreSQL (perform operation)
-              → Admin Web (response)
-
-3. Token Refresh
-   Admin Web → Auth Service (refresh token)
-              → Redis (verify session)
-              → Admin Web (new access token - 15min)
-
-4. Logout
-   Admin Web → Auth Service → Redis (blacklist)
-                            → Admin Web (confirm)
+User Login Request
+        │
+        ▼
+┌───────────────┐      ┌───────────────┐      ┌───────────────┐
+│   CloudFront  │ ───▶ │  auth-service │ ───▶ │    Aurora     │
+│   (WAF: 10/5m)│      │  (validate)   │      │ (verify hash) │
+└───────────────┘      └───────┬───────┘      └───────────────┘
+                               │
+                               ▼
+                       ┌───────────────┐
+                       │  ElastiCache  │
+                       │(store session)│
+                       └───────────────┘
+                               │
+                               ▼
+                    JWT Access + Refresh Tokens
 ```
 
-**Note**: Admin API and Files API validate JWTs by calling Auth
-Service's `/api/v1/auth/validate` endpoint, ensuring centralized
-authentication logic.
-
-## Network Architecture
-
-All services run in a Docker bridge network named `network`.
-
-### Port Mapping
-
-| Service | Internal | External | Binding | Access |
-|---------|----------|----------|---------|--------|
-| **Public Facing** | | | | |
-| Public Web | 80 | 80 | 0.0.0.0 | HTTP |
-| Public Web | 443 | 443 | 0.0.0.0 | HTTPS |
-| Admin Web | 80 | 81 | 0.0.0.0 | HTTP |
-| Admin Web | 443 | 8443 | 0.0.0.0 | HTTPS |
-| Swagger Docs | - | 82 | 0.0.0.0 | HTTP |
-| **Internal Services** | | | | |
-| Public API | 8082 | 8082 | 0.0.0.0 | Direct (dev) |
-| Admin API | 8083 | 8083 | 0.0.0.0 | Direct (dev) |
-| Auth Service | 8084 | 8084 | 0.0.0.0 | Direct (dev) |
-| Files API | 8085 | 8085 | 0.0.0.0 | Direct (dev) |
-| **Infrastructure** | | | | |
-| PostgreSQL | 5432 | 5432 | 127.0.0.1 | TCP (localhost only) |
-| Redis | 6379 | 6379 | 127.0.0.1 | TCP (localhost only) |
-| MinIO API | 9000 | 9000 | 0.0.0.0 | HTTP |
-| MinIO Console | 9001 | 9001 | 0.0.0.0 | HTTP |
-| Traefik Dashboard | 8080 | 9002 | 0.0.0.0 | HTTP |
-
-## Security Architecture
-
-### Authentication & Authorization
-
-- **JWT-based authentication**
-  - Access tokens: 15 minutes expiry
-    (configurable via JWT_ACCESS_EXPIRY)
-  - Refresh tokens: 7 days/168h expiry
-    (configurable via JWT_REFRESH_EXPIRY)
-  - Signed with configurable JWT_SECRET
-  - **Centralized validation**: Admin API and Files API validate
-    tokens via Auth Service
-- **Password security**
-  - Bcrypt hashing with automatic salt
-  - No plain text storage
-- **Session management**
-  - Redis-based session store
-  - Token blacklist on logout
-- **Route protection**
-  - Admin API calls Auth Service `/api/v1/auth/validate` endpoint
-  - Files API calls Auth Service `/api/v1/auth/validate` endpoint
-  - Admin Web navigation guards
-  - 401 responses for unauthorized access
-- **Database security**
-  - Role-based access control with 3 user levels:
-    - portfolio_owner (DDL only)
-    - portfolio_admin (CRUD operations)
-    - portfolio_public (SELECT only)
-
-### Network Security
-
-- Internal service communication via Docker network
-- External access only through Traefik
-- SSL/TLS termination at reverse proxy
-- PostgreSQL and Redis bound to localhost only (127.0.0.1) — inaccessible from
-  external networks
-- Container security hardening:
-  - Traefik: no-new-privileges, capabilities dropped except
-    NET_BIND_SERVICE
-  - Redis: no-new-privileges, capabilities dropped except SETUID/SETGID/CHOWN
-- Environment-based secrets
-
-### Data Security
-
-- Database credentials in environment variables
-- S3/MinIO access keys configurable
-- Secrets must be changed for production
-
-## Service Dependencies
-
-Startup order and dependencies:
+### File Upload Flow
 
 ```text
-1. Infrastructure Layer
-   ├── PostgreSQL (no dependencies)
-   ├── Redis (no dependencies)
-   └── MinIO (no dependencies)
-
-2. Migration Layer
-   └── Flyway (waits for PostgreSQL health check)
-
-3. Backend Services
-   ├── Auth Service (depends on PostgreSQL, Redis, Flyway)
-   ├── Public API (depends on PostgreSQL, Flyway)
-   ├── Admin API (depends on PostgreSQL, Auth Service, Flyway)
-   └── Files API (depends on PostgreSQL, MinIO, Auth Service, Flyway)
-
-4. Frontend Services
-   ├── Public Web (depends on Public API)
-   └── Admin Web (depends on Admin API, Auth Service)
-
-5. Reverse Proxy
-   └── Traefik (depends on all services)
+File Upload Request (multipart)
+        │
+        ▼
+┌───────────────┐      ┌───────────────┐      ┌───────────────┐
+│   CloudFront  │ ───▶ │   files-api   │ ───▶ │      S3       │
+│(WAF: 300/5m)  │      │(validate type)│      │ (store file)  │
+└───────────────┘      └───────┬───────┘      └───────────────┘
+                               │
+                               ▼
+                       ┌───────────────┐
+                       │    Aurora     │
+                       │(store metadata│
+                       └───────────────┘
 ```
 
-## Technology Stack
+### Public Read Flow
 
-| Layer | Technologies |
-|-------|-------------|
-| **Frontend** | Vue 3.5, Vite 7, Naive UI 2, Axios, Pinia 3, Vue Router 4 |
-| **Backend** | Go 1.24.5, Gin 1.11, GORM 1.31, JWT v5, bcrypt |
-| **Database** | PostgreSQL 18-alpine |
-| **Cache** | Redis 8.2-alpine |
-| **Storage** | MinIO (S3-compatible, SDK v7) |
-| **Proxy** | Traefik v3.6.1 |
-| **Migrations** | Flyway 11.1.0 |
-| **Observability** | Prometheus v3.7.3, Loki 3.6.0, Grafana 12.2.1, OTel |
-| **Container** | Docker, Docker Compose |
-| **Task Runner** | Task (Taskfile) |
-| **Documentation** | Swagger/OpenAPI 3.0 |
+```text
+Public Page Request
+        │
+        ▼
+┌───────────────┐      ┌───────────────┐      ┌───────────────┐
+│   CloudFront  │ ───▶ │  public-api   │ ───▶ │    Aurora     │
+│(WAF: 600/5m)  │      │               │      │ (SELECT only) │
+│ (cache: 60s)  │      │               │      │               │
+└───────────────┘      └───────────────┘      └───────────────┘
+```
 
-## Scalability Considerations
+---
 
-### Current Architecture
+## Security Layers
 
-- Stateless API services (horizontally scalable)
-- Shared session store (Redis)
-- Centralized object storage (MinIO)
-- Single database instance
+```text
+Layer 1: WAF
+├── Rate limiting per endpoint
+├── OWASP Core Rule Set
+├── SQL injection protection
+├── Known bad inputs
+└── IP reputation filtering
 
-### Horizontal Scaling Options
+Layer 2: CloudFront
+├── TLS 1.3 minimum
+├── Security headers (HSTS, CSP)
+├── Geographic restrictions (optional)
+└── Origin access control
 
-- Multiple API service instances behind Traefik
-- Load balancing via Traefik
-- Redis cluster for session replication
-- MinIO distributed mode
+Layer 3: App Runner
+├── VPC connector (private networking)
+├── IAM roles (least privilege)
+├── Environment variables from Secrets Manager
+└── Health checks
 
-### Vertical Scaling Options
+Layer 4: Database
+├── Private subnet only
+├── Security group: App Runner SG only
+├── Role-based access (admin/public/messaging)
+├── TLS enforced
+└── pgaudit logging
+```
 
-- Increase PostgreSQL resources
-- Increase Redis memory
-- Expand MinIO storage
+---
 
-### Future Improvements
+## Secrets Management
 
-- Database read replicas for read-heavy loads
-- Response caching layer (Redis)
-- Monitoring (Prometheus + Grafana)
-- Centralized logging (ELK stack)
-- Message queue for async operations
-- Database connection pooling optimization
+### Production (Secrets Manager)
 
-## Deployment Environments
+| Secret | Used By |
+|--------|---------|
+| aurora-admin-password | auth-service, admin-api, files-api |
+| aurora-public-password | public-api |
+| aurora-messaging-password | messaging-api |
+| redis-auth-token | auth-service |
+| jwt-secret | auth-service, all APIs (validation) |
 
-### Development (Current)
+### Local Development (.env files)
 
-- All services in Docker Compose
-- Self-signed SSL certificates
-- Hot reload for frontends
-- Direct database access
-- MinIO for local storage
-- Default credentials
+See [.env.example](../.env.example) for all required environment variables.
+Generate secure credentials with `task secrets:generate`.
 
-### Production Considerations
+---
 
-- Enable Let's Encrypt for SSL
-- Use managed database (AWS RDS, etc.)
-- Use managed Redis (AWS ElastiCache, etc.)
-- Use S3 instead of MinIO
-- Strong JWT secrets
-- Secure passwords and credentials
-- HTTP to HTTPS redirect
-- WAF rate limiting (CloudFront + AWS WAF)
-- Health checks and monitoring
-- Automated backups
-- Log aggregation
-- CDN for static content
+## Monitoring
 
-**AWS Production WAF Rate Limits** (per IP, per 5 minutes):
+### Production Alarms
 
-| Endpoint | Host | Path | Limit |
-|----------|------|------|-------|
-| Login | `auth.gunarsk.com` | `/login` | 20 |
-| Token Refresh | `auth.gunarsk.com` | `/refresh` | 100 |
-| Token Validation | `auth.gunarsk.com` | `/validate` | 300 |
-| Logout | `auth.gunarsk.com` | `*/logout` | 60 |
-| Admin API | `admin.gunarsk.com` | `/api/v1/*` | 1200 |
-| Public API | `gunarsk.com` | `/api/v1/*` | 600 |
-| Files API | `files.gunarsk.com` | `/api/v1/*` | 200 |
+| Alarm | Threshold | Action |
+|-------|-----------|--------|
+| CloudFront 5xx Rate | >5% | SNS notification |
+| App Runner Latency p99 | >2s | SNS notification |
+| Aurora CPU | >80% | SNS notification |
+| Aurora Connections | >400 | SNS notification |
+| ElastiCache Memory | >80% | SNS notification |
+| WAF Block Rate | >100/5min | SNS notification |
 
-## API Documentation
+### Log Retention
 
-Swagger UI available for all backend services:
+| Log Type | Retention | Location |
+|----------|-----------|----------|
+| App Runner | 7 days | CloudWatch |
+| WAF | 30 days | CloudWatch |
+| VPC Flow | 90 days | CloudWatch |
+| CloudTrail | 90 days | CloudWatch + S3 |
+| Aurora | 7 days | CloudWatch |
 
-- **Public API**: <http://localhost:82/public/>
-- **Admin API**: <http://localhost:82/admin/>
-- **Auth Service**: <http://localhost:82/auth/>
-- **Files API**: <http://localhost:82/files/>
+---
 
-Each service generates its own OpenAPI 3.0 specification via Swaggo.
+## Deployment
 
-## Health Checks
+### Local Development
 
-All services implement health endpoints:
+```bash
+cd infrastructure
+docker-compose up -d
+# Wait for Flyway migrations
+# Access: https://localhost (public), https://localhost:8443 (admin)
+```
 
-- **Endpoint**: `GET /api/v1/health`
-- **Response**: `200 OK` if healthy
+### Production (GitHub Actions)
 
-Docker Compose health checks:
+```text
+Tag Push (v*)
+     │
+     ▼
+┌─────────────────┐
+│  Build & Test   │ ← Lint, unit tests, security scans
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│   Push to ECR   │ ← Docker images
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ App Runner Auto │ ← Automatic deployment on image push
+│    Deploy       │
+└─────────────────┘
+```
 
-- PostgreSQL: `pg_isready -U postgres -d portfolio`
-- Redis: `redis-cli ping`
-- MinIO: HTTP probe to `/minio/health/live`
-- Auth Service: HTTP probe to `http://localhost:8084/api/v1/health`
-- Public API: HTTP probe to `http://localhost:8082/api/v1/health`
-- Admin API: HTTP probe to `http://localhost:8083/api/v1/health`
-- Files API: HTTP probe to `http://localhost:8085/api/v1/health`
+---
 
-## License
+## Network Ports Reference
 
-MIT
+### Local Dev Ports
+
+| Port | Service |
+|------|---------|
+| 443 | Public HTTPS (Traefik) |
+| 8443 | Admin HTTPS (Traefik) |
+| 5432 | PostgreSQL (localhost only) |
+| 6379 | Redis (localhost only) |
+| 9000 | MinIO API |
+| 9001 | MinIO Console |
+| 9002 | Traefik Dashboard |
+
+### Production (Internal)
+
+| Port | Service | Access |
+|------|---------|--------|
+| 5432 | Aurora | App Runner SG only |
+| 6379 | ElastiCache (write) | App Runner SG only |
+| 6380 | ElastiCache (read) | App Runner SG only |
+
+---
+
+*Architecture diagrams represent the current infrastructure design.*
