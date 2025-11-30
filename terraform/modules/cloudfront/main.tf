@@ -171,7 +171,8 @@ resource "aws_cloudfront_distribution" "public" {
     }
   }
 
-  # Default behavior: route to public-web
+  # Default behavior: route to public-web (index.html - no caching)
+  # index.html must not be cached to ensure new deployments serve fresh asset references
   default_cache_behavior {
     allowed_methods            = ["GET", "HEAD", "OPTIONS"]
     cached_methods             = ["GET", "HEAD"]
@@ -190,8 +191,33 @@ resource "aws_cloudfront_distribution" "public" {
     }
 
     min_ttl     = 0
-    default_ttl = 3600
-    max_ttl     = 86400
+    default_ttl = 0
+    max_ttl     = 0
+  }
+
+  # Path behavior: /assets/* -> public-web (hashed assets - long cache)
+  # Vite generates hashed filenames, so assets can be cached indefinitely
+  ordered_cache_behavior {
+    path_pattern               = "/assets/*"
+    allowed_methods            = ["GET", "HEAD", "OPTIONS"]
+    cached_methods             = ["GET", "HEAD"]
+    target_origin_id           = "public-web"
+    viewer_protocol_policy     = "redirect-to-https"
+    compress                   = true
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.security_headers.id
+
+    forwarded_values {
+      query_string = false
+      headers      = []
+
+      cookies {
+        forward = "none"
+      }
+    }
+
+    min_ttl     = 0
+    default_ttl = 31536000 # 1 year
+    max_ttl     = 31536000
   }
 
   # Path behavior: /api/v1/* -> public-api
@@ -296,7 +322,8 @@ resource "aws_cloudfront_distribution" "admin" {
     }
   }
 
-  # Default behavior: route to admin-web
+  # Default behavior: route to admin-web (index.html - no caching)
+  # index.html must not be cached to ensure new deployments serve fresh asset references
   default_cache_behavior {
     allowed_methods            = ["GET", "HEAD", "OPTIONS"]
     cached_methods             = ["GET", "HEAD"]
@@ -315,8 +342,33 @@ resource "aws_cloudfront_distribution" "admin" {
     }
 
     min_ttl     = 0
-    default_ttl = 3600
-    max_ttl     = 86400
+    default_ttl = 0
+    max_ttl     = 0
+  }
+
+  # Path behavior: /assets/* -> admin-web (hashed assets - long cache)
+  # Vite generates hashed filenames, so assets can be cached indefinitely
+  ordered_cache_behavior {
+    path_pattern               = "/assets/*"
+    allowed_methods            = ["GET", "HEAD", "OPTIONS"]
+    cached_methods             = ["GET", "HEAD"]
+    target_origin_id           = "admin-web"
+    viewer_protocol_policy     = "redirect-to-https"
+    compress                   = true
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.security_headers.id
+
+    forwarded_values {
+      query_string = false
+      headers      = []
+
+      cookies {
+        forward = "none"
+      }
+    }
+
+    min_ttl     = 0
+    default_ttl = 31536000 # 1 year
+    max_ttl     = 31536000
   }
 
   # Path behavior: /api/v1/* -> admin-api
