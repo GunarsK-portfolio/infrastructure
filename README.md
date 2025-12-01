@@ -602,4 +602,4 @@ volumes separately.
 
 ## License
 
-MIT
+[MIT](LICENSE)
