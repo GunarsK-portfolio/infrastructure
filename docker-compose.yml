@@ -313,6 +313,8 @@ services:
       - GIN_MODE=release
       # CORS
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS_AUTH}
+      # Swagger (development only)
+      - SWAGGER_HOST=${SWAGGER_HOST_AUTH}
     ports:
       - "8084:8084"
     networks:
@@ -393,6 +395,8 @@ services:
       - GIN_MODE=release
       # CORS
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS_PUBLIC}
+      # Swagger (development only)
+      - SWAGGER_HOST=${SWAGGER_HOST_PUBLIC}
     ports:
       - "8082:8082"
     networks:
@@ -471,6 +475,8 @@ services:
       - GIN_MODE=release
       # CORS
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS_ADMIN}
+      # Swagger (development only)
+      - SWAGGER_HOST=${SWAGGER_HOST_ADMIN}
     ports:
       - "8083:8083"
     networks:
@@ -561,6 +567,8 @@ services:
       - GIN_MODE=release
       # CORS
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS_FILES}
+      # Swagger (development only)
+      - SWAGGER_HOST=${SWAGGER_HOST_FILES}
     ports:
       - "8085:8085"
     networks:
@@ -649,6 +657,8 @@ services:
       - GIN_MODE=release
       # CORS
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS_MESSAGING}
+      # Swagger (development only)
+      - SWAGGER_HOST=${SWAGGER_HOST_MESSAGING}
     ports:
       - "8086:8086"
     networks:
