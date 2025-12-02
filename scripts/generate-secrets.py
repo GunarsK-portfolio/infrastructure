@@ -67,6 +67,7 @@ def generate_env_file(infrastructure_dir, force=False):
         'REDIS_PASSWORD': generate_password(32),
 
         # RabbitMQ password
+        # Note: Local dev uses alphanumeric charset; AWS Secrets Manager may use additional specials
         'RABBITMQ_PASSWORD': generate_password(32),
 
         # MinIO credentials

@@ -11,7 +11,7 @@ and 2 Vue.js frontends. Infrastructure differs between local development
 ## Service Inventory
 
 | Service | Port | Purpose | Database User |
-|---------|------|---------|---------------|
+| ------- | ---- | ------- | ------------- |
 | auth-service | 8084 | JWT authentication, sessions | portfolio_admin |
 | public-api | 8082 | Read-only public data | portfolio_public |
 | admin-api | 8083 | Admin CRUD operations | portfolio_admin |
@@ -120,6 +120,40 @@ flowchart LR
 | auth-service | portfolio_admin | ✓ | - | - | - |
 | admin-api | portfolio_admin | - | - | - | - |
 | files-api | portfolio_admin | - | - | ✓ | - |
+
+### Message Queue Strategy
+
+**Queue Configuration:**
+
+- Exchange: `contact_messages` (direct)
+- Queue: `contact_messages` (durable)
+- Retry delays: 1m → 5m → 30m → 2h → 12h (exponential backoff)
+
+**Message Durability:**
+
+- Messages are persistent (delivery mode 2)
+- Queue is durable (survives broker restart)
+- Consumer uses manual acknowledgment
+
+**Retry & Dead Letter Handling:**
+
+- Failed messages are requeued with delay headers
+- After 5 retries (12h total), message is moved to DLQ
+- DLQ: `contact_messages.dlq` (manual inspection required)
+
+**Consumer Scaling:**
+
+- Single consumer instance (contact form volume is low)
+- Prefetch limit: 1 (process one message at a time)
+- For higher volume: scale horizontally with `consumer_tag` uniqueness
+
+**Monitoring:**
+
+| Metric | Threshold | Action |
+|--------|-----------|--------|
+| Queue depth | >100 messages | Investigate consumer health |
+| Consumer lag | >5 minutes | Check messaging-service logs |
+| DLQ depth | >0 | Manual review required |
 
 Docker Network: `infrastructure_network`
 Volumes: `postgres_data`, `redis_data`, `rabbitmq_data`, `localstack_data`, `minio_data`

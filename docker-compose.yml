@@ -753,8 +753,8 @@ services:
       - RABBITMQ_RETRY_DELAYS=${RABBITMQ_RETRY_DELAYS}
       # AWS SES (via LocalStack in development)
       - AWS_REGION=${AWS_REGION}
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - SES_ENDPOINT=${SES_ENDPOINT}
       - SES_SENDER_EMAIL=${SES_FROM_EMAIL}
       # Logging

@@ -11,7 +11,7 @@ variable "environment" {
 }
 
 variable "private_subnet_ids" {
-  description = "List of private subnet IDs for Amazon MQ"
+  description = "List of private subnet IDs for Amazon MQ. Currently single-instance deployment uses first subnet only. List structure enables future HA cluster configuration."
   type        = list(string)
 }
 
@@ -43,7 +43,7 @@ variable "engine_version" {
 }
 
 variable "credentials_secret_arn" {
-  description = "ARN of Secrets Manager secret containing RabbitMQ credentials"
+  description = "ARN of Secrets Manager secret containing RabbitMQ credentials. Format: {\"username\": \"user\", \"password\": \"pass\"}. Must exist before module instantiation (created by secrets module)."
   type        = string
 }
 

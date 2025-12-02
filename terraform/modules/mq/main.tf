@@ -22,8 +22,8 @@ data "aws_secretsmanager_secret_version" "rabbitmq" {
 }
 
 locals {
-  # Parse credentials from Secrets Manager
-  # Format: {"username": "...", "password": "..."}
+  # Parse credentials from Secrets Manager (created by secrets module)
+  # Expected format: {"username": "...", "password": "..."}
   credentials = try(
     jsondecode(data.aws_secretsmanager_secret_version.rabbitmq.secret_string),
     { username = "", password = "" }
@@ -138,8 +138,8 @@ resource "aws_cloudwatch_metric_alarm" "rabbitmq_queue_depth" {
   namespace           = "AWS/AmazonMQ"
   period              = 300
   statistic           = "Average"
-  threshold           = 1000
-  alarm_description   = "RabbitMQ queue depth exceeds 1000 messages"
+  threshold           = 10
+  alarm_description   = "RabbitMQ queue depth exceeds 10 messages - indicates consumer lag or failure"
   alarm_actions       = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
 
   dimensions = {
