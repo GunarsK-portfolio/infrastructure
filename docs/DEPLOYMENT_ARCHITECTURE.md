@@ -11,6 +11,7 @@ Infrastructure and applications are separated into independent repositories:
 - **admin-api**: Go admin API
 - **public-api**: Go public API
 - **files-api**: Go file management API
+- **messaging-api**: Go contact form API
 
 ## Deployment Flow
 

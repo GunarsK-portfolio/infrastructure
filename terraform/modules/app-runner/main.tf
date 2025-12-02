@@ -92,18 +92,21 @@ locals {
       ALLOWED_ORIGINS      = "https://${var.domain_name},https://admin.${var.domain_name}"
     }
     "messaging-api" = {
-      ENVIRONMENT     = local.environment_map[var.environment]
-      SERVICE_NAME    = "messaging-api"
-      LOG_LEVEL       = "info"
-      LOG_FORMAT      = "json"
-      DB_HOST         = var.aurora_endpoint
-      DB_PORT         = "5432"
-      DB_NAME         = "portfolio"
-      DB_USER         = "portfolio_messaging"
-      DB_SSLMODE      = "require"
-      RABBITMQ_HOST   = var.mq_endpoint
-      RABBITMQ_PORT   = "5671"
-      ALLOWED_ORIGINS = "https://${var.domain_name}"
+      ENVIRONMENT           = local.environment_map[var.environment]
+      SERVICE_NAME          = "messaging-api"
+      LOG_LEVEL             = "info"
+      LOG_FORMAT            = "json"
+      DB_HOST               = var.aurora_endpoint
+      DB_PORT               = "5432"
+      DB_NAME               = "portfolio"
+      DB_USER               = "portfolio_messaging"
+      DB_SSLMODE            = "require"
+      RABBITMQ_HOST         = var.mq_endpoint
+      RABBITMQ_PORT         = "5671"
+      RABBITMQ_EXCHANGE     = "contact_messages"
+      RABBITMQ_QUEUE        = "contact_messages"
+      RABBITMQ_RETRY_DELAYS = "1m,5m,30m,2h,12h"
+      ALLOWED_ORIGINS       = "https://${var.domain_name}"
     }
     "admin-web" = {
       ENVIRONMENT  = local.environment_map[var.environment]

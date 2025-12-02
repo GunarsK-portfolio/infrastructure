@@ -91,7 +91,8 @@ flowchart LR
 | Flow | Path |
 |------|------|
 | Portfolio data | public-web → public-api → PostgreSQL |
-| Contact form | public-web → messaging-api → PostgreSQL |
+| Contact form | public-web → messaging-api → PostgreSQL + RabbitMQ |
+| Email notifications | messaging-service → RabbitMQ → SES |
 | Public images | public-web → files-api → PostgreSQL + MinIO |
 | Login/sessions | admin-web → auth-service → PostgreSQL + Redis |
 | Admin CRUD | admin-web → admin-api → PostgreSQL |
@@ -168,10 +169,10 @@ flowchart TB
     end
 
     subgraph VPC["VPC (Private Subnets)"]
-        AURORA[(Aurora PostgreSQL)]
-        REDIS[(ElastiCache Valkey)]
-        MQ[(Amazon MQ)]
         S3[(S3 Buckets)]
+        REDIS[(ElastiCache Valkey)]
+        AURORA[(Aurora PostgreSQL)]
+        MQ[(Amazon MQ)]
     end
 
     subgraph AWS["AWS Services"]
@@ -294,16 +295,16 @@ User Login Request
 File Upload Request (multipart)
         │
         ▼
-┌───────────────┐      ┌───────────────┐      ┌───────────────┐
+┌───────────────┐      ┌───────────────┐       ┌───────────────┐
 │   CloudFront  │ ───▶ │   files-api   │ ───▶ │      S3       │
-│(WAF: 300/5m)  │      │(validate type)│      │ (store file)  │
-└───────────────┘      └───────┬───────┘      └───────────────┘
+│(WAF: 300/5m)  │      │(validate type)│       │ (store file)  │
+└───────────────┘      └───────┬───────┘       └───────────────┘
                                │
                                ▼
-                       ┌───────────────┐
-                       │    Aurora     │
-                       │(store metadata│
-                       └───────────────┘
+                       ┌────────────────┐
+                       │    Aurora      │
+                       │(store metadata)│
+                       └────────────────┘
 ```
 
 ### Public Read Flow
@@ -312,11 +313,35 @@ File Upload Request (multipart)
 Public Page Request
         │
         ▼
-┌───────────────┐      ┌───────────────┐      ┌───────────────┐
+┌───────────────┐      ┌───────────────┐       ┌───────────────┐
 │   CloudFront  │ ───▶ │  public-api   │ ───▶ │    Aurora     │
-│(WAF: 600/5m)  │      │               │      │ (SELECT only) │
-│ (cache: 60s)  │      │               │      │               │
-└───────────────┘      └───────────────┘      └───────────────┘
+│(WAF: 600/5m)  │      │               │       │ (SELECT only) │
+│ (cache: 60s)  │      │               │       │               │
+└───────────────┘      └───────────────┘       └───────────────┘
+```
+
+### Contact Message Flow
+
+```text
+Contact Form Submission
+        │
+        ▼
+┌───────────────┐      ┌───────────────┐      ┌───────────────┐
+│   CloudFront  │ ───▶ │ messaging-api │ ───▶ │    Aurora     │
+│ (WAF: 10/5m)  │      │ (validate)    │      │(store message)│
+└───────────────┘      └───────┬───────┘      └───────────────┘
+                               │
+                               ▼
+                       ┌───────────────┐
+                       │   RabbitMQ    │
+                       │(publish event)│
+                       └───────┬───────┘
+                               │
+                               ▼
+                       ┌───────────────┐      ┌───────────────┐
+                       │  messaging-   │ ───▶ │      SES      │
+                       │   service     │      │ (send email)  │
+                       └───────────────┘      └───────────────┘
 ```
 
 ---
