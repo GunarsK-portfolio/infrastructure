@@ -101,6 +101,8 @@ locals {
       DB_NAME         = "portfolio"
       DB_USER         = "portfolio_messaging"
       DB_SSLMODE      = "require"
+      RABBITMQ_HOST   = var.mq_endpoint
+      RABBITMQ_PORT   = "5671"
       ALLOWED_ORIGINS = "https://${var.domain_name}"
     }
     "admin-web" = {
@@ -137,8 +139,10 @@ locals {
       JWT_SECRET  = "${var.secrets_arns["jwt_secret"]}:secret::"
     }
     "messaging-api" = {
-      DB_PASSWORD = "${var.secrets_arns["aurora_messaging"]}:password::"
-      JWT_SECRET  = "${var.secrets_arns["jwt_secret"]}:secret::"
+      DB_PASSWORD       = "${var.secrets_arns["aurora_messaging"]}:password::"
+      JWT_SECRET        = "${var.secrets_arns["jwt_secret"]}:secret::"
+      RABBITMQ_USER     = "${var.secrets_arns["rabbitmq"]}:username::"
+      RABBITMQ_PASSWORD = "${var.secrets_arns["rabbitmq"]}:password::"
     }
     "admin-web"  = {}
     "public-web" = {}

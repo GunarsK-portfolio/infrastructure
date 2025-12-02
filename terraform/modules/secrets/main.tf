@@ -407,6 +407,33 @@ resource "aws_secretsmanager_secret_version" "jwt_secret" {
   }
 }
 
+# RabbitMQ Credentials (Amazon MQ)
+resource "aws_secretsmanager_secret" "rabbitmq_credentials" {
+  name_prefix             = "${var.project_name}-${var.environment}-rabbitmq-"
+  description             = "Amazon MQ RabbitMQ credentials"
+  kms_key_id              = aws_kms_key.secrets.id
+  recovery_window_in_days = 30
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-rabbitmq-credentials"
+    }
+  )
+}
+
+resource "aws_secretsmanager_secret_version" "rabbitmq_credentials" {
+  secret_id = aws_secretsmanager_secret.rabbitmq_credentials.id
+  secret_string = jsonencode({
+    username = "rabbitmq"
+    password = random_password.rabbitmq.result
+  })
+
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
+}
+
 # Random passwords (temporary, must be replaced)
 resource "random_password" "aurora_master" {
   length  = 32
@@ -443,6 +470,14 @@ resource "random_password" "redis_auth" {
 resource "random_password" "jwt_secret" {
   length  = 64
   special = false
+}
+
+resource "random_password" "rabbitmq" {
+  length  = 32
+  special = true
+  # Amazon MQ passwords must be 12-250 characters, contain at least 4 unique characters
+  # Avoid problematic characters in connection strings
+  override_special = "!#$%&*()-_=+[]{}|;:,.<>?"
 }
 
 # CloudWatch Log Group for secret rotation Lambda (if rotation enabled)

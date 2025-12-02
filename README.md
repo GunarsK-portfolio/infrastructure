@@ -33,6 +33,8 @@ reverse proxy setup for running all portfolio services together.
 - **Traefik v3.6.1** - Reverse proxy and load balancer
 - **PostgreSQL 18** - Main database
 - **Redis 8.2** - Session and cache store
+- **RabbitMQ 4.2** - Message broker for async processing
+- **LocalStack 4.11** - AWS service emulation (SES for local email testing)
 - **MinIO** - S3-compatible object storage (⚠️ no longer updated on Docker Hub)
 - **Flyway 11.1.0** - Database migrations
 
@@ -131,6 +133,7 @@ task monitoring:up
 | - Messaging API Docs | <http://localhost:82/messaging/> | - |
 | Traefik Dashboard | <http://localhost:9002> | - |
 | MinIO Console | <http://localhost:9001> | minioadmin / minioadmin |
+| RabbitMQ Management | <http://localhost:15672> | rabbitmq / rabbitmq |
 | **Grafana** | <http://localhost:3000> | admin / admin |
 | **Prometheus** | <http://localhost:9090> | - |
 
@@ -261,6 +264,9 @@ docker-compose up -d --build [service]  # Rebuild service
 |------|---------|---------|
 | 5432 | PostgreSQL | 127.0.0.1 (localhost only) |
 | 6379 | Redis | 127.0.0.1 (localhost only) |
+| 5672 | RabbitMQ AMQP | 127.0.0.1 (localhost only) |
+| 15672 | RabbitMQ Management | 127.0.0.1 (localhost only) |
+| 4566 | LocalStack (SES) | 127.0.0.1 (localhost only) |
 | 9000 | MinIO API | 0.0.0.0 (all interfaces) |
 | 9001 | MinIO Console | 0.0.0.0 (all interfaces) |
 | 9002 | Traefik Dashboard | 0.0.0.0 (all interfaces) |
@@ -588,6 +594,8 @@ task monitoring:up
 
 - `postgres_data` - Database
 - `redis_data` - Cache
+- `rabbitmq_data` - Message broker
+- `localstack_data` - AWS service emulation (SES)
 - `minio_data` - Object storage
 
 ### Monitoring Volumes

@@ -30,6 +30,11 @@ output "cache_security_group_id" {
   value       = aws_security_group.cache.id
 }
 
+output "mq_security_group_id" {
+  description = "ID of the message queue security group"
+  value       = aws_security_group.mq.id
+}
+
 output "app_runner_security_group_id" {
   description = "ID of the App Runner security group"
   value       = aws_security_group.app_runner.id

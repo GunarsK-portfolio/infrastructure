@@ -66,6 +66,9 @@ def generate_env_file(infrastructure_dir, force=False):
         # Redis password
         'REDIS_PASSWORD': generate_password(32),
 
+        # RabbitMQ password
+        'RABBITMQ_PASSWORD': generate_password(32),
+
         # MinIO credentials
         'MINIO_ROOT_PASSWORD': generate_password(32),
         'S3_SECRET_KEY': generate_password(48),
@@ -85,6 +88,7 @@ def generate_env_file(infrastructure_dir, force=False):
         'portfolio_public_dev_pass': secrets_map['DB_PASSWORD_READONLY'],
         'portfolio_messaging_dev_pass': secrets_map['DB_PASSWORD_MESSAGING'],
         'redis_dev_pass': secrets_map['REDIS_PASSWORD'],
+        'rabbitmq_dev_pass': secrets_map['RABBITMQ_PASSWORD'],
         'minioadmin_dev_pass': secrets_map['MINIO_ROOT_PASSWORD'],
         'files-api-secret-change-in-production': secrets_map['S3_SECRET_KEY'],
         'your-secret-key-change-in-production': secrets_map['JWT_SECRET'],

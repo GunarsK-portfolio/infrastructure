@@ -48,10 +48,16 @@ flowchart LR
         FA[files-api]
     end
 
+    subgraph Workers
+        MS[messaging-service]
+    end
+
     subgraph Data
         PG[(PostgreSQL)]
         REDIS[(Redis)]
+        RMQ[(RabbitMQ)]
         MINIO[(MinIO)]
+        LS[(LocalStack SES)]
     end
 
     PUB --> T
@@ -69,6 +75,10 @@ flowchart LR
 
     PA --> PG
     MA --> PG
+    MA --> RMQ
+    MS --> RMQ
+    MS --> PG
+    MS --> LS
     AUTH --> PG
     AUTH --> REDIS
     AA --> PG
@@ -101,16 +111,17 @@ flowchart LR
 
 ### Service → Data Store Connections
 
-| Service | PostgreSQL Role | Redis | MinIO |
-|---------|-----------------|-------|-------|
-| public-api | portfolio_public (SELECT only) | - | - |
-| messaging-api | portfolio_messaging | - | - |
-| auth-service | portfolio_admin | ✓ | - |
-| admin-api | portfolio_admin | - | - |
-| files-api | portfolio_admin | - | ✓ |
+| Service | PostgreSQL Role | Redis | RabbitMQ | MinIO | SES |
+|---------|-----------------|-------|----------|-------|-----|
+| public-api | portfolio_public (SELECT only) | - | - | - | - |
+| messaging-api | portfolio_messaging | - | ✓ (publish) | - | - |
+| messaging-service | portfolio_messaging | - | ✓ (consume) | - | ✓ |
+| auth-service | portfolio_admin | ✓ | - | - | - |
+| admin-api | portfolio_admin | - | - | - | - |
+| files-api | portfolio_admin | - | - | ✓ | - |
 
 Docker Network: `infrastructure_network`
-Volumes: `postgres_data`, `redis_data`, `minio_data`
+Volumes: `postgres_data`, `redis_data`, `rabbitmq_data`, `localstack_data`, `minio_data`
 
 ### Local Service URLs
 
@@ -120,6 +131,7 @@ Volumes: `postgres_data`, `redis_data`, `minio_data`
 | Admin Panel | <https://localhost:8443> |
 | Swagger Docs | <http://localhost:82> |
 | Traefik Dashboard | <http://localhost:9002> |
+| RabbitMQ Management | <http://localhost:15672> |
 | MinIO Console | <http://localhost:9001> |
 
 ---
@@ -152,12 +164,18 @@ flowchart TB
         AUTH[auth-service]
         FA[files-api]
         MA[messaging-api]
+        MS[messaging-service]
     end
 
     subgraph VPC["VPC (Private Subnets)"]
         AURORA[(Aurora PostgreSQL)]
         REDIS[(ElastiCache Valkey)]
+        MQ[(Amazon MQ)]
         S3[(S3 Buckets)]
+    end
+
+    subgraph AWS["AWS Services"]
+        SES[SES]
     end
 
     USER --> R53
@@ -179,6 +197,10 @@ flowchart TB
 
     PA --> AURORA
     MA --> AURORA
+    MA --> MQ
+    MS --> MQ
+    MS --> AURORA
+    MS --> SES
     AUTH --> AURORA
     AUTH --> REDIS
     AA --> AURORA
@@ -190,14 +212,16 @@ flowchart TB
 
 | Resource | Service | Configuration |
 |----------|---------|---------------|
-| Compute | App Runner | 7 services, auto-scaling 1-4 |
+| Compute | App Runner | 8 services, auto-scaling 1-4 |
 | Database | Aurora Serverless v2 | PostgreSQL 17, 0.5-4 ACU |
 | Cache | ElastiCache Serverless | Valkey 8.x |
+| Message Queue | Amazon MQ | RabbitMQ 4.2, mq.t3.micro |
+| Email | SES | Transactional email delivery |
 | CDN | CloudFront | 5 distributions, TLS 1.3 |
 | DNS | Route53 | A/AAAA records → CloudFront |
 | WAF | WAF v2 | OWASP rules, rate limiting |
 | Storage | S3 | 3 buckets, KMS encrypted |
-| Secrets | Secrets Manager | DB passwords, JWT secret, Redis token |
+| Secrets | Secrets Manager | DB passwords, JWT secret, Redis token, RabbitMQ |
 | Monitoring | CloudWatch | Dashboards, alarms, SNS alerts |
 | Audit | CloudTrail | API logging, 90-day retention |
 | Threats | GuardDuty | Automated threat detection |
@@ -437,6 +461,9 @@ Tag Push (v*)
 | 8443 | Admin HTTPS (Traefik) |
 | 5432 | PostgreSQL (localhost only) |
 | 6379 | Redis (localhost only) |
+| 5672 | RabbitMQ AMQP (localhost only) |
+| 15672 | RabbitMQ Management (localhost only) |
+| 4566 | LocalStack SES (localhost only) |
 | 9000 | MinIO API |
 | 9001 | MinIO Console |
 | 9002 | Traefik Dashboard |
@@ -448,6 +475,7 @@ Tag Push (v*)
 | 5432 | Aurora | App Runner SG only |
 | 6379 | ElastiCache (write) | App Runner SG only |
 | 6380 | ElastiCache (read) | App Runner SG only |
+| 5671 | Amazon MQ RabbitMQ (AMQPS) | App Runner SG only |
 
 ---
 
