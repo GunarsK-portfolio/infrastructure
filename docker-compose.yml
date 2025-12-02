@@ -247,7 +247,7 @@ services:
       - "127.0.0.1:4566:4566"
     volumes:
       - localstack_data:/var/lib/localstack
-      - ./docker/localstack/init-ses.sh:/etc/localstack/init/ready.d/init-ses.sh:ro
+      - ./docker/localstack:/etc/localstack/init/ready.d:ro
     networks:
       - network
     healthcheck:
@@ -728,6 +728,61 @@ services:
       - "traefik.http.routers.messaging-swagger.entrypoints=swagger"
       - "traefik.http.routers.messaging-swagger.middlewares=messaging-swagger-strip"
       - "traefik.http.middlewares.messaging-swagger-strip.stripprefix.prefixes=/messaging"
+
+  # Messaging Service (Background Worker)
+  messaging-service:
+    build:
+      context: ../messaging-service
+      dockerfile: Dockerfile
+    container_name: messaging-service
+    restart: unless-stopped
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      # Use portfolio_messaging for messaging service (owns messaging schema)
+      - DB_USER=${DB_USER_MESSAGING}
+      - DB_PASSWORD=${DB_PASSWORD_MESSAGING}
+      - DB_NAME=${POSTGRES_DB}
+      # RabbitMQ
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - RABBITMQ_EXCHANGE=${RABBITMQ_EXCHANGE}
+      - RABBITMQ_QUEUE=${RABBITMQ_QUEUE}
+      - RABBITMQ_RETRY_DELAYS=${RABBITMQ_RETRY_DELAYS}
+      # AWS SES (via LocalStack in development)
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - SES_ENDPOINT=${SES_ENDPOINT}
+      - SES_SENDER_EMAIL=${SES_FROM_EMAIL}
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_FORMAT=${LOG_FORMAT}
+      - LOG_SOURCE=${LOG_SOURCE}
+      - ENVIRONMENT=${ENVIRONMENT}
+    networks:
+      - network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+    labels:
+      # Promtail logging
+      - "logging=promtail"
+      - "environment=${ENVIRONMENT}"
 
   # Public Web
   public-web:

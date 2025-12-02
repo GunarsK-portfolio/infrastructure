@@ -1,0 +1,3 @@
+# Ensure shell scripts always use Unix line endings (LF)
+# This is critical for Docker volume mounts on Windows
+*.sh text eol=lf

@@ -12,6 +12,7 @@ Infrastructure and applications are separated into independent repositories:
 - **public-api**: Go public API
 - **files-api**: Go file management API
 - **messaging-api**: Go contact form API
+- **messaging-service**: Go email notification worker (RabbitMQ consumer)
 
 ## Deployment Flow
 

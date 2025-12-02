@@ -24,7 +24,8 @@ reverse proxy setup for running all portfolio services together.
 - **public-api** - Public API service (read-only)
 - **admin-api** - Admin API service (full CRUD)
 - **files-api** - File upload/download service
-- **messaging-api** - Contact form service
+- **messaging-api** - Contact form API
+- **messaging-service** - Email notification worker (RabbitMQ consumer)
 - **public-web** - Public frontend (Vue.js + Naive UI)
 - **admin-web** - Admin frontend (Vue.js + Naive UI)
 
@@ -67,17 +68,18 @@ Expected directory layout:
 
 ```text
 portfolio/
-├── infrastructure/     # This repo
-├── auth-service/       # Auth service repo
-├── public-api/         # Public API repo
-├── admin-api/          # Admin API repo
-├── files-api/          # Files API repo
-├── messaging-api/      # Messaging API repo
-├── public-web/         # Public web repo
-├── admin-web/          # Admin web repo
-├── database/           # Database repo
-├── e2e-tests/          # E2E tests repo
-└── portfolio-common/   # Shared models repo
+├── infrastructure/      # This repo
+├── auth-service/        # Auth service repo
+├── public-api/          # Public API repo
+├── admin-api/           # Admin API repo
+├── files-api/           # Files API repo
+├── messaging-api/       # Messaging API repo
+├── messaging-service/   # Email worker repo
+├── public-web/          # Public web repo
+├── admin-web/           # Admin web repo
+├── database/            # Database repo
+├── e2e-tests/           # E2E tests repo
+└── portfolio-common/    # Shared models repo
 ```
 
 ## Quick Start
@@ -183,6 +185,12 @@ task messaging-api:stop      # Stop messaging API service
 task messaging-api:restart   # Restart messaging API service
 task messaging-api:rebuild   # Rebuild and restart messaging API
 task messaging-api:ci        # Run CI checks in messaging-api repo
+
+task messaging-service:logs     # View messaging service logs
+task messaging-service:stop     # Stop messaging service
+task messaging-service:restart  # Restart messaging service
+task messaging-service:rebuild  # Rebuild and restart messaging service
+task messaging-service:ci       # Run CI checks in messaging-service repo
 
 task public-api:logs     # View public API logs
 task public-api:stop     # Stop public API service
