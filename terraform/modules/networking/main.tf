@@ -181,6 +181,47 @@ resource "aws_vpc_endpoint" "s3" {
   )
 }
 
+# Security Group for VPC Interface Endpoints
+resource "aws_security_group" "vpc_endpoints" {
+  name_prefix = "${var.project_name}-${var.environment}-vpce-sg"
+  description = "Security group for VPC interface endpoints"
+  vpc_id      = aws_vpc.main.id
+
+  # Allow HTTPS from App Runner security group
+  ingress {
+    description     = "HTTPS from App Runner"
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.app_runner.id]
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-vpce-sg"
+    }
+  )
+}
+
+# SES VPC Endpoint (Interface)
+# Required for App Runner services with VPC egress to send emails via SES
+resource "aws_vpc_endpoint" "ses" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${data.aws_region.current.region}.email-smtp"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-ses-endpoint"
+    }
+  )
+}
+
 # Security Group for Aurora Database
 resource "aws_security_group" "database" {
   name        = "${var.project_name}-${var.environment}-aurora-sg"
