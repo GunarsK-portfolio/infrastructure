@@ -112,7 +112,7 @@ locals {
       RABBITMQ_EXCHANGE     = "contact_messages"
       RABBITMQ_QUEUE        = "contact_messages"
       RABBITMQ_RETRY_DELAYS = "1m,5m,30m,2h,12h"
-      ALLOWED_ORIGINS       = "https://${var.domain_name}"
+      ALLOWED_ORIGINS       = "https://${var.domain_name},https://admin.${var.domain_name}"
     }
     "messaging-service" = {
       ENVIRONMENT           = local.environment_map[var.environment]
