@@ -73,6 +73,7 @@ flowchart LR
     AW --> AUTH
     AW --> AA
     AW --> FA
+    AW --> MA
 
     PA --> PG
     MA --> PG
@@ -98,6 +99,7 @@ flowchart LR
 | Login/sessions | admin-web → auth-service → PostgreSQL + Redis |
 | Admin CRUD | admin-web → admin-api → PostgreSQL |
 | File uploads | admin-web → files-api → PostgreSQL + MinIO |
+| Admin messaging | admin-web → messaging-api → PostgreSQL |
 
 ### Traefik Routing
 
@@ -110,6 +112,7 @@ flowchart LR
 | :8443 | `/auth/v1/*` | auth-service |
 | :8443 | `/admin-api/*` | admin-api |
 | :8443 | `/files-api/*` | files-api |
+| :8443 | `/messaging-api/*` | messaging-api |
 
 ### Service → Data Store Connections
 
@@ -230,6 +233,7 @@ flowchart TB
     AW --> AUTH
     AW --> AA
     AW --> FA
+    AW --> MA
 
     PA --> AURORA
     MA --> AURORA
