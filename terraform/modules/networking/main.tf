@@ -208,7 +208,7 @@ resource "aws_security_group" "vpc_endpoints" {
 # Required for App Runner services with VPC egress to send emails via SES
 resource "aws_vpc_endpoint" "ses" {
   vpc_id              = aws_vpc.main.id
-  service_name        = "com.amazonaws.${data.aws_region.current.region}.ses"
+  service_name        = "com.amazonaws.${data.aws_region.current.region}.email"
   vpc_endpoint_type   = "Interface"
   subnet_ids          = aws_subnet.private[*].id
   security_group_ids  = [aws_security_group.vpc_endpoints.id]
