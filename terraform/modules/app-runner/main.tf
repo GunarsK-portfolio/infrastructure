@@ -108,6 +108,7 @@ locals {
       DB_SSLMODE            = "require"
       RABBITMQ_HOST         = var.mq_endpoint
       RABBITMQ_PORT         = "5671"
+      RABBITMQ_TLS          = "true"
       RABBITMQ_EXCHANGE     = "contact_messages"
       RABBITMQ_QUEUE        = "contact_messages"
       RABBITMQ_RETRY_DELAYS = "1m,5m,30m,2h,12h"
@@ -126,6 +127,7 @@ locals {
       DB_SSLMODE            = "require"
       RABBITMQ_HOST         = var.mq_endpoint
       RABBITMQ_PORT         = "5671"
+      RABBITMQ_TLS          = "true"
       RABBITMQ_EXCHANGE     = "contact_messages"
       RABBITMQ_QUEUE        = "contact_messages"
       RABBITMQ_RETRY_DELAYS = "1m,5m,30m,2h,12h"

@@ -233,7 +233,7 @@ module "app_runner" {
   # Database, cache, and message queue endpoints (injected via Secrets Manager)
   aurora_endpoint      = module.database.cluster_endpoint
   elasticache_endpoint = module.cache.primary_endpoint
-  mq_endpoint          = module.mq.amqp_endpoint
+  mq_endpoint          = module.mq.amqp_host
 
   # S3 bucket names
   s3_bucket_names = module.storage.bucket_names

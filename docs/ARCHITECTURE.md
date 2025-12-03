@@ -251,7 +251,7 @@ flowchart TB
 | Compute | App Runner | 8 services, auto-scaling 1-4 |
 | Database | Aurora Serverless v2 | PostgreSQL 17, 0.5-4 ACU |
 | Cache | ElastiCache Serverless | Valkey 8.x |
-| Message Queue | Amazon MQ | RabbitMQ 4.2, mq.t3.micro |
+| Message Queue | Amazon MQ | RabbitMQ 3.13, mq.t3.micro |
 | Email | SES | Transactional email delivery |
 | CDN | CloudFront | 5 distributions, TLS 1.3 |
 | DNS | Route53 | A/AAAA records → CloudFront |

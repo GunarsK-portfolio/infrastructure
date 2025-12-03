@@ -55,8 +55,14 @@ output "mq_broker_id" {
 }
 
 output "mq_amqp_endpoint" {
-  description = "Amazon MQ AMQP endpoint"
+  description = "Amazon MQ AMQP endpoint (full URL)"
   value       = module.mq.amqp_endpoint
+  sensitive   = true
+}
+
+output "mq_amqp_host" {
+  description = "Amazon MQ AMQP hostname (without protocol/port)"
+  value       = module.mq.amqp_host
   sensitive   = true
 }
 
