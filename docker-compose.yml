@@ -840,6 +840,7 @@ services:
         VITE_API_URL: ${VITE_ADMIN_API_URL}
         VITE_AUTH_URL: ${VITE_ADMIN_AUTH_URL}
         VITE_FILES_API_URL: ${VITE_ADMIN_FILES_API_URL}
+        VITE_MESSAGING_API_URL: ${VITE_ADMIN_MESSAGING_API_URL}
     container_name: admin-web
     restart: unless-stopped
     ports:
@@ -849,6 +850,7 @@ services:
     depends_on:
       - admin-api
       - auth-service
+      - messaging-api
     deploy:
       resources:
         limits:

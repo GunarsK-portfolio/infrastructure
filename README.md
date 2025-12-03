@@ -448,6 +448,7 @@ task e2e:test:headless
 - **Work Experience CRUD** - Experience management
 - **Certifications CRUD** - Certifications/education management
 - **Miniatures CRUD** - Projects, themes, and paints management
+- **Messaging CRUD** - Recipients management and message viewing
 
 ### E2E Test Requirements
 
