@@ -122,7 +122,7 @@ task monitoring:up
 1. Access the applications:
 
 | Service | URL | Credentials |
-|---------|-----|-------------|
+| --------- | ----- | ------------- |
 | Public Website | <http://localhost> | - |
 | Public Website (HTTPS) | <https://localhost> | - |
 | Admin Panel | <http://localhost:81> | - |
@@ -254,7 +254,7 @@ docker-compose up -d --build [service]  # Rebuild service
 ### Application Ports
 
 | Port | Service |
-|------|---------|
+| ------ | --------- |
 | 80 | Public web (HTTP) |
 | 443 | Public web (HTTPS) |
 | 81 | Admin web (HTTP) |
@@ -269,7 +269,7 @@ docker-compose up -d --build [service]  # Rebuild service
 ### Infrastructure Ports
 
 | Port | Service | Binding |
-|------|---------|---------|
+| ------ | --------- | --------- |
 | 5432 | PostgreSQL | 127.0.0.1 (localhost only) |
 | 6379 | Redis | 127.0.0.1 (localhost only) |
 | 5672 | RabbitMQ AMQP | 127.0.0.1 (localhost only) |
@@ -282,7 +282,7 @@ docker-compose up -d --build [service]  # Rebuild service
 ### Observability Ports
 
 | Port | Service |
-|------|---------|
+| ------ | --------- |
 | 3000 | Grafana |
 | 9090 | Prometheus |
 | 3100 | Loki |

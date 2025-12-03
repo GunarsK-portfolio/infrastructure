@@ -6,7 +6,7 @@ using Prometheus, Loki, Promtail, and Grafana.
 ## Components
 
 | Component | Version | Port | Purpose |
-|-----------|---------|------|---------|
+| ----------- | --------- | ------ | --------- |
 | **Prometheus** | v3.7.3 | 9090 | Metrics collection (30d retention) |
 | **Loki** | 3.6.0 | 3100 | Log aggregation (7d retention) |
 | **Promtail** | 3.6.0 | 9080 | Log shipper (⚠️ EOL Mar 2026) |
@@ -168,7 +168,7 @@ task monitoring:restart
 ### Environment Variables
 
 | Variable | Values | Description |
-|----------|--------|-------------|
+| ---------- | -------- | ------------- |
 | `LOG_LEVEL` | debug, info, warn, error | Log verbosity |
 | `LOG_FORMAT` | json, text | Output format |
 | `LOG_SOURCE` | true, false | Add file:line (dev only) |

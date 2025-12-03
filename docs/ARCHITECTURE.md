@@ -90,7 +90,7 @@ flowchart LR
 ### Data Flows
 
 | Flow | Path |
-|------|------|
+| ------ | ------ |
 | Portfolio data | public-web → public-api → PostgreSQL |
 | Contact form | public-web → messaging-api → PostgreSQL + RabbitMQ |
 | Email notifications | messaging-service → RabbitMQ → SES |
@@ -102,7 +102,7 @@ flowchart LR
 ### Traefik Routing
 
 | Entrypoint | Path | Routes To |
-|------------|------|-----------|
+| ------------ | ------ | ----------- |
 | :443 | `/*` | public-web |
 | :443 | `/api/*` | public-api |
 | :443 | `/message/*` | messaging-api |
@@ -114,7 +114,7 @@ flowchart LR
 ### Service → Data Store Connections
 
 | Service | PostgreSQL Role | Redis | RabbitMQ | MinIO | SES |
-|---------|-----------------|-------|----------|-------|-----|
+| --------- | ----------------- | ------- | ---------- | ------- | ----- |
 | public-api | portfolio_public (SELECT only) | - | - | - | - |
 | messaging-api | portfolio_messaging | - | ✓ (publish) | - | - |
 | messaging-service | portfolio_messaging | - | ✓ (consume) | - | ✓ |
@@ -151,7 +151,7 @@ flowchart LR
 **Monitoring:**
 
 | Metric | Threshold | Action |
-|--------|-----------|--------|
+| -------- | ----------- | -------- |
 | Queue depth | >100 messages | Investigate consumer health |
 | Consumer lag | >5 minutes | Check messaging-service logs |
 | DLQ depth | >0 | Manual review required |
@@ -162,7 +162,7 @@ Volumes: `postgres_data`, `redis_data`, `rabbitmq_data`, `localstack_data`, `min
 ### Local Service URLs
 
 | Service | URL |
-|---------|-----|
+| --------- | ----- |
 | Public Site | <https://localhost> |
 | Admin Panel | <https://localhost:8443> |
 | Swagger Docs | <http://localhost:82> |
@@ -247,7 +247,7 @@ flowchart TB
 ### AWS Resource Summary
 
 | Resource | Service | Configuration |
-|----------|---------|---------------|
+| ---------- | --------- | --------------- |
 | Compute | App Runner | 8 services, auto-scaling 1-4 |
 | Database | Aurora Serverless v2 | PostgreSQL 17, 0.5-4 ACU |
 | Cache | ElastiCache Serverless | Valkey 8.x |
@@ -265,7 +265,7 @@ flowchart TB
 ### Disaster Recovery
 
 | Component | Strategy | Details |
-|-----------|----------|---------|
+| ----------- | ---------- | --------- |
 | Aurora | Automated backups | 30-day retention, point-in-time recovery |
 | Aurora | Single AZ | Writer instance only (cost optimization) |
 | ElastiCache | Single node | 30-day snapshot retention |
@@ -288,7 +288,7 @@ For production HA, consider adding Aurora reader instance and ElastiCache replic
 ### App Runner Health Checks
 
 | Setting | Value |
-|---------|-------|
+| --------- | ------- |
 | Endpoint | Service-specific (e.g., `/health`) |
 | Protocol | HTTP |
 | Interval | 10 seconds |
@@ -388,7 +388,7 @@ Contact Form Submission
 All limits are per IP address per 5-minute window:
 
 | Endpoint | Limit | Rationale |
-|----------|-------|-----------|
+| ---------- | ------- | ----------- |
 | Login (`/login`) | 10 | Brute-force prevention |
 | Refresh (`/refresh`) | 100 | Token refresh cycles |
 | Validate (`/validate`) | 600 | Internal service calls |
@@ -437,7 +437,7 @@ Layer 4: Database
 ### Production (Secrets Manager)
 
 | Secret | Used By |
-|--------|---------|
+| -------- | --------- |
 | aurora-admin-password | auth-service, admin-api, files-api |
 | aurora-public-password | public-api |
 | aurora-messaging-password | messaging-api |
@@ -456,7 +456,7 @@ Generate secure credentials with `task secrets:generate`.
 ### Production Alarms
 
 | Alarm | Threshold | Action |
-|-------|-----------|--------|
+| ------- | ----------- | -------- |
 | CloudFront 5xx Rate | >5% | SNS notification |
 | App Runner Latency p99 | >2s | SNS notification |
 | Aurora CPU | >80% | SNS notification |
@@ -467,7 +467,7 @@ Generate secure credentials with `task secrets:generate`.
 ### Log Retention
 
 | Log Type | Retention | Location |
-|----------|-----------|----------|
+| ---------- | ----------- | ---------- |
 | App Runner | 7 days | CloudWatch |
 | WAF | 30 days | CloudWatch |
 | VPC Flow | 90 days | CloudWatch |
@@ -516,7 +516,7 @@ Tag Push (v*)
 ### Local Dev Ports
 
 | Port | Service |
-|------|---------|
+| ------ | --------- |
 | 443 | Public HTTPS (Traefik) |
 | 8443 | Admin HTTPS (Traefik) |
 | 5432 | PostgreSQL (localhost only) |
@@ -531,7 +531,7 @@ Tag Push (v*)
 ### Production (Internal)
 
 | Port | Service | Access |
-|------|---------|--------|
+| ------ | --------- | -------- |
 | 5432 | Aurora | App Runner SG only |
 | 6379 | ElastiCache (write) | App Runner SG only |
 | 6380 | ElastiCache (read) | App Runner SG only |
