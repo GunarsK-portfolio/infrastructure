@@ -71,6 +71,7 @@ tasks:
       - task: auth:ci
       - task: files-api:ci
       - task: messaging-api:ci
+      - task: messaging-service:ci
       - task: public-api:ci
       - task: public-web:ci
       - task: database:ci
@@ -208,6 +209,33 @@ tasks:
   messaging-api:ci:
     desc: Run CI checks for messaging-api repo
     dir: ../messaging-api
+    cmds:
+      - task ci:all
+
+  # Individual service operations - Messaging Service (Worker)
+  messaging-service:logs:
+    desc: View messaging service logs
+    cmds:
+      - docker compose logs -f messaging-service
+
+  messaging-service:stop:
+    desc: Stop messaging service
+    cmds:
+      - docker compose stop messaging-service
+
+  messaging-service:restart:
+    desc: Restart messaging service
+    cmds:
+      - docker compose restart messaging-service
+
+  messaging-service:rebuild:
+    desc: Rebuild and restart messaging service
+    cmds:
+      - docker compose up -d --build messaging-service
+
+  messaging-service:ci:
+    desc: Run CI checks for messaging-service repo
+    dir: ../messaging-service
     cmds:
       - task ci:all
 

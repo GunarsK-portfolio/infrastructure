@@ -24,7 +24,8 @@ reverse proxy setup for running all portfolio services together.
 - **public-api** - Public API service (read-only)
 - **admin-api** - Admin API service (full CRUD)
 - **files-api** - File upload/download service
-- **messaging-api** - Contact form service
+- **messaging-api** - Contact form API
+- **messaging-service** - Email notification worker (RabbitMQ consumer)
 - **public-web** - Public frontend (Vue.js + Naive UI)
 - **admin-web** - Admin frontend (Vue.js + Naive UI)
 
@@ -33,6 +34,8 @@ reverse proxy setup for running all portfolio services together.
 - **Traefik v3.6.1** - Reverse proxy and load balancer
 - **PostgreSQL 18** - Main database
 - **Redis 8.2** - Session and cache store
+- **RabbitMQ 4.2** - Message broker for async processing
+- **LocalStack 4.11** - AWS service emulation (SES for local email testing)
 - **MinIO** - S3-compatible object storage (⚠️ no longer updated on Docker Hub)
 - **Flyway 11.1.0** - Database migrations
 
@@ -65,17 +68,18 @@ Expected directory layout:
 
 ```text
 portfolio/
-├── infrastructure/     # This repo
-├── auth-service/       # Auth service repo
-├── public-api/         # Public API repo
-├── admin-api/          # Admin API repo
-├── files-api/          # Files API repo
-├── messaging-api/      # Messaging API repo
-├── public-web/         # Public web repo
-├── admin-web/          # Admin web repo
-├── database/           # Database repo
-├── e2e-tests/          # E2E tests repo
-└── portfolio-common/   # Shared models repo
+├── infrastructure/      # This repo
+├── auth-service/        # Auth service repo
+├── public-api/          # Public API repo
+├── admin-api/           # Admin API repo
+├── files-api/           # Files API repo
+├── messaging-api/       # Messaging API repo
+├── messaging-service/   # Email worker repo
+├── public-web/          # Public web repo
+├── admin-web/           # Admin web repo
+├── database/            # Database repo
+├── e2e-tests/           # E2E tests repo
+└── portfolio-common/    # Shared models repo
 ```
 
 ## Quick Start
@@ -131,6 +135,7 @@ task monitoring:up
 | - Messaging API Docs | <http://localhost:82/messaging/> | - |
 | Traefik Dashboard | <http://localhost:9002> | - |
 | MinIO Console | <http://localhost:9001> | minioadmin / minioadmin |
+| RabbitMQ Management | <http://localhost:15672> | rabbitmq / rabbitmq |
 | **Grafana** | <http://localhost:3000> | admin / admin |
 | **Prometheus** | <http://localhost:9090> | - |
 
@@ -180,6 +185,12 @@ task messaging-api:stop      # Stop messaging API service
 task messaging-api:restart   # Restart messaging API service
 task messaging-api:rebuild   # Rebuild and restart messaging API
 task messaging-api:ci        # Run CI checks in messaging-api repo
+
+task messaging-service:logs     # View messaging service logs
+task messaging-service:stop     # Stop messaging service
+task messaging-service:restart  # Restart messaging service
+task messaging-service:rebuild  # Rebuild and restart messaging service
+task messaging-service:ci       # Run CI checks in messaging-service repo
 
 task public-api:logs     # View public API logs
 task public-api:stop     # Stop public API service
@@ -261,6 +272,9 @@ docker-compose up -d --build [service]  # Rebuild service
 |------|---------|---------|
 | 5432 | PostgreSQL | 127.0.0.1 (localhost only) |
 | 6379 | Redis | 127.0.0.1 (localhost only) |
+| 5672 | RabbitMQ AMQP | 127.0.0.1 (localhost only) |
+| 15672 | RabbitMQ Management | 127.0.0.1 (localhost only) |
+| 4566 | LocalStack (SES) | 127.0.0.1 (localhost only) |
 | 9000 | MinIO API | 0.0.0.0 (all interfaces) |
 | 9001 | MinIO Console | 0.0.0.0 (all interfaces) |
 | 9002 | Traefik Dashboard | 0.0.0.0 (all interfaces) |
@@ -308,101 +322,8 @@ This will:
 cp .env.example .env
 ```
 
-1. Review and update `.env` with your settings. The example file
-   contains development-safe defaults:
-
-```env
-# Database Connection
-POSTGRES_DB=portfolio
-DB_HOST=postgres
-DB_PORT=5432
-# SSL Mode: disable (local Docker), require (AWS RDS)
-DB_SSLMODE=disable
-
-# PostgreSQL Superuser (for database creation)
-POSTGRES_SUPERUSER=postgres
-POSTGRES_SUPERUSER_PASSWORD=postgres_pass
-
-# Flyway Migration User (DDL rights - creates/alters tables)
-FLYWAY_USER=portfolio_owner
-FLYWAY_PASSWORD=portfolio_owner_dev_pass
-FLYWAY_BASELINE_ON_MIGRATE=true
-FLYWAY_LOCATIONS=filesystem:/flyway/sql,filesystem:/flyway/seeds
-
-# Application API User (CRUD rights - used by services)
-DB_USER=portfolio_admin
-DB_PASSWORD=portfolio_admin_dev_pass
-
-# Read-Only User (SELECT only - used by public API)
-DB_USER_READONLY=portfolio_public
-DB_PASSWORD_READONLY=portfolio_public_dev_pass
-
-# Redis (bound to localhost only for security)
-REDIS_HOST=redis
-REDIS_PORT=6379
-REDIS_PASSWORD=redis_dev_pass
-
-# MinIO (S3-compatible storage)
-# Root user for MinIO administration
-MINIO_ROOT_USER=minioadmin
-MINIO_ROOT_PASSWORD=minioadmin
-
-# Service account for files-api (limited to bucket operations only)
-S3_ACCESS_KEY=files-api-user
-S3_SECRET_KEY=files-api-secret-change-in-production
-
-S3_ENDPOINT=http://minio:9000
-# Three separate buckets for content segregation and fine-grained IAM policies:
-# - images: Portfolio project images (public read via CloudFront)
-# - documents: PDFs, CVs, resumes (authenticated access only)
-# - miniatures: Miniature painting photos (public read via CloudFront)
-S3_IMAGES_BUCKET=images
-S3_DOCUMENTS_BUCKET=documents
-S3_MINIATURES_BUCKET=miniatures
-S3_USE_SSL=false
-
-# JWT
-JWT_SECRET=your-secret-key-change-in-production
-JWT_ACCESS_EXPIRY=15m
-JWT_REFRESH_EXPIRY=168h
-
-# SSL/TLS Certificates
-TRAEFIK_CERT_DIR=./docker/traefik/certs
-TLS_CERT_FILE=localhost.crt
-TLS_KEY_FILE=localhost.key
-
-# Environment
-ENVIRONMENT=development
-
-# Logging Configuration (for all services)
-LOG_LEVEL=info              # debug, info, warn, error
-LOG_FORMAT=json             # json (for Loki), text (human-readable)
-LOG_SOURCE=false            # true = add file:line (dev only)
-
-# Service Ports
-AUTH_SERVICE_PORT=8084
-PUBLIC_API_PORT=8082
-ADMIN_API_PORT=8083
-FILES_API_PORT=8085
-
-# Service URLs (internal Docker network)
-# Note: admin-api and files-api use JWT_SECRET for local token validation
-FILES_API_URL=http://files-api:8085
-
-# File Upload Configuration
-MAX_FILE_SIZE=10485760
-ALLOWED_FILE_TYPES=image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword
-
-# Web Frontend Build Args
-# Public Web
-VITE_PUBLIC_API_URL=https://localhost/api/v1
-VITE_PUBLIC_MESSAGE_API_URL=https://localhost/message/v1
-VITE_PUBLIC_USE_MOCK_DATA=false
-
-# Admin Web
-VITE_ADMIN_API_URL=https://localhost:8443/admin-api/v1
-VITE_ADMIN_AUTH_URL=https://localhost:8443/auth/v1
-```
+1. Review and update `.env` with your settings
+   (see [.env.example](.env.example) for all options).
 
 **Important for Production**:
 
@@ -588,6 +509,8 @@ task monitoring:up
 
 - `postgres_data` - Database
 - `redis_data` - Cache
+- `rabbitmq_data` - Message broker
+- `localstack_data` - AWS service emulation (SES)
 - `minio_data` - Object storage
 
 ### Monitoring Volumes

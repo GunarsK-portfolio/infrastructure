@@ -206,6 +206,62 @@ services:
       minio:
         condition: service_healthy
 
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:4.2-management-alpine
+    container_name: rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # LocalStack (AWS SES emulation for local development)
+  localstack:
+    image: localstack/localstack:4.11
+    container_name: localstack
+    restart: unless-stopped
+    environment:
+      SERVICES: ses
+      DEBUG: 0
+      AWS_DEFAULT_REGION: ${AWS_REGION:-eu-north-1}
+    ports:
+      - "127.0.0.1:4566:4566"
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - ./docker/localstack:/etc/localstack/init/ready.d:ro
+    networks:
+      - network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
   # Database Migrations (Flyway)
   flyway:
     image: flyway/flyway:11.18.0
@@ -257,6 +313,8 @@ services:
       - GIN_MODE=release
       # CORS
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS_AUTH}
+      # Swagger (development only)
+      - SWAGGER_HOST=${SWAGGER_HOST_AUTH}
     ports:
       - "8084:8084"
     networks:
@@ -337,6 +395,8 @@ services:
       - GIN_MODE=release
       # CORS
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS_PUBLIC}
+      # Swagger (development only)
+      - SWAGGER_HOST=${SWAGGER_HOST_PUBLIC}
     ports:
       - "8082:8082"
     networks:
@@ -415,6 +475,8 @@ services:
       - GIN_MODE=release
       # CORS
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS_ADMIN}
+      # Swagger (development only)
+      - SWAGGER_HOST=${SWAGGER_HOST_ADMIN}
     ports:
       - "8083:8083"
     networks:
@@ -505,6 +567,8 @@ services:
       - GIN_MODE=release
       # CORS
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS_FILES}
+      # Swagger (development only)
+      - SWAGGER_HOST=${SWAGGER_HOST_FILES}
     ports:
       - "8085:8085"
     networks:
@@ -577,6 +641,14 @@ services:
       - DB_PASSWORD=${DB_PASSWORD_MESSAGING}
       - DB_NAME=${POSTGRES_DB}
       - JWT_SECRET=${JWT_SECRET}
+      # RabbitMQ
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - RABBITMQ_EXCHANGE=${RABBITMQ_EXCHANGE}
+      - RABBITMQ_QUEUE=${RABBITMQ_QUEUE}
+      - RABBITMQ_RETRY_DELAYS=${RABBITMQ_RETRY_DELAYS}
       # Logging
       - LOG_LEVEL=${LOG_LEVEL}
       - LOG_FORMAT=${LOG_FORMAT}
@@ -585,12 +657,16 @@ services:
       - GIN_MODE=release
       # CORS
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS_MESSAGING}
+      # Swagger (development only)
+      - SWAGGER_HOST=${SWAGGER_HOST_MESSAGING}
     ports:
       - "8086:8086"
     networks:
       - network
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
       flyway:
         condition: service_completed_successfully
@@ -652,6 +728,61 @@ services:
       - "traefik.http.routers.messaging-swagger.entrypoints=swagger"
       - "traefik.http.routers.messaging-swagger.middlewares=messaging-swagger-strip"
       - "traefik.http.middlewares.messaging-swagger-strip.stripprefix.prefixes=/messaging"
+
+  # Messaging Service (Background Worker)
+  messaging-service:
+    build:
+      context: ../messaging-service
+      dockerfile: Dockerfile
+    container_name: messaging-service
+    restart: unless-stopped
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      # Use portfolio_messaging for messaging service (owns messaging schema)
+      - DB_USER=${DB_USER_MESSAGING}
+      - DB_PASSWORD=${DB_PASSWORD_MESSAGING}
+      - DB_NAME=${POSTGRES_DB}
+      # RabbitMQ
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - RABBITMQ_EXCHANGE=${RABBITMQ_EXCHANGE}
+      - RABBITMQ_QUEUE=${RABBITMQ_QUEUE}
+      - RABBITMQ_RETRY_DELAYS=${RABBITMQ_RETRY_DELAYS}
+      # AWS SES (via LocalStack in development)
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - SES_ENDPOINT=${SES_ENDPOINT}
+      - SES_SENDER_EMAIL=${SES_FROM_EMAIL}
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_FORMAT=${LOG_FORMAT}
+      - LOG_SOURCE=${LOG_SOURCE}
+      - ENVIRONMENT=${ENVIRONMENT}
+    networks:
+      - network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+    labels:
+      # Promtail logging
+      - "logging=promtail"
+      - "environment=${ENVIRONMENT}"
 
   # Public Web
   public-web:
@@ -737,3 +868,5 @@ volumes:
   postgres_data:
   redis_data:
   minio_data:
+  rabbitmq_data:
+  localstack_data:

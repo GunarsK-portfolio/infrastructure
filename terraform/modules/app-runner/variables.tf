@@ -54,6 +54,11 @@ variable "elasticache_endpoint" {
   type        = string
 }
 
+variable "mq_endpoint" {
+  description = "Amazon MQ RabbitMQ AMQP endpoint"
+  type        = string
+}
+
 variable "s3_bucket_names" {
   description = "Map of S3 bucket names"
   type        = map(string)

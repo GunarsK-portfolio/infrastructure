@@ -98,6 +98,24 @@ module "cache" {
   tags = local.common_tags
 }
 
+# Message Queue Module - Amazon MQ for RabbitMQ
+module "mq" {
+  source = "./modules/mq"
+
+  project_name         = var.project_name
+  environment          = var.environment
+  private_subnet_ids   = module.networking.private_subnet_ids
+  mq_security_group_id = module.networking.mq_security_group_id
+
+  # Reference credentials from Secrets Manager
+  credentials_secret_arn = module.secrets.rabbitmq_credentials_arn
+
+  # Encryption
+  kms_key_arn = module.secrets.kms_key_arn
+
+  tags = local.common_tags
+}
+
 # Bastion Module - SSM-enabled database access
 module "bastion" {
   source = "./modules/bastion"
@@ -205,16 +223,17 @@ module "app_runner" {
   services           = var.app_runner_services
   service_image_tags = var.service_image_tags
 
-  # VPC connector for private resource access (Aurora, ElastiCache, S3)
+  # VPC connector for private resource access (Aurora, ElastiCache, MQ, S3)
   private_subnet_ids           = module.networking.private_subnet_ids
   app_runner_security_group_id = module.networking.app_runner_security_group_id
 
   # ECR repository URLs
   ecr_repository_urls = module.ecr.repository_urls
 
-  # Database and cache endpoints (injected via Secrets Manager)
+  # Database, cache, and message queue endpoints (injected via Secrets Manager)
   aurora_endpoint      = module.database.cluster_endpoint
   elasticache_endpoint = module.cache.primary_endpoint
+  mq_endpoint          = module.mq.amqp_endpoint
 
   # S3 bucket names
   s3_bucket_names = module.storage.bucket_names

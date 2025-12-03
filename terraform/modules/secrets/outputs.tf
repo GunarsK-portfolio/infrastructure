@@ -52,6 +52,12 @@ output "jwt_secret_arn" {
   sensitive   = true
 }
 
+output "rabbitmq_credentials_arn" {
+  description = "ARN of RabbitMQ credentials secret"
+  value       = aws_secretsmanager_secret.rabbitmq_credentials.arn
+  sensitive   = true
+}
+
 output "secret_arns" {
   description = "Map of all secret ARNs"
   value = {
@@ -62,6 +68,7 @@ output "secret_arns" {
     aurora_messaging = aws_secretsmanager_secret.aurora_messaging_password.arn
     redis_auth       = aws_secretsmanager_secret.redis_auth_token.arn
     jwt_secret       = aws_secretsmanager_secret.jwt_secret.arn
+    rabbitmq         = aws_secretsmanager_secret.rabbitmq_credentials.arn
   }
   sensitive = true
 }

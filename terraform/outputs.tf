@@ -48,6 +48,18 @@ output "elasticache_reader_endpoint" {
   sensitive   = true
 }
 
+# Amazon MQ Outputs
+output "mq_broker_id" {
+  description = "Amazon MQ broker ID"
+  value       = module.mq.broker_id
+}
+
+output "mq_amqp_endpoint" {
+  description = "Amazon MQ AMQP endpoint"
+  value       = module.mq.amqp_endpoint
+  sensitive   = true
+}
+
 # S3 Outputs
 output "s3_bucket_names" {
   description = "Names of S3 buckets"

@@ -240,13 +240,47 @@ resource "aws_security_group" "cache" {
   )
 }
 
+# Security Group for Amazon MQ RabbitMQ
+resource "aws_security_group" "mq" {
+  name_prefix = "${var.project_name}-${var.environment}-mq-sg"
+  description = "Security group for Amazon MQ RabbitMQ"
+  vpc_id      = aws_vpc.main.id
+
+  # Allow AMQP from App Runner security group (port 5671 - TLS)
+  ingress {
+    description     = "AMQP TLS from App Runner"
+    from_port       = 5671
+    to_port         = 5671
+    protocol        = "tcp"
+    security_groups = [aws_security_group.app_runner.id]
+  }
+
+  # Allow HTTPS for management console from App Runner (port 443)
+  ingress {
+    description     = "HTTPS management from App Runner"
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.app_runner.id]
+  }
+
+  # No egress rules - deny all outbound traffic (defense-in-depth)
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-mq-sg"
+    }
+  )
+}
+
 # Security Group for App Runner VPC Connector
 resource "aws_security_group" "app_runner" {
   name_prefix = "${var.project_name}-${var.environment}-app-runner-sg"
   description = "Security group for App Runner VPC connector"
   vpc_id      = aws_vpc.main.id
 
-  # Allow all outbound traffic (App Runner needs to reach Aurora, ElastiCache, S3)
+  # Allow all outbound traffic (App Runner needs to reach Aurora, ElastiCache, MQ, S3)
   egress {
     description = "All outbound traffic"
     from_port   = 0

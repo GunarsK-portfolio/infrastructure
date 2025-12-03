@@ -11,7 +11,7 @@ and 2 Vue.js frontends. Infrastructure differs between local development
 ## Service Inventory
 
 | Service | Port | Purpose | Database User |
-|---------|------|---------|---------------|
+| ------- | ---- | ------- | ------------- |
 | auth-service | 8084 | JWT authentication, sessions | portfolio_admin |
 | public-api | 8082 | Read-only public data | portfolio_public |
 | admin-api | 8083 | Admin CRUD operations | portfolio_admin |
@@ -48,10 +48,16 @@ flowchart LR
         FA[files-api]
     end
 
+    subgraph Workers
+        MS[messaging-service]
+    end
+
     subgraph Data
         PG[(PostgreSQL)]
         REDIS[(Redis)]
+        RMQ[(RabbitMQ)]
         MINIO[(MinIO)]
+        LS[(LocalStack SES)]
     end
 
     PUB --> T
@@ -69,6 +75,10 @@ flowchart LR
 
     PA --> PG
     MA --> PG
+    MA --> RMQ
+    MS --> RMQ
+    MS --> PG
+    MS --> LS
     AUTH --> PG
     AUTH --> REDIS
     AA --> PG
@@ -81,7 +91,8 @@ flowchart LR
 | Flow | Path |
 |------|------|
 | Portfolio data | public-web → public-api → PostgreSQL |
-| Contact form | public-web → messaging-api → PostgreSQL |
+| Contact form | public-web → messaging-api → PostgreSQL + RabbitMQ |
+| Email notifications | messaging-service → RabbitMQ → SES |
 | Public images | public-web → files-api → PostgreSQL + MinIO |
 | Login/sessions | admin-web → auth-service → PostgreSQL + Redis |
 | Admin CRUD | admin-web → admin-api → PostgreSQL |
@@ -101,16 +112,51 @@ flowchart LR
 
 ### Service → Data Store Connections
 
-| Service | PostgreSQL Role | Redis | MinIO |
-|---------|-----------------|-------|-------|
-| public-api | portfolio_public (SELECT only) | - | - |
-| messaging-api | portfolio_messaging | - | - |
-| auth-service | portfolio_admin | ✓ | - |
-| admin-api | portfolio_admin | - | - |
-| files-api | portfolio_admin | - | ✓ |
+| Service | PostgreSQL Role | Redis | RabbitMQ | MinIO | SES |
+|---------|-----------------|-------|----------|-------|-----|
+| public-api | portfolio_public (SELECT only) | - | - | - | - |
+| messaging-api | portfolio_messaging | - | ✓ (publish) | - | - |
+| messaging-service | portfolio_messaging | - | ✓ (consume) | - | ✓ |
+| auth-service | portfolio_admin | ✓ | - | - | - |
+| admin-api | portfolio_admin | - | - | - | - |
+| files-api | portfolio_admin | - | - | ✓ | - |
+
+### Message Queue Strategy
+
+**Queue Configuration:**
+
+- Exchange: `contact_messages` (direct)
+- Queue: `contact_messages` (durable)
+- Retry delays: 1m → 5m → 30m → 2h → 12h (exponential backoff)
+
+**Message Durability:**
+
+- Messages are persistent (delivery mode 2)
+- Queue is durable (survives broker restart)
+- Consumer uses manual acknowledgment
+
+**Retry & Dead Letter Handling:**
+
+- Failed messages are requeued with delay headers
+- After 5 retries (12h total), message is moved to DLQ
+- DLQ: `contact_messages.dlq` (manual inspection required)
+
+**Consumer Scaling:**
+
+- Single consumer instance (contact form volume is low)
+- Prefetch limit: 1 (process one message at a time)
+- For higher volume: scale horizontally with `consumer_tag` uniqueness
+
+**Monitoring:**
+
+| Metric | Threshold | Action |
+|--------|-----------|--------|
+| Queue depth | >100 messages | Investigate consumer health |
+| Consumer lag | >5 minutes | Check messaging-service logs |
+| DLQ depth | >0 | Manual review required |
 
 Docker Network: `infrastructure_network`
-Volumes: `postgres_data`, `redis_data`, `minio_data`
+Volumes: `postgres_data`, `redis_data`, `rabbitmq_data`, `localstack_data`, `minio_data`
 
 ### Local Service URLs
 
@@ -120,6 +166,7 @@ Volumes: `postgres_data`, `redis_data`, `minio_data`
 | Admin Panel | <https://localhost:8443> |
 | Swagger Docs | <http://localhost:82> |
 | Traefik Dashboard | <http://localhost:9002> |
+| RabbitMQ Management | <http://localhost:15672> |
 | MinIO Console | <http://localhost:9001> |
 
 ---
@@ -152,12 +199,18 @@ flowchart TB
         AUTH[auth-service]
         FA[files-api]
         MA[messaging-api]
+        MS[messaging-service]
     end
 
     subgraph VPC["VPC (Private Subnets)"]
-        AURORA[(Aurora PostgreSQL)]
-        REDIS[(ElastiCache Valkey)]
         S3[(S3 Buckets)]
+        REDIS[(ElastiCache Valkey)]
+        AURORA[(Aurora PostgreSQL)]
+        MQ[(Amazon MQ)]
+    end
+
+    subgraph AWS["AWS Services"]
+        SES[SES]
     end
 
     USER --> R53
@@ -179,6 +232,10 @@ flowchart TB
 
     PA --> AURORA
     MA --> AURORA
+    MA --> MQ
+    MS --> MQ
+    MS --> AURORA
+    MS --> SES
     AUTH --> AURORA
     AUTH --> REDIS
     AA --> AURORA
@@ -190,14 +247,16 @@ flowchart TB
 
 | Resource | Service | Configuration |
 |----------|---------|---------------|
-| Compute | App Runner | 7 services, auto-scaling 1-4 |
+| Compute | App Runner | 8 services, auto-scaling 1-4 |
 | Database | Aurora Serverless v2 | PostgreSQL 17, 0.5-4 ACU |
 | Cache | ElastiCache Serverless | Valkey 8.x |
+| Message Queue | Amazon MQ | RabbitMQ 4.2, mq.t3.micro |
+| Email | SES | Transactional email delivery |
 | CDN | CloudFront | 5 distributions, TLS 1.3 |
 | DNS | Route53 | A/AAAA records → CloudFront |
 | WAF | WAF v2 | OWASP rules, rate limiting |
 | Storage | S3 | 3 buckets, KMS encrypted |
-| Secrets | Secrets Manager | DB passwords, JWT secret, Redis token |
+| Secrets | Secrets Manager | DB passwords, JWT secret, Redis token, RabbitMQ |
 | Monitoring | CloudWatch | Dashboards, alarms, SNS alerts |
 | Audit | CloudTrail | API logging, 90-day retention |
 | Threats | GuardDuty | Automated threat detection |
@@ -270,16 +329,16 @@ User Login Request
 File Upload Request (multipart)
         │
         ▼
-┌───────────────┐      ┌───────────────┐      ┌───────────────┐
+┌───────────────┐      ┌───────────────┐       ┌───────────────┐
 │   CloudFront  │ ───▶ │   files-api   │ ───▶ │      S3       │
-│(WAF: 300/5m)  │      │(validate type)│      │ (store file)  │
-└───────────────┘      └───────┬───────┘      └───────────────┘
+│(WAF: 300/5m)  │      │(validate type)│       │ (store file)  │
+└───────────────┘      └───────┬───────┘       └───────────────┘
                                │
                                ▼
-                       ┌───────────────┐
-                       │    Aurora     │
-                       │(store metadata│
-                       └───────────────┘
+                       ┌────────────────┐
+                       │    Aurora      │
+                       │(store metadata)│
+                       └────────────────┘
 ```
 
 ### Public Read Flow
@@ -288,11 +347,35 @@ File Upload Request (multipart)
 Public Page Request
         │
         ▼
-┌───────────────┐      ┌───────────────┐      ┌───────────────┐
+┌───────────────┐      ┌───────────────┐       ┌───────────────┐
 │   CloudFront  │ ───▶ │  public-api   │ ───▶ │    Aurora     │
-│(WAF: 600/5m)  │      │               │      │ (SELECT only) │
-│ (cache: 60s)  │      │               │      │               │
-└───────────────┘      └───────────────┘      └───────────────┘
+│(WAF: 600/5m)  │      │               │       │ (SELECT only) │
+│ (cache: 60s)  │      │               │       │               │
+└───────────────┘      └───────────────┘       └───────────────┘
+```
+
+### Contact Message Flow
+
+```text
+Contact Form Submission
+        │
+        ▼
+┌───────────────┐      ┌───────────────┐      ┌───────────────┐
+│   CloudFront  │ ───▶ │ messaging-api │ ───▶ │    Aurora     │
+│ (WAF: 10/5m)  │      │ (validate)    │      │(store message)│
+└───────────────┘      └───────┬───────┘      └───────────────┘
+                               │
+                               ▼
+                       ┌───────────────┐
+                       │   RabbitMQ    │
+                       │(publish event)│
+                       └───────┬───────┘
+                               │
+                               ▼
+                       ┌───────────────┐      ┌───────────────┐
+                       │  messaging-   │ ───▶ │      SES      │
+                       │   service     │      │ (send email)  │
+                       └───────────────┘      └───────────────┘
 ```
 
 ---
@@ -437,6 +520,9 @@ Tag Push (v*)
 | 8443 | Admin HTTPS (Traefik) |
 | 5432 | PostgreSQL (localhost only) |
 | 6379 | Redis (localhost only) |
+| 5672 | RabbitMQ AMQP (localhost only) |
+| 15672 | RabbitMQ Management (localhost only) |
+| 4566 | LocalStack SES (localhost only) |
 | 9000 | MinIO API |
 | 9001 | MinIO Console |
 | 9002 | Traefik Dashboard |
@@ -448,6 +534,7 @@ Tag Push (v*)
 | 5432 | Aurora | App Runner SG only |
 | 6379 | ElastiCache (write) | App Runner SG only |
 | 6380 | ElastiCache (read) | App Runner SG only |
+| 5671 | Amazon MQ RabbitMQ (AMQPS) | App Runner SG only |
 
 ---
 
