@@ -2,7 +2,7 @@
 
 ## Overview
 
-The portfolio project uses a microservices architecture with 5 Go backend services
+The portfolio project uses a microservices architecture with 6 Go backend services
 and 2 Vue.js frontends. Infrastructure differs between local development
 (Docker Compose) and production (AWS).
 
@@ -16,7 +16,8 @@ and 2 Vue.js frontends. Infrastructure differs between local development
 | public-api | 8082 | Read-only public data | portfolio_public |
 | admin-api | 8083 | Admin CRUD operations | portfolio_admin |
 | files-api | 8085 | File upload/download | portfolio_admin |
-| messaging-api | 8086 | Contact form | portfolio_messaging |
+| messaging-api | 8086 | Contact form API | portfolio_messaging |
+| messaging-service | 8087 | Email worker (RabbitMQ) | portfolio_messaging |
 | public-web | 80 | Public Vue.js frontend | - |
 | admin-web | 80 | Admin Vue.js frontend | - |
 
