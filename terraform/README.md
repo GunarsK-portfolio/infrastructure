@@ -7,7 +7,7 @@ AWS serverless infrastructure for production deployment.
 <!-- markdownlint-disable MD013 -->
 
 | Service | Type | Purpose |
-|---------|------|---------|
+| --------- | ------ | --------- |
 | **App Runner** | Compute | Serverless container runtime for 7 microservices (auth-service, admin-api, public-api, files-api, messaging-api, admin-web, public-web). Auto-scales 1-10 instances per service. |
 | **Aurora Serverless v2** | Database | PostgreSQL 17.4 with auto-scaling (1-16 ACU). Multi-AZ deployment with 30-day backups, encryption, and pg_cron/pg_stat_statements extensions. |
 | **ElastiCache** | Cache | Valkey 8.2 (Redis-compatible) for session storage. Single cache.t4g.micro node (~$12/month). |
@@ -32,7 +32,7 @@ AWS serverless infrastructure for production deployment.
 ## Production URLs
 
 | Domain | Purpose | Backend Services |
-|--------|---------|-----------------|
+| -------- | --------- | ----------------- |
 | `gunarsk.com` | Public website | public-web (/) + public-api (/api/v1/*) |
 | `admin.gunarsk.com` | Admin panel | admin-web (/) + admin-api (/api/v1/*) |
 | `auth.gunarsk.com` | Authentication API | auth-service |

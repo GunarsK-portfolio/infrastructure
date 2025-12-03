@@ -8,7 +8,7 @@ CloudWatch monitoring with alarms, dashboard, and email notifications.
 
 <!-- markdownlint-disable MD013 MD058 -->
 | Service | Metrics | Details |
-|---------|---------|---------|
+| --------- | --------- | --------- |
 | **App Runner** | Error rates, Latency (p99), Request count | All 6 services combined on single widgets with color-coded lines |
 | **Aurora** | ACU utilization, Database connections | Serverless capacity and connection pool monitoring |
 | **ElastiCache** | Memory utilization, Evictions | Cache memory pressure and eviction rate tracking |
@@ -19,7 +19,7 @@ CloudWatch monitoring with alarms, dashboard, and email notifications.
 
 <!-- markdownlint-disable MD013 MD058 -->
 | Service | Alarm Type | Threshold | Evaluation | Action |
-|---------|-----------|-----------|------------|--------|
+| --------- | ----------- | ----------- | ------------ | -------- |
 | **App Runner** (24) | 4xx error rate | >5% | 2 periods of 5min | Email alert |
 | | 5xx error rate | >1% | 2 periods of 5min | Email alert |
 | | Request latency (p99) | >3s | 2 periods of 5min | Email alert |
@@ -35,7 +35,7 @@ CloudWatch monitoring with alarms, dashboard, and email notifications.
 
 <!-- markdownlint-disable MD013 MD058 -->
 | Type | Retention | Purpose |
-|------|-----------|---------|
+| ------ | ----------- | --------- |
 | **App Runner** | 7 days | Application logs for all 6 services |
 | **VPC Flow Logs** | 90 days | Network traffic analysis, security forensics |
 | **Route53 Query Logs** | 30 days | DNS query monitoring, attack detection |
@@ -89,7 +89,7 @@ state files are:
 ## Outputs
 
 | Output | Type | Description |
-|--------|------|-------------|
+| -------- | ------ | ------------- |
 | `sns_topic_arn` | string | SNS topic ARN for alarm notifications |
 | `dashboard_name` | string | CloudWatch dashboard name |
 | `log_group_arns` | map(string) | Map of log group ARNs keyed by service name |

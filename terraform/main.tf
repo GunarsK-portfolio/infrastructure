@@ -380,3 +380,13 @@ module "budgets" {
   monthly_budget_limit = var.monthly_budget_limit
   alert_emails         = var.budget_alert_emails
 }
+
+# SES Module - Email Sending
+module "ses" {
+  source = "./modules/ses"
+
+  domain_name = var.domain_name
+  zone_id     = module.dns.zone_id
+
+  depends_on = [module.dns]
+}
