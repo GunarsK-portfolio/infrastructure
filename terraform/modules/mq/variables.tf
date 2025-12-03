@@ -32,9 +32,9 @@ variable "instance_type" {
 }
 
 variable "engine_version" {
-  description = "RabbitMQ engine version"
+  description = "RabbitMQ engine version. Note: 4.x requires M7G instances."
   type        = string
-  default     = "4.2"
+  default     = "3.13"
 
   validation {
     condition     = can(regex("^[34]\\.", var.engine_version))
