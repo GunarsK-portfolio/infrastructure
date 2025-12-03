@@ -183,6 +183,16 @@ variable "app_runner_services" {
       max_concurrency   = 50
       health_check_path = "/health"
     }
+    messaging-service = {
+      name              = "messaging-service"
+      cpu               = "0.25 vCPU"
+      memory            = "0.5 GB"
+      port              = 8080
+      min_instances     = 1
+      max_instances     = 3
+      max_concurrency   = 10
+      health_check_path = "/health"
+    }
     admin-web = {
       name              = "admin-web"
       cpu               = "0.25 vCPU"
@@ -210,13 +220,14 @@ variable "service_image_tags" {
   description = "Docker image tags per service (use semantic versioning, e.g., v1.0.0)"
   type        = map(string)
   default = {
-    auth-service  = "latest"
-    admin-api     = "latest"
-    public-api    = "latest"
-    files-api     = "latest"
-    messaging-api = "latest"
-    admin-web     = "latest"
-    public-web    = "latest"
+    auth-service      = "latest"
+    admin-api         = "latest"
+    public-api        = "latest"
+    files-api         = "latest"
+    messaging-api     = "latest"
+    messaging-service = "latest"
+    admin-web         = "latest"
+    public-web        = "latest"
   }
 
   validation {

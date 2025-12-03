@@ -32,6 +32,7 @@ locals {
       SERVICE_NAME       = "auth-service"
       LOG_LEVEL          = "info"
       LOG_FORMAT         = "json"
+      GIN_MODE           = "release"
       DB_HOST            = var.aurora_endpoint
       DB_PORT            = "5432"
       DB_NAME            = "portfolio"
@@ -48,6 +49,7 @@ locals {
       SERVICE_NAME    = "admin-api"
       LOG_LEVEL       = "info"
       LOG_FORMAT      = "json"
+      GIN_MODE        = "release"
       DB_HOST         = var.aurora_endpoint
       DB_PORT         = "5432"
       DB_NAME         = "portfolio"
@@ -62,6 +64,7 @@ locals {
       SERVICE_NAME    = "public-api"
       LOG_LEVEL       = "info"
       LOG_FORMAT      = "json"
+      GIN_MODE        = "release"
       DB_HOST         = var.aurora_endpoint
       DB_PORT         = "5432"
       DB_NAME         = "portfolio"
@@ -76,6 +79,7 @@ locals {
       SERVICE_NAME = "files-api"
       LOG_LEVEL    = "info"
       LOG_FORMAT   = "json"
+      GIN_MODE     = "release"
       DB_HOST      = var.aurora_endpoint
       DB_PORT      = "5432"
       DB_NAME      = "portfolio"
@@ -96,6 +100,7 @@ locals {
       SERVICE_NAME          = "messaging-api"
       LOG_LEVEL             = "info"
       LOG_FORMAT            = "json"
+      GIN_MODE              = "release"
       DB_HOST               = var.aurora_endpoint
       DB_PORT               = "5432"
       DB_NAME               = "portfolio"
@@ -107,6 +112,25 @@ locals {
       RABBITMQ_QUEUE        = "contact_messages"
       RABBITMQ_RETRY_DELAYS = "1m,5m,30m,2h,12h"
       ALLOWED_ORIGINS       = "https://${var.domain_name}"
+    }
+    "messaging-service" = {
+      ENVIRONMENT           = local.environment_map[var.environment]
+      SERVICE_NAME          = "messaging-service"
+      LOG_LEVEL             = "info"
+      LOG_FORMAT            = "json"
+      GIN_MODE              = "release"
+      DB_HOST               = var.aurora_endpoint
+      DB_PORT               = "5432"
+      DB_NAME               = "portfolio"
+      DB_USER               = "portfolio_messaging"
+      DB_SSLMODE            = "require"
+      RABBITMQ_HOST         = var.mq_endpoint
+      RABBITMQ_PORT         = "5671"
+      RABBITMQ_EXCHANGE     = "contact_messages"
+      RABBITMQ_QUEUE        = "contact_messages"
+      RABBITMQ_RETRY_DELAYS = "1m,5m,30m,2h,12h"
+      AWS_REGION            = data.aws_region.current.region
+      SES_SENDER_EMAIL      = "noreply@${var.domain_name}"
     }
     "admin-web" = {
       ENVIRONMENT  = local.environment_map[var.environment]
@@ -144,6 +168,11 @@ locals {
     "messaging-api" = {
       DB_PASSWORD       = "${var.secrets_arns["aurora_messaging"]}:password::"
       JWT_SECRET        = "${var.secrets_arns["jwt_secret"]}:secret::"
+      RABBITMQ_USER     = "${var.secrets_arns["rabbitmq"]}:username::"
+      RABBITMQ_PASSWORD = "${var.secrets_arns["rabbitmq"]}:password::"
+    }
+    "messaging-service" = {
+      DB_PASSWORD       = "${var.secrets_arns["aurora_messaging"]}:password::"
       RABBITMQ_USER     = "${var.secrets_arns["rabbitmq"]}:username::"
       RABBITMQ_PASSWORD = "${var.secrets_arns["rabbitmq"]}:password::"
     }
@@ -315,6 +344,37 @@ resource "aws_iam_role_policy" "s3_access" {
   })
 }
 
+# IAM Policy for SES access (least privilege - only messaging-service sends emails)
+resource "aws_iam_role_policy" "ses_access" {
+  # Only grant SES access to messaging-service
+  for_each = {
+    for k, v in var.services : k => v
+    if k == "messaging-service"
+  }
+
+  name_prefix = "ses-access-"
+  role        = aws_iam_role.app_runner[each.key].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ses:SendEmail",
+          "ses:SendRawEmail"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "aws:RequestedRegion" = data.aws_region.current.region
+          }
+        }
+      }
+    ]
+  })
+}
+
 # IAM Role for ECR Access (for App Runner to pull images)
 resource "aws_iam_role" "ecr_access" {
   name_prefix = "${var.project_name}-${var.environment}-ecr-access-"
@@ -436,7 +496,8 @@ resource "aws_apprunner_observability_configuration" "xray" {
 resource "aws_apprunner_auto_scaling_configuration_version" "main" {
   for_each = var.services
 
-  auto_scaling_configuration_name = "${var.project_name}-${var.environment}-${each.key}-asg"
+  # Shorten messaging-service to msg-svc to stay within 32 char limit
+  auto_scaling_configuration_name = "${var.project_name}-${var.environment}-${each.key == "messaging-service" ? "msg-svc" : each.key}-asg"
   max_concurrency                 = each.value.max_concurrency
   max_size                        = each.value.max_instances
   min_size                        = each.value.min_instances

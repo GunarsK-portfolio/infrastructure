@@ -737,6 +737,7 @@ services:
     container_name: messaging-service
     restart: unless-stopped
     environment:
+      - PORT=${MESSAGING_SERVICE_PORT}
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
       # Use portfolio_messaging for messaging service (owns messaging schema)
@@ -751,6 +752,8 @@ services:
       - RABBITMQ_EXCHANGE=${RABBITMQ_EXCHANGE}
       - RABBITMQ_QUEUE=${RABBITMQ_QUEUE}
       - RABBITMQ_RETRY_DELAYS=${RABBITMQ_RETRY_DELAYS}
+      - RABBITMQ_PREFETCH_COUNT=${RABBITMQ_PREFETCH_COUNT}
+      - RABBITMQ_CONSUMER_TAG=${RABBITMQ_CONSUMER_TAG}
       # AWS SES (via LocalStack in development)
       - AWS_REGION=${AWS_REGION}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -762,6 +765,7 @@ services:
       - LOG_FORMAT=${LOG_FORMAT}
       - LOG_SOURCE=${LOG_SOURCE}
       - ENVIRONMENT=${ENVIRONMENT}
+      - GIN_MODE=release
     networks:
       - network
     depends_on:
@@ -773,12 +777,18 @@ services:
         condition: service_healthy
       flyway:
         condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8087/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     deploy:
       resources:
         limits:
-          memory: 128M
+          memory: 256M
         reservations:
-          memory: 64M
+          memory: 128M
     labels:
       # Promtail logging
       - "logging=promtail"
