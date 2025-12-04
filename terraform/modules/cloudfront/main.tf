@@ -67,7 +67,7 @@ resource "aws_cloudfront_response_headers_policy" "security_headers" {
         "default-src 'self'",
         "script-src 'self'",                # Strict: no inline scripts
         "style-src 'self' 'unsafe-inline'", # Required for Naive UI inline styles
-        "img-src 'self' data: https:",      # Allow external images and data URIs
+        "img-src 'self' data: blob: https:", # Allow external images, data URIs, and blob URLs for WebP conversion
         "font-src 'self' data:",            # Allow web fonts
         "connect-src 'self' https:",        # Allow HTTPS API calls
         "frame-ancestors 'none'",           # Prevent clickjacking
