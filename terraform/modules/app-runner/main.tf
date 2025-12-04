@@ -42,7 +42,11 @@ locals {
       REDIS_PORT         = "6379"
       JWT_ACCESS_EXPIRY  = "15m"
       JWT_REFRESH_EXPIRY = "168h"
-      ALLOWED_ORIGINS    = "https://admin.${var.domain_name}"
+      # Cookie configuration for httpOnly auth tokens
+      COOKIE_DOMAIN   = ".${var.domain_name}"
+      COOKIE_SECURE   = "true"
+      COOKIE_SAMESITE = "Strict"
+      ALLOWED_ORIGINS = "https://admin.${var.domain_name}"
     }
     "admin-api" = {
       ENVIRONMENT     = local.environment_map[var.environment]
