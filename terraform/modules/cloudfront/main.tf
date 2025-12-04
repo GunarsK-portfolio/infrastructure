@@ -65,15 +65,15 @@ resource "aws_cloudfront_response_headers_policy" "security_headers" {
       # - TODO: Migrate to nonce-based CSP when Naive UI supports it
       content_security_policy = join("; ", [
         "default-src 'self'",
-        "script-src 'self'",                # Strict: no inline scripts
-        "style-src 'self' 'unsafe-inline'", # Required for Naive UI inline styles
+        "script-src 'self'",                 # Strict: no inline scripts
+        "style-src 'self' 'unsafe-inline'",  # Required for Naive UI inline styles
         "img-src 'self' data: blob: https:", # Allow external images, data URIs, and blob URLs for WebP conversion
-        "font-src 'self' data:",            # Allow web fonts
-        "connect-src 'self' https:",        # Allow HTTPS API calls
-        "frame-ancestors 'none'",           # Prevent clickjacking
-        "base-uri 'self'",                  # Restrict <base> tag
-        "form-action 'self'",               # Restrict form submissions
-        "upgrade-insecure-requests"         # Upgrade HTTP to HTTPS
+        "font-src 'self' data:",             # Allow web fonts
+        "connect-src 'self' https:",         # Allow HTTPS API calls
+        "frame-ancestors 'none'",            # Prevent clickjacking
+        "base-uri 'self'",                   # Restrict <base> tag
+        "form-action 'self'",                # Restrict form submissions
+        "upgrade-insecure-requests"          # Upgrade HTTP to HTTPS
       ])
       override = true
     }
