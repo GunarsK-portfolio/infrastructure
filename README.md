@@ -224,9 +224,12 @@ task monitoring:targets  # Open Prometheus targets page
 
 # E2E Testing
 task e2e:setup           # Setup E2E testing environment (install dependencies)
-task e2e:test            # Run all E2E tests (browser visible)
-task e2e:test:headless   # Run all E2E tests in headless mode
-task e2e:ci              # Run E2E tests for CI (headless + linting)
+task e2e:admin           # Run admin-web E2E tests (browser visible)
+task e2e:admin:headless  # Run admin-web E2E tests in headless mode
+task e2e:public          # Run public-web E2E tests (browser visible)
+task e2e:public:headless # Run public-web E2E tests in headless mode
+task e2e:ci:admin        # Run admin E2E tests for CI (headless + linting)
+task e2e:ci:public       # Run public E2E tests for CI (headless + linting)
 
 # CI/CD tasks
 task ci:all              # Run all CI checks
@@ -423,7 +426,10 @@ docker-compose up -d postgres redis minio flyway
 ## E2E Testing
 
 End-to-end tests are available in the `../e2e-tests/` directory using
-Playwright with Python.
+Playwright with Python. Tests are separated into two suites:
+
+- **Admin-web tests** - CRUD operations requiring authentication
+- **Public-web tests** - Public website functionality (no auth required)
 
 ### Running E2E Tests
 
@@ -434,29 +440,43 @@ task e2e:setup
 # Start all services (if not already running)
 task services:up
 
-# Run tests (browser visible)
-task e2e:test
+# Run admin tests (browser visible)
+task e2e:admin
+
+# Run public tests (browser visible)
+task e2e:public
 
 # Run tests in headless mode (faster)
-task e2e:test:headless
+task e2e:admin:headless
+task e2e:public:headless
 ```
 
-### Available Test Suites
+### Admin-Web Test Suites
 
+- **Authentication Flow** - Login/logout, session management
+- **Dashboard Navigation** - Page routing verification
 - **Profile Management** - Profile CRUD operations
 - **Skills CRUD** - Skills management
 - **Work Experience CRUD** - Experience management
 - **Certifications CRUD** - Certifications/education management
+- **Portfolio Projects CRUD** - Projects management
 - **Miniatures CRUD** - Projects, themes, and paints management
 - **Messaging CRUD** - Recipients management and message viewing
+
+### Public-Web Test Suites
+
+- **Home Page** - Hero, skills, experience, portfolio sections
+- **Contact Form** - Form validation and submission
+- **Miniatures Gallery** - Theme/project navigation and carousel
+- **Error Pages** - 404 page and navigation
 
 ### E2E Test Requirements
 
 E2E tests require:
 
 - Python 3.12+
-- Running services (admin-web on port 81, admin-api on 8083)
-- Valid admin credentials in `../e2e-tests/.env`
+- Running services via Docker Compose
+- Valid admin credentials in `../e2e-tests/.env` (for admin tests)
 
 See [../e2e-tests/README.md](../e2e-tests/README.md) for detailed
 documentation.

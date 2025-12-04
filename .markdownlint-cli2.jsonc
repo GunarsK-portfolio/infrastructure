@@ -1,4 +1,9 @@
 {
   "globs": ["**/*.md"],
-  "ignores": ["node_modules/**", "terraform/.terraform/**"]
+  "ignores": ["node_modules/**", "terraform/.terraform/**"],
+  "config": {
+    "MD013": {
+      "tables": false
+    }
+  }
 }

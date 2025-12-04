@@ -316,17 +316,29 @@ tasks:
       - task ci:all
 
   # E2E Testing operations
-  e2e:test:
-    desc: Run all E2E tests (requires services running)
+  e2e:admin:
+    desc: Run admin-web E2E tests (requires services running)
     dir: ../e2e-tests
     cmds:
-      - task test:all
+      - task test:admin
 
-  e2e:test:headless:
-    desc: Run all E2E tests in headless mode
+  e2e:admin:headless:
+    desc: Run admin-web E2E tests in headless mode
     dir: ../e2e-tests
     cmds:
-      - task test:all:headless
+      - task test:admin:headless
+
+  e2e:public:
+    desc: Run public-web E2E tests (requires services running)
+    dir: ../e2e-tests
+    cmds:
+      - task test:public
+
+  e2e:public:headless:
+    desc: Run public-web E2E tests in headless mode
+    dir: ../e2e-tests
+    cmds:
+      - task test:public:headless
 
   e2e:setup:
     desc: Setup E2E testing environment
@@ -334,11 +346,17 @@ tasks:
     cmds:
       - task setup
 
-  e2e:ci:
-    desc: Run E2E tests for CI (headless, with linting)
+  e2e:ci:admin:
+    desc: Run admin-web E2E tests for CI (headless, with linting)
     dir: ../e2e-tests
     cmds:
-      - task ci:all
+      - task ci:admin
+
+  e2e:ci:public:
+    desc: Run public-web E2E tests for CI (headless, with linting)
+    dir: ../e2e-tests
+    cmds:
+      - task ci:public
 
   # CI/CD tasks (infrastructure repo only)
   ci:all:
