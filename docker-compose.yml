@@ -17,6 +17,7 @@ services:
       # Docker provider
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.constraints=Label(`traefik.constraint-portfolio`,`true`)"
       - "--providers.file.directory=/config"
       - "--providers.file.watch=true"
       # Metrics
@@ -349,6 +350,7 @@ services:
       - "environment=${ENVIRONMENT}"
       # Traefik
       - "traefik.enable=true"
+      - "traefik.constraint-portfolio=true"
       # Rate limiting middleware (100 req/min per IP for development)
       - "traefik.http.middlewares.auth-ratelimit.ratelimit.average=100"
       - "traefik.http.middlewares.auth-ratelimit.ratelimit.period=1m"
@@ -431,6 +433,7 @@ services:
       - "environment=${ENVIRONMENT}"
       # Traefik
       - "traefik.enable=true"
+      - "traefik.constraint-portfolio=true"
       # Rate limiting middleware (60 req/min per IP)
       - "traefik.http.middlewares.public-ratelimit.ratelimit.average=60"
       - "traefik.http.middlewares.public-ratelimit.ratelimit.period=1m"
@@ -515,6 +518,7 @@ services:
       - "environment=${ENVIRONMENT}"
       # Traefik
       - "traefik.enable=true"
+      - "traefik.constraint-portfolio=true"
       # Rate limiting middleware (30 req/min per IP)
       - "traefik.http.middlewares.admin-ratelimit.ratelimit.average=30"
       - "traefik.http.middlewares.admin-ratelimit.ratelimit.period=1m"
@@ -603,6 +607,7 @@ services:
       - "environment=${ENVIRONMENT}"
       # Traefik
       - "traefik.enable=true"
+      - "traefik.constraint-portfolio=true"
       # Rate limiting middleware (10 req/min per IP)
       - "traefik.http.middlewares.files-ratelimit.ratelimit.average=10"
       - "traefik.http.middlewares.files-ratelimit.ratelimit.period=1m"
@@ -693,6 +698,7 @@ services:
       - "environment=${ENVIRONMENT}"
       # Traefik
       - "traefik.enable=true"
+      - "traefik.constraint-portfolio=true"
       # Rate limiting middleware (10 req/min per IP for contact form)
       - "traefik.http.middlewares.messaging-ratelimit.ratelimit.average=10"
       - "traefik.http.middlewares.messaging-ratelimit.ratelimit.period=1m"
@@ -824,6 +830,7 @@ services:
           memory: 64M
     labels:
       - "traefik.enable=true"
+      - "traefik.constraint-portfolio=true"
       # HTTP router
       - "traefik.http.routers.public-web.rule=PathPrefix(`/`) && !PathPrefix(`/api/`)"
       - "traefik.http.routers.public-web.entrypoints=web"
@@ -864,6 +871,7 @@ services:
           memory: 64M
     labels:
       - "traefik.enable=true"
+      - "traefik.constraint-portfolio=true"
       # HTTP router
       - "traefik.http.routers.admin-web.rule=PathPrefix(`/`)"
       - "traefik.http.routers.admin-web.entrypoints=admin"
