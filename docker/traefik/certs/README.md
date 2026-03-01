@@ -42,4 +42,5 @@ These files are ignored by git for security reasons.
 
 ## Production
 
-For production, use Let's Encrypt by uncommenting the relevant configuration in `docker-compose.yml`.
+For production, use Let's Encrypt by uncommenting the
+relevant configuration in `docker-compose.yml`.
