@@ -147,11 +147,69 @@ resource "aws_wafv2_web_acl" "main" {
     }
   }
 
+  # Rate limiting for registration endpoint (strict to prevent abuse)
+  # bcrypt hashing is CPU-intensive, repeated attempts cause resource exhaustion
+  # Matches: auth.gunarsk.com/*/register
+  rule {
+    name     = "rate-limit-register"
+    priority = 2
+
+    action {
+      block {}
+    }
+
+    statement {
+      rate_based_statement {
+        limit              = 10
+        aggregate_key_type = "IP"
+
+        scope_down_statement {
+          and_statement {
+            statement {
+              byte_match_statement {
+                field_to_match {
+                  single_header {
+                    name = "host"
+                  }
+                }
+                positional_constraint = "STARTS_WITH"
+                search_string         = "auth.${var.domain_name}"
+                text_transformation {
+                  priority = 0
+                  type     = "LOWERCASE"
+                }
+              }
+            }
+            statement {
+              byte_match_statement {
+                field_to_match {
+                  uri_path {}
+                }
+                positional_constraint = "CONTAINS"
+                search_string         = "/register"
+                text_transformation {
+                  priority = 0
+                  type     = "LOWERCASE"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "RateLimitRegister"
+      sampled_requests_enabled   = true
+    }
+  }
+
   # Rate limiting for token refresh endpoint
   # Matches: auth.gunarsk.com/*/refresh
   rule {
     name     = "rate-limit-refresh"
-    priority = 2
+    priority = 3
 
     action {
       block {}
@@ -208,7 +266,7 @@ resource "aws_wafv2_web_acl" "main" {
   # Matches: auth.gunarsk.com/*/validate
   rule {
     name     = "rate-limit-validate"
-    priority = 3
+    priority = 4
 
     action {
       block {}
@@ -265,7 +323,7 @@ resource "aws_wafv2_web_acl" "main" {
   # Matches: auth.gunarsk.com/*/logout
   rule {
     name     = "rate-limit-logout"
-    priority = 4
+    priority = 5
 
     action {
       block {}
@@ -323,7 +381,7 @@ resource "aws_wafv2_web_acl" "main" {
   # Single consolidated rule (300 req/5min) - admin is authenticated, no need for per-method limits
   rule {
     name     = "rate-limit-admin-api"
-    priority = 5
+    priority = 6
 
     action {
       block {}
@@ -380,7 +438,7 @@ resource "aws_wafv2_web_acl" "main" {
   # Matches: gunarsk.com/api/v1/* (read-only public API)
   rule {
     name     = "rate-limit-public-api"
-    priority = 6
+    priority = 7
 
     action {
       block {}
@@ -456,7 +514,7 @@ resource "aws_wafv2_web_acl" "main" {
   # Matches: files.gunarsk.com/api/v1/files/*
   rule {
     name     = "rate-limit-files-api"
-    priority = 7
+    priority = 8
 
     action {
       block {}
@@ -515,7 +573,7 @@ resource "aws_wafv2_web_acl" "main" {
   # Priority 8: runs before managed rules (priority 9+)
   rule {
     name     = "allow-files-api-uploads"
-    priority = 8
+    priority = 9
 
     action {
       allow {}
@@ -579,7 +637,7 @@ resource "aws_wafv2_web_acl" "main" {
   # Stricter limit: 10 requests per 5 minutes per IP (anti-spam)
   rule {
     name     = "rate-limit-messaging-api"
-    priority = 9
+    priority = 10
 
     action {
       block {}
@@ -638,7 +696,7 @@ resource "aws_wafv2_web_acl" "main" {
   # Application enforces MAX_FILE_SIZE validation (10MB limit in files-api)
   rule {
     name     = "aws-managed-core-rule-set"
-    priority = 10
+    priority = 11
 
     override_action {
       none {}
@@ -670,7 +728,7 @@ resource "aws_wafv2_web_acl" "main" {
   # AWS Managed Rules - Known Bad Inputs (Log4Shell, etc.)
   rule {
     name     = "aws-managed-known-bad-inputs"
-    priority = 11
+    priority = 12
 
     override_action {
       none {}
@@ -693,7 +751,7 @@ resource "aws_wafv2_web_acl" "main" {
   # AWS Managed Rules - SQL Injection Protection
   rule {
     name     = "aws-managed-sqli-rule-set"
-    priority = 12
+    priority = 13
 
     override_action {
       none {}
@@ -716,7 +774,7 @@ resource "aws_wafv2_web_acl" "main" {
   # AWS Managed Rules - IP Reputation List (Known Bad IPs)
   rule {
     name     = "aws-managed-ip-reputation-list"
-    priority = 13
+    priority = 14
 
     override_action {
       none {}
@@ -739,7 +797,7 @@ resource "aws_wafv2_web_acl" "main" {
   # AWS Managed Rules - Linux Operating System Protection
   rule {
     name     = "aws-managed-linux-rule-set"
-    priority = 14
+    priority = 15
 
     override_action {
       none {}
