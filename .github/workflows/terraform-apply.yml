@@ -34,7 +34,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: 1.13.0
 
@@ -76,7 +76,7 @@ jobs:
           echo "Outputs saved to terraform-outputs.json"
 
       - name: Upload Terraform Outputs
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: terraform-outputs
           path: terraform/terraform-outputs.json
