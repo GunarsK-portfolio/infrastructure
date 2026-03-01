@@ -43,12 +43,12 @@ locals {
       JWT_ACCESS_EXPIRY  = "15m"
       JWT_REFRESH_EXPIRY = "168h"
       # Cookie configuration for httpOnly auth tokens
-      COOKIE_DOMAIN       = ".${var.domain_name}"
-      COOKIE_SECURE       = "true"
-      COOKIE_SAMESITE     = "Strict"
-      COOKIE_REFRESH_PATH = "/api/v1/auth/refresh"
-      ALLOWED_ORIGINS           = "https://admin.${var.domain_name}"
-      DENIED_SELF_ASSIGN_ROLES  = "admin,rpg-admin"
+      COOKIE_DOMAIN            = ".${var.domain_name}"
+      COOKIE_SECURE            = "true"
+      COOKIE_SAMESITE          = "Strict"
+      COOKIE_REFRESH_PATH      = "/api/v1/auth/refresh"
+      ALLOWED_ORIGINS          = "https://admin.${var.domain_name}"
+      DENIED_SELF_ASSIGN_ROLES = "admin,rpg-admin"
     }
     "admin-api" = {
       ENVIRONMENT     = local.environment_map[var.environment]

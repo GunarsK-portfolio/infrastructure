@@ -107,7 +107,8 @@ internal communication.
   - Token Refresh (`auth.gunarsk.com/refresh`): 100 requests (token abuse prevention)
   - Token Validation (`auth.gunarsk.com/validate`): 600 requests (validation protection)
   - Logout (`auth.gunarsk.com/logout`): 60 requests (logout abuse prevention)
-  - Admin API (`admin.gunarsk.com/api/v1/*`): 300 requests (authenticated admin users)
+  - Admin API (`admin.gunarsk.com/api/v1/*`): 300 requests
+    (authenticated admin users)
   - Public API (`gunarsk.com/api/v1/*`): 600 requests (public read-only)
   - Files API (`files.gunarsk.com/api/v1/*`): 120 requests (file upload/download)
   - Messaging API (`message.gunarsk.com/api/v1/*`): 10 requests (contact form anti-spam)
@@ -488,8 +489,9 @@ aws secretsmanager create-secret \
   --secret-string 'https://yyyyy.eu-west-1.awsapprunner.com'
 ```
 
-Note: admin-api and files-api use JWT_SECRET for local token validation instead of
-calling auth-service. The JWT_SECRET is already stored in Secrets Manager.
+Note: admin-api and files-api use JWT_SECRET for local token
+validation instead of calling auth-service. The JWT_SECRET
+is already stored in Secrets Manager.
 
 Update App Runner environment variables to reference these secrets.
 
