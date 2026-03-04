@@ -334,11 +334,12 @@ module "monitoring" {
   # Resources to monitor
   app_runner_service_arns = module.app_runner.service_arns
   cloudfront_distribution_ids = {
-    public = module.cloudfront.public_distribution_id
-    admin  = module.cloudfront.admin_distribution_id
-    auth   = module.cloudfront.auth_distribution_id
-    files  = module.cloudfront.files_distribution_id
-    rpg    = module.cloudfront.rpg_distribution_id
+    public  = module.cloudfront.public_distribution_id
+    admin   = module.cloudfront.admin_distribution_id
+    auth    = module.cloudfront.auth_distribution_id
+    files   = module.cloudfront.files_distribution_id
+    message = module.cloudfront.message_distribution_id
+    rpg     = module.cloudfront.rpg_distribution_id
   }
   waf_web_acl_name          = module.waf.web_acl_name
   db_cluster_id             = module.database.cluster_id
