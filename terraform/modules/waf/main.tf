@@ -567,13 +567,71 @@ resource "aws_wafv2_web_acl" "main" {
     }
   }
 
+  # Rate limiting for RPG API (character sheets, game data)
+  # Matches: rpg.gunarsk.com/api/v1/*
+  # Higher limit: RPG loads many resources per page (classifiers, character data, skills, talents, equipment)
+  # Multiple players may share IP during game sessions
+  rule {
+    name     = "rate-limit-rpg-api"
+    priority = 9
+
+    action {
+      block {}
+    }
+
+    statement {
+      rate_based_statement {
+        limit              = 3000
+        aggregate_key_type = "IP"
+
+        scope_down_statement {
+          and_statement {
+            statement {
+              byte_match_statement {
+                field_to_match {
+                  single_header {
+                    name = "host"
+                  }
+                }
+                positional_constraint = "STARTS_WITH"
+                search_string         = "rpg.${var.domain_name}"
+                text_transformation {
+                  priority = 0
+                  type     = "LOWERCASE"
+                }
+              }
+            }
+            statement {
+              byte_match_statement {
+                field_to_match {
+                  uri_path {}
+                }
+                positional_constraint = "STARTS_WITH"
+                search_string         = "/api/v1"
+                text_transformation {
+                  priority = 0
+                  type     = "LOWERCASE"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "RateLimitRPGAPI"
+      sampled_requests_enabled   = true
+    }
+  }
+
   # Allow files-api uploads to bypass XSS body checks
   # Binary image data triggers false positives in XSS detection
   # Files-api validates content-type and file extensions server-side
-  # Priority 8: runs before managed rules (priority 9+)
   rule {
     name     = "allow-files-api-uploads"
-    priority = 9
+    priority = 10
 
     action {
       allow {}
@@ -637,7 +695,7 @@ resource "aws_wafv2_web_acl" "main" {
   # Stricter limit: 10 requests per 5 minutes per IP (anti-spam)
   rule {
     name     = "rate-limit-messaging-api"
-    priority = 10
+    priority = 11
 
     action {
       block {}
@@ -696,7 +754,7 @@ resource "aws_wafv2_web_acl" "main" {
   # Application enforces MAX_FILE_SIZE validation (10MB limit in files-api)
   rule {
     name     = "aws-managed-core-rule-set"
-    priority = 11
+    priority = 12
 
     override_action {
       none {}
@@ -728,7 +786,7 @@ resource "aws_wafv2_web_acl" "main" {
   # AWS Managed Rules - Known Bad Inputs (Log4Shell, etc.)
   rule {
     name     = "aws-managed-known-bad-inputs"
-    priority = 12
+    priority = 13
 
     override_action {
       none {}
@@ -751,7 +809,7 @@ resource "aws_wafv2_web_acl" "main" {
   # AWS Managed Rules - SQL Injection Protection
   rule {
     name     = "aws-managed-sqli-rule-set"
-    priority = 13
+    priority = 14
 
     override_action {
       none {}
@@ -774,7 +832,7 @@ resource "aws_wafv2_web_acl" "main" {
   # AWS Managed Rules - IP Reputation List (Known Bad IPs)
   rule {
     name     = "aws-managed-ip-reputation-list"
-    priority = 14
+    priority = 15
 
     override_action {
       none {}
@@ -797,7 +855,7 @@ resource "aws_wafv2_web_acl" "main" {
   # AWS Managed Rules - Linux Operating System Protection
   rule {
     name     = "aws-managed-linux-rule-set"
-    priority = 15
+    priority = 16
 
     override_action {
       none {}

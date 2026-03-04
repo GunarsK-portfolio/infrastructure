@@ -30,6 +30,7 @@ variable "cloudfront_distributions" {
     auth    = string
     files   = string
     message = string
+    rpg     = string
   })
   default = null
 }

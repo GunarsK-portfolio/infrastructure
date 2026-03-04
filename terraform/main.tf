@@ -147,12 +147,26 @@ module "storage" {
   tags = local.common_tags
 }
 
-# ECR Module - Container Registry
+# ECR Module - Container Registry (portfolio services)
 module "ecr" {
   source = "./modules/ecr"
 
   project_name  = var.project_name
-  service_names = keys(var.app_runner_services)
+  service_names = [for k in keys(var.app_runner_services) : k if !startswith(k, "rpg-")]
+
+  # Use customer-managed KMS key for encryption
+  kms_key_arn = module.secrets.kms_key_arn
+
+  tags = local.common_tags
+}
+
+# RPG ECR Module - Container Registry (separate namespace)
+module "rpg_ecr" {
+  source = "./modules/ecr"
+
+  project_name           = "rpg"
+  service_names          = ["public-api", "public-web"]
+  create_scanning_config = false
 
   # Use customer-managed KMS key for encryption
   kms_key_arn = module.secrets.kms_key_arn
@@ -227,8 +241,14 @@ module "app_runner" {
   private_subnet_ids           = module.networking.private_subnet_ids
   app_runner_security_group_id = module.networking.app_runner_security_group_id
 
-  # ECR repository URLs
-  ecr_repository_urls = module.ecr.repository_urls
+  # ECR repository URLs (merge portfolio + RPG repos)
+  ecr_repository_urls = merge(
+    module.ecr.repository_urls,
+    {
+      "rpg-public-api" = module.rpg_ecr.repository_urls["public-api"]
+      "rpg-public-web" = module.rpg_ecr.repository_urls["public-web"]
+    }
+  )
 
   # Database, cache, and message queue endpoints (injected via Secrets Manager)
   aurora_endpoint      = module.database.cluster_endpoint
@@ -292,6 +312,7 @@ module "dns_records" {
     auth    = module.cloudfront.auth_distribution_domain_name
     files   = module.cloudfront.files_distribution_domain_name
     message = module.cloudfront.message_distribution_domain_name
+    rpg     = module.cloudfront.rpg_distribution_domain_name
   }
 
   # KMS encryption for logs (not needed in records-only mode, but required variable)
@@ -317,6 +338,7 @@ module "monitoring" {
     admin  = module.cloudfront.admin_distribution_id
     auth   = module.cloudfront.auth_distribution_id
     files  = module.cloudfront.files_distribution_id
+    rpg    = module.cloudfront.rpg_distribution_id
   }
   waf_web_acl_name          = module.waf.web_acl_name
   db_cluster_id             = module.database.cluster_id

@@ -213,6 +213,26 @@ variable "app_runner_services" {
       max_concurrency   = 50
       health_check_path = "/"
     }
+    rpg-public-api = {
+      name              = "rpg-public-api"
+      cpu               = "0.25 vCPU"
+      memory            = "0.5 GB"
+      port              = 8080
+      min_instances     = 1
+      max_instances     = 2
+      max_concurrency   = 50
+      health_check_path = "/health"
+    }
+    rpg-public-web = {
+      name              = "rpg-public-web"
+      cpu               = "0.25 vCPU"
+      memory            = "0.5 GB"
+      port              = 8080
+      min_instances     = 1
+      max_instances     = 2
+      max_concurrency   = 100
+      health_check_path = "/"
+    }
   }
 }
 
@@ -228,6 +248,8 @@ variable "service_image_tags" {
     messaging-service = "latest"
     admin-web         = "latest"
     public-web        = "latest"
+    rpg-public-api    = "latest"
+    rpg-public-web    = "latest"
   }
 
   validation {

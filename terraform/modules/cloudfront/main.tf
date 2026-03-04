@@ -99,7 +99,7 @@ resource "aws_cloudfront_response_headers_policy" "api_cors" {
     }
 
     access_control_allow_origins {
-      items = ["https://${var.domain_name}", "https://admin.${var.domain_name}"]
+      items = ["https://${var.domain_name}", "https://admin.${var.domain_name}", "https://rpg.${var.domain_name}"]
     }
 
     access_control_max_age_sec = 86400
@@ -658,6 +658,161 @@ resource "aws_cloudfront_distribution" "message" {
     var.tags,
     {
       Name = "${var.project_name}-message"
+    }
+  )
+}
+
+# RPG CloudFront Distribution (rpg.gunarsk.com)
+# Routes: / -> rpg-public-web, /api/v1/* -> rpg-public-api
+resource "aws_cloudfront_distribution" "rpg" {
+  enabled             = true
+  is_ipv6_enabled     = true
+  comment             = "${var.project_name} ${var.environment} RPG Distribution"
+  default_root_object = "index.html"
+  price_class         = "PriceClass_100"
+  aliases             = ["rpg.${var.domain_name}"]
+  web_acl_id          = var.web_acl_arn
+
+  # Origin: rpg-public-web (Vue/Quasar frontend via nginx)
+  origin {
+    domain_name = var.app_runner_urls["rpg-public-web"]
+    origin_id   = "rpg-public-web"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  # Origin: rpg-public-api (Go backend)
+  origin {
+    domain_name = var.app_runner_urls["rpg-public-api"]
+    origin_id   = "rpg-public-api"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  # Default behavior: route to rpg-public-web (index.html - no caching)
+  default_cache_behavior {
+    allowed_methods            = ["GET", "HEAD", "OPTIONS"]
+    cached_methods             = ["GET", "HEAD"]
+    target_origin_id           = "rpg-public-web"
+    viewer_protocol_policy     = "redirect-to-https"
+    compress                   = true
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.security_headers.id
+
+    forwarded_values {
+      query_string = true
+      headers      = ["Origin"]
+
+      cookies {
+        forward = "none"
+      }
+    }
+
+    min_ttl     = 0
+    default_ttl = 0
+    max_ttl     = 0
+  }
+
+  # Path behavior: /assets/* -> rpg-public-web (hashed assets - long cache)
+  ordered_cache_behavior {
+    path_pattern               = "/assets/*"
+    allowed_methods            = ["GET", "HEAD", "OPTIONS"]
+    cached_methods             = ["GET", "HEAD"]
+    target_origin_id           = "rpg-public-web"
+    viewer_protocol_policy     = "redirect-to-https"
+    compress                   = true
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.security_headers.id
+
+    forwarded_values {
+      query_string = false
+      headers      = []
+
+      cookies {
+        forward = "none"
+      }
+    }
+
+    min_ttl     = 0
+    default_ttl = 31536000 # 1 year
+    max_ttl     = 31536000
+  }
+
+  # Path behavior: /api/v1/* -> rpg-public-api
+  ordered_cache_behavior {
+    path_pattern           = "/api/v1/*"
+    allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = "rpg-public-api"
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    forwarded_values {
+      query_string = true
+      headers      = ["Authorization", "Content-Type", "Accept", "Origin", "Referer", "User-Agent"]
+
+      cookies {
+        forward = "all"
+      }
+    }
+
+    min_ttl     = 0
+    default_ttl = 0
+    max_ttl     = 0
+  }
+
+  # Path behavior: /health -> rpg-public-api
+  ordered_cache_behavior {
+    path_pattern           = "/health"
+    allowed_methods        = ["GET", "HEAD"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = "rpg-public-api"
+    viewer_protocol_policy = "redirect-to-https"
+
+    forwarded_values {
+      query_string = false
+      headers      = []
+
+      cookies {
+        forward = "none"
+      }
+    }
+
+    min_ttl     = 0
+    default_ttl = 0
+    max_ttl     = 0
+  }
+
+  viewer_certificate {
+    acm_certificate_arn      = var.certificate_arn
+    minimum_protocol_version = "TLSv1.3_2025"
+    ssl_support_method       = "sni-only"
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  logging_config {
+    include_cookies = false
+    bucket          = aws_s3_bucket.cloudfront_logs.bucket_regional_domain_name
+    prefix          = "rpg/"
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-rpg"
     }
   )
 }

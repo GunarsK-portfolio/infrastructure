@@ -40,6 +40,18 @@ output "aurora_messaging_password_arn" {
   sensitive   = true
 }
 
+output "aurora_rpg_owner_password_arn" {
+  description = "ARN of Aurora RPG owner password secret"
+  value       = aws_secretsmanager_secret.aurora_rpg_owner_password.arn
+  sensitive   = true
+}
+
+output "aurora_rpg_app_password_arn" {
+  description = "ARN of Aurora RPG app password secret"
+  value       = aws_secretsmanager_secret.aurora_rpg_app_password.arn
+  sensitive   = true
+}
+
 output "redis_auth_token_arn" {
   description = "ARN of Redis AUTH token secret"
   value       = aws_secretsmanager_secret.redis_auth_token.arn
@@ -66,6 +78,8 @@ output "secret_arns" {
     aurora_admin     = aws_secretsmanager_secret.aurora_admin_password.arn
     aurora_public    = aws_secretsmanager_secret.aurora_public_password.arn
     aurora_messaging = aws_secretsmanager_secret.aurora_messaging_password.arn
+    aurora_rpg_owner = aws_secretsmanager_secret.aurora_rpg_owner_password.arn
+    aurora_rpg_app   = aws_secretsmanager_secret.aurora_rpg_app_password.arn
     redis_auth       = aws_secretsmanager_secret.redis_auth_token.arn
     jwt_secret       = aws_secretsmanager_secret.jwt_secret.arn
     rabbitmq         = aws_secretsmanager_secret.rabbitmq_credentials.arn
