@@ -84,8 +84,6 @@ locals {
       DB_USER         = "portfolio_public"
       DB_SSLMODE      = "require"
       ALLOWED_ORIGINS = "https://${var.domain_name}"
-      REDIS_HOST      = var.elasticache_endpoint
-      REDIS_PORT      = "6379"
       # Public file URL generation (for frontend)
       FILES_API_URL = "https://files.${var.domain_name}/api/v1"
     }
@@ -174,6 +172,8 @@ locals {
       DB_SSLMODE      = "require"
       ALLOWED_ORIGINS = "https://rpg.${var.domain_name}"
       MAX_BODY_SIZE   = "1048576"
+      REDIS_HOST      = var.elasticache_endpoint
+      REDIS_PORT      = "6379"
     }
     "rpg-public-web" = {
       ENVIRONMENT  = local.environment_map[var.environment]
@@ -196,8 +196,7 @@ locals {
       JWT_SECRET  = "${var.secrets_arns["jwt_secret"]}:secret::"
     }
     "public-api" = {
-      DB_PASSWORD    = "${var.secrets_arns["aurora_public"]}:password::"
-      REDIS_PASSWORD = "${var.secrets_arns["redis_auth"]}:token::"
+      DB_PASSWORD = "${var.secrets_arns["aurora_public"]}:password::"
     }
     "files-api" = {
       DB_PASSWORD = "${var.secrets_arns["aurora_admin"]}:password::"
@@ -217,8 +216,9 @@ locals {
     "admin-web"  = {}
     "public-web" = {}
     "rpg-public-api" = {
-      DB_PASSWORD = "${var.secrets_arns["aurora_rpg_app"]}:password::"
-      JWT_SECRET  = "${var.secrets_arns["jwt_secret"]}:secret::"
+      DB_PASSWORD    = "${var.secrets_arns["aurora_rpg_app"]}:password::"
+      JWT_SECRET     = "${var.secrets_arns["jwt_secret"]}:secret::"
+      REDIS_PASSWORD = "${var.secrets_arns["redis_auth"]}:token::"
     }
     "rpg-public-web" = {}
   }
