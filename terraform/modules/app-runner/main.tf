@@ -23,6 +23,13 @@ locals {
     "prod"    = "production"
   }
 
+  # Shorten long service keys to stay within 32 char ASG name limit
+  asg_name_overrides = {
+    "messaging-service" = "msg-svc"
+    "rpg-public-api"    = "rpg-api"
+    "rpg-public-web"    = "rpg-web"
+  }
+
   # Service-specific environment variables
   # Note: DB_USER values are application-level PostgreSQL users created via Flyway migrations
   # These are NOT the RDS master user, but application-specific roles with limited privileges
@@ -47,7 +54,7 @@ locals {
       COOKIE_SECURE            = "true"
       COOKIE_SAMESITE          = "Strict"
       COOKIE_REFRESH_PATH      = "/api/v1/auth/refresh"
-      ALLOWED_ORIGINS          = "https://admin.${var.domain_name}"
+      ALLOWED_ORIGINS          = "https://admin.${var.domain_name},https://rpg.${var.domain_name}"
       DENIED_SELF_ASSIGN_ROLES = "admin,rpg-admin"
     }
     "admin-api" = {
@@ -154,6 +161,26 @@ locals {
       LOG_LEVEL    = "info"
       LOG_FORMAT   = "json"
     }
+    "rpg-public-api" = {
+      ENVIRONMENT     = local.environment_map[var.environment]
+      SERVICE_NAME    = "rpg-public-api"
+      LOG_LEVEL       = "info"
+      LOG_FORMAT      = "json"
+      GIN_MODE        = "release"
+      DB_HOST         = var.aurora_endpoint
+      DB_PORT         = "5432"
+      DB_NAME         = "cosmere_rpg"
+      DB_USER         = "cosmere_app"
+      DB_SSLMODE      = "require"
+      ALLOWED_ORIGINS = "https://rpg.${var.domain_name}"
+      MAX_BODY_SIZE   = "1048576"
+    }
+    "rpg-public-web" = {
+      ENVIRONMENT  = local.environment_map[var.environment]
+      SERVICE_NAME = "rpg-public-web"
+      LOG_LEVEL    = "info"
+      LOG_FORMAT   = "json"
+    }
   }
 
   # Service-specific secrets from AWS Secrets Manager
@@ -189,6 +216,11 @@ locals {
     }
     "admin-web"  = {}
     "public-web" = {}
+    "rpg-public-api" = {
+      DB_PASSWORD = "${var.secrets_arns["aurora_rpg_app"]}:password::"
+      JWT_SECRET  = "${var.secrets_arns["jwt_secret"]}:secret::"
+    }
+    "rpg-public-web" = {}
   }
 }
 
@@ -507,8 +539,8 @@ resource "aws_apprunner_observability_configuration" "xray" {
 resource "aws_apprunner_auto_scaling_configuration_version" "main" {
   for_each = var.services
 
-  # Shorten messaging-service to msg-svc to stay within 32 char limit
-  auto_scaling_configuration_name = "${var.project_name}-${var.environment}-${each.key == "messaging-service" ? "msg-svc" : each.key}-asg"
+  # Shorten long service names to stay within 32 char limit
+  auto_scaling_configuration_name = "${var.project_name}-${var.environment}-${lookup(local.asg_name_overrides, each.key, each.key)}-asg"
   max_concurrency                 = each.value.max_concurrency
   max_size                        = each.value.max_instances
   min_size                        = each.value.min_instances

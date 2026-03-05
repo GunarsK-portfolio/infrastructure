@@ -16,6 +16,12 @@ variable "tags" {
   default     = {}
 }
 
+variable "create_scanning_config" {
+  description = "Whether to create the ECR registry scanning configuration (only one per account)"
+  type        = bool
+  default     = true
+}
+
 variable "kms_key_arn" {
   description = "KMS key ARN for encryption"
   type        = string

@@ -50,6 +50,16 @@ output "message_distribution_domain_name" {
   value       = aws_cloudfront_distribution.message.domain_name
 }
 
+output "rpg_distribution_id" {
+  description = "RPG CloudFront distribution ID"
+  value       = aws_cloudfront_distribution.rpg.id
+}
+
+output "rpg_distribution_domain_name" {
+  description = "RPG CloudFront distribution domain name (for DNS CNAME)"
+  value       = aws_cloudfront_distribution.rpg.domain_name
+}
+
 output "distribution_urls" {
   description = "Map of all CloudFront distribution URLs"
   value = {
@@ -58,5 +68,6 @@ output "distribution_urls" {
     auth    = "https://auth.${var.domain_name}"
     files   = "https://files.${var.domain_name}"
     message = "https://message.${var.domain_name}"
+    rpg     = "https://rpg.${var.domain_name}"
   }
 }

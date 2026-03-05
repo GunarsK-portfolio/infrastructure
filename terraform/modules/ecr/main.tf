@@ -77,14 +77,16 @@ resource "aws_ecr_lifecycle_policy" "main" {
   })
 }
 
-# Enhanced scanning
+# Enhanced scanning (singleton per account — only create once)
 resource "aws_ecr_registry_scanning_configuration" "main" {
+  count = var.create_scanning_config ? 1 : 0
+
   scan_type = "ENHANCED"
 
   rule {
     scan_frequency = "CONTINUOUS_SCAN"
     repository_filter {
-      filter      = "${var.project_name}/*"
+      filter      = "*"
       filter_type = "WILDCARD"
     }
   }
