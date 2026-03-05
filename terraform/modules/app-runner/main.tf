@@ -77,6 +77,8 @@ locals {
       DB_USER         = "portfolio_public"
       DB_SSLMODE      = "require"
       ALLOWED_ORIGINS = "https://${var.domain_name}"
+      REDIS_HOST      = var.elasticache_endpoint
+      REDIS_PORT      = "6379"
       # Public file URL generation (for frontend)
       FILES_API_URL = "https://files.${var.domain_name}/api/v1"
     }
@@ -167,7 +169,8 @@ locals {
       JWT_SECRET  = "${var.secrets_arns["jwt_secret"]}:secret::"
     }
     "public-api" = {
-      DB_PASSWORD = "${var.secrets_arns["aurora_public"]}:password::"
+      DB_PASSWORD    = "${var.secrets_arns["aurora_public"]}:password::"
+      REDIS_PASSWORD = "${var.secrets_arns["redis_auth"]}:token::"
     }
     "files-api" = {
       DB_PASSWORD = "${var.secrets_arns["aurora_admin"]}:password::"
