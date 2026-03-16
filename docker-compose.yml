@@ -321,6 +321,11 @@ services:
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS_AUTH}
       # Swagger (development only)
       - SWAGGER_HOST=${SWAGGER_HOST_AUTH}
+      # Email verification
+      - MESSAGING_API_URL=${MESSAGING_API_URL}
+      - SERVICE_USER_NAME=${SERVICE_USER_NAME}
+      - VERIFY_RATE_LIMIT_MAX=${VERIFY_RATE_LIMIT_MAX}
+      - VERIFY_RATE_LIMIT_WINDOW=${VERIFY_RATE_LIMIT_WINDOW}
     ports:
       - "8084:8084"
     networks:
@@ -329,6 +334,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      messaging-api:
         condition: service_healthy
       flyway:
         condition: service_completed_successfully
