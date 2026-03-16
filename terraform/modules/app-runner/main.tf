@@ -56,6 +56,11 @@ locals {
       COOKIE_REFRESH_PATH      = "/api/v1/auth/refresh"
       ALLOWED_ORIGINS          = "https://admin.${var.domain_name},https://rpg.${var.domain_name}"
       DENIED_SELF_ASSIGN_ROLES = "admin,rpg-admin"
+      # Email verification via messaging-api (S2S)
+      MESSAGING_API_URL        = "https://message.${var.domain_name}"
+      SERVICE_USER_NAME        = "svc-auth"
+      VERIFY_RATE_LIMIT_MAX    = "3"
+      VERIFY_RATE_LIMIT_WINDOW = "1h"
     }
     "admin-api" = {
       ENVIRONMENT     = local.environment_map[var.environment]
