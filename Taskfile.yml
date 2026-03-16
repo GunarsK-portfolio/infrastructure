@@ -309,6 +309,21 @@ tasks:
     cmds:
       - docker compose restart postgres
 
+  db:migrate:
+    desc: Run Flyway migrations
+    cmds:
+      - docker compose run --rm flyway migrate
+
+  db:validate:
+    desc: Validate Flyway migrations
+    cmds:
+      - docker compose run --rm flyway validate
+
+  db:repair:
+    desc: Repair Flyway schema history (fixes checksum mismatches)
+    cmds:
+      - docker compose run --rm flyway repair
+
   database:ci:
     desc: Run CI checks for database repo
     dir: ../database
