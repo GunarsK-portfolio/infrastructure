@@ -277,7 +277,7 @@ resource "aws_rds_cluster" "main" {
   ]
 
   lifecycle {
-    ignore_changes = [master_password]
+    ignore_changes = [master_password, final_snapshot_identifier]
   }
 }
 

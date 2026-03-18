@@ -228,16 +228,9 @@ resource "aws_security_group" "database" {
   description = "Security group for Aurora Serverless v2 PostgreSQL"
   vpc_id      = aws_vpc.main.id
 
-  # Allow PostgreSQL from App Runner security group only
-  ingress {
-    description     = "PostgreSQL from App Runner"
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [aws_security_group.app_runner.id]
-  }
-
   # No egress rules - deny all outbound traffic (defense-in-depth)
+  # Ingress rules managed via aws_security_group_rule resources to avoid
+  # conflicts with rules added by other modules (e.g. bastion)
 
   tags = merge(
     var.tags,
@@ -245,6 +238,16 @@ resource "aws_security_group" "database" {
       Name = "${var.project_name}-${var.environment}-aurora-sg"
     }
   )
+}
+
+resource "aws_security_group_rule" "aurora_from_app_runner" {
+  type                     = "ingress"
+  description              = "PostgreSQL from App Runner"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.database.id
+  source_security_group_id = aws_security_group.app_runner.id
 }
 
 # Security Group for ElastiCache Redis
