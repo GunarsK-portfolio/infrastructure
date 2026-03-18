@@ -95,7 +95,7 @@ resource "aws_cloudfront_response_headers_policy" "api_cors" {
     }
 
     access_control_allow_methods {
-      items = ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"]
+      items = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"]
     }
 
     access_control_allow_origins {
