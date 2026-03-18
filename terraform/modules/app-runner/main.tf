@@ -56,9 +56,13 @@ locals {
       COOKIE_REFRESH_PATH      = "/api/v1/auth/refresh"
       ALLOWED_ORIGINS          = "https://admin.${var.domain_name},https://rpg.${var.domain_name}"
       DENIED_SELF_ASSIGN_ROLES = "admin,rpg-admin"
-      # Email verification via messaging-api (S2S)
-      MESSAGING_API_URL        = "https://message.${var.domain_name}"
-      SERVICE_USER_NAME        = "svc-auth"
+      # RabbitMQ for email delivery (direct publish, bypasses messaging-api)
+      RABBITMQ_HOST            = var.mq_endpoint
+      RABBITMQ_PORT            = "5671"
+      RABBITMQ_TLS             = "true"
+      RABBITMQ_EXCHANGE        = "contact_messages"
+      RABBITMQ_QUEUE           = "contact_messages"
+      RABBITMQ_RETRY_DELAYS    = "1m,5m,30m,2h,12h"
       VERIFY_RATE_LIMIT_MAX    = "3"
       VERIFY_RATE_LIMIT_WINDOW = "1h"
     }
@@ -192,9 +196,11 @@ locals {
   # Format: arn:secret-arn:json-key:: extracts specific JSON field
   service_secrets = {
     "auth-service" = {
-      DB_PASSWORD    = "${var.secrets_arns["aurora_admin"]}:password::"
-      REDIS_PASSWORD = "${var.secrets_arns["redis_auth"]}:token::"
-      JWT_SECRET     = "${var.secrets_arns["jwt_secret"]}:secret::"
+      DB_PASSWORD       = "${var.secrets_arns["aurora_admin"]}:password::"
+      REDIS_PASSWORD    = "${var.secrets_arns["redis_auth"]}:token::"
+      JWT_SECRET        = "${var.secrets_arns["jwt_secret"]}:secret::"
+      RABBITMQ_USER     = "${var.secrets_arns["rabbitmq"]}:username::"
+      RABBITMQ_PASSWORD = "${var.secrets_arns["rabbitmq"]}:password::"
     }
     "admin-api" = {
       DB_PASSWORD = "${var.secrets_arns["aurora_admin"]}:password::"

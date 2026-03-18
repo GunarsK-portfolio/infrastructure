@@ -321,9 +321,15 @@ services:
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS_AUTH}
       # Swagger (development only)
       - SWAGGER_HOST=${SWAGGER_HOST_AUTH}
-      # Email verification
-      - MESSAGING_API_URL=${MESSAGING_API_URL}
-      - SERVICE_USER_NAME=${SERVICE_USER_NAME}
+      # Email verification (publishes directly to RabbitMQ)
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - RABBITMQ_TLS=${RABBITMQ_TLS}
+      - RABBITMQ_EXCHANGE=${RABBITMQ_EXCHANGE}
+      - RABBITMQ_QUEUE=${RABBITMQ_QUEUE}
+      - RABBITMQ_RETRY_DELAYS=${RABBITMQ_RETRY_DELAYS}
       - VERIFY_RATE_LIMIT_MAX=${VERIFY_RATE_LIMIT_MAX}
       - VERIFY_RATE_LIMIT_WINDOW=${VERIFY_RATE_LIMIT_WINDOW}
     ports:
@@ -335,7 +341,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      messaging-api:
+      rabbitmq:
         condition: service_healthy
       flyway:
         condition: service_completed_successfully
