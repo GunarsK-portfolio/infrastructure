@@ -57,12 +57,12 @@ locals {
       ALLOWED_ORIGINS          = "https://admin.${var.domain_name},https://rpg.${var.domain_name}"
       DENIED_SELF_ASSIGN_ROLES = "admin,rpg-admin"
       # RabbitMQ for email delivery (direct publish, bypasses messaging-api)
-      RABBITMQ_HOST         = var.mq_endpoint
-      RABBITMQ_PORT         = "5671"
-      RABBITMQ_TLS          = "true"
-      RABBITMQ_EXCHANGE     = "contact_messages"
-      RABBITMQ_QUEUE        = "contact_messages"
-      RABBITMQ_RETRY_DELAYS = "1m,5m,30m,2h,12h"
+      RABBITMQ_HOST            = var.mq_endpoint
+      RABBITMQ_PORT            = "5671"
+      RABBITMQ_TLS             = "true"
+      RABBITMQ_EXCHANGE        = "contact_messages"
+      RABBITMQ_QUEUE           = "contact_messages"
+      RABBITMQ_RETRY_DELAYS    = "1m,5m,30m,2h,12h"
       VERIFY_RATE_LIMIT_MAX    = "3"
       VERIFY_RATE_LIMIT_WINDOW = "1h"
     }
