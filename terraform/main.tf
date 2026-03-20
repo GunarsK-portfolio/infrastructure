@@ -38,6 +38,7 @@ module "networking" {
   availability_zones = local.availability_zones
 
   enable_vpc_flow_logs = var.enable_vpc_flow_logs
+  enable_nat_gateway   = true
   kms_key_arn          = module.secrets.kms_key_arn # Use secrets KMS key for flow logs
 
   tags = local.common_tags
