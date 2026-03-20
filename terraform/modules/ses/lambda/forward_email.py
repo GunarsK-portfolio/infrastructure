@@ -52,8 +52,12 @@ def handler(event, context):
 
             try:
                 forwarded = build_forwarded_message(original, recipient, forward_to)
+                source = f"noreply@{FROM_DOMAIN}"
+                logger.info(
+                    "Sending: Source=%s, Destinations=%s", source, [forward_to]
+                )
                 response = ses.send_raw_email(
-                    Source=f"noreply@{FROM_DOMAIN}",
+                    Source=source,
                     Destinations=[forward_to],
                     RawMessage={"Data": forwarded.as_string()},
                 )
