@@ -1,16 +1,14 @@
 """SES email forwarder Lambda.
 
-Reads raw email from S3 (stored by SES receipt rule), rewrites headers,
-and forwards to the configured destination via SES SendRawEmail.
+Reads raw email from S3 (stored by SES receipt rule), rewrites From/To
+headers, and forwards to the configured destination via SES SendRawEmail.
 """
 
 import json
 import logging
 import os
 import email
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
+from email.utils import parseaddr
 
 import boto3
 from botocore.exceptions import ClientError
@@ -51,13 +49,9 @@ def handler(event, context):
                 continue
 
             try:
-                forwarded = build_forwarded_message(original, recipient, forward_to)
-                source = f"noreply@{FROM_DOMAIN}"
-                logger.info(
-                    "Sending: Source=%s, Destinations=%s", source, [forward_to]
-                )
+                forwarded = rewrite_for_forwarding(original, forward_to)
                 response = ses.send_raw_email(
-                    Source=source,
+                    Source=f"noreply@{FROM_DOMAIN}",
                     Destinations=[forward_to],
                     RawMessage={"Data": forwarded.as_string()},
                 )
@@ -71,34 +65,34 @@ def handler(event, context):
                 )
 
 
-def build_forwarded_message(original, original_recipient, forward_to):
-    """Build a new message that wraps the original for forwarding."""
-    msg = MIMEMultipart("mixed")
+def rewrite_for_forwarding(original, forward_to):
+    """Rewrite headers on the original email for forwarding."""
+    msg = email.message_from_string(original.as_string())
 
-    original_from = original.get("From", "unknown")
-    original_subject = original.get("Subject", "(no subject)")
+    original_from = msg.get("From", "")
+    original_subject = msg.get("Subject", "(no subject)")
 
-    msg["From"] = f"noreply@{FROM_DOMAIN}"
+    # Replace headers for forwarding
+    del msg["To"]
+    del msg["CC"]
+    del msg["BCC"]
+    del msg["Return-Path"]
+    del msg["DKIM-Signature"]
+
+    msg.replace_header("From", f"noreply@{FROM_DOMAIN}")
     msg["To"] = forward_to
-    msg["Subject"] = f"Fwd: {original_subject}"
-    if "@" in original_from:
+    msg["X-Original-From"] = original_from
+
+    # Set Reply-To to original sender if valid
+    _, addr = parseaddr(original_from)
+    if addr and "@" in addr:
         msg["Reply-To"] = original_from
-    msg["X-Original-To"] = original_recipient
 
-    body = MIMEText(
-        f"Forwarded email to {original_recipient}\n"
-        f"From: {original_from}\n"
-        f"Subject: {original_subject}\n"
-        f"---\n\n",
-        "plain",
-    )
-    msg.attach(body)
-
-    original_attachment = MIMEBase("message", "rfc822")
-    original_attachment.set_payload(original.as_string())
-    original_attachment.add_header(
-        "Content-Disposition", "attachment", filename="original.eml"
-    )
-    msg.attach(original_attachment)
+    # Prefix subject
+    if not original_subject.lower().startswith("fwd:"):
+        try:
+            msg.replace_header("Subject", f"Fwd: {original_subject}")
+        except KeyError:
+            msg["Subject"] = f"Fwd: {original_subject}"
 
     return msg
