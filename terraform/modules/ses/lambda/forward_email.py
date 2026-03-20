@@ -81,9 +81,9 @@ def build_forwarded_message(original, original_recipient, forward_to):
     msg["From"] = f"noreply@{FROM_DOMAIN}"
     msg["To"] = forward_to
     msg["Subject"] = f"Fwd: {original_subject}"
-    msg["Reply-To"] = original_from
+    if "@" in original_from:
+        msg["Reply-To"] = original_from
     msg["X-Original-To"] = original_recipient
-    msg["X-Original-From"] = original_from
 
     body = MIMEText(
         f"Forwarded email to {original_recipient}\n"
