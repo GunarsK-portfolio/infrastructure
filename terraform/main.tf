@@ -415,9 +415,7 @@ module "ses" {
   zone_id      = module.dns.zone_id
   tags         = local.common_tags
 
-  email_forwarding_rules = {
-    "privacy@gunarsk.com" = "gunarskunakovs@gmail.com"
-  }
+  email_forwarding_rules = var.email_forwarding_rules
 
   depends_on = [module.dns]
 }

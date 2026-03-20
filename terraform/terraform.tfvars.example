@@ -52,6 +52,11 @@ enable_budgets                 = false # [OPTIONAL] Cost control and budget aler
 monthly_budget_limit           = 100   # [OPTIONAL] Monthly budget in USD
 budget_alert_emails            = []    # [REQUIRED IF enable_budgets=true] Email addresses for alerts
 
+# Email Forwarding (SES Receiving)
+email_forwarding_rules = {  # [OPTIONAL] Recipient → forwarding address
+  # "privacy@yourdomain.com" = "your@email.com"
+}
+
 # Additional Tags
 additional_tags = {  # [OPTIONAL] Custom resource tags
   CostCenter = "Engineering"

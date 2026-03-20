@@ -30,4 +30,5 @@ variable "email_forwarding_rules" {
   description = "Map of forwarding rules: recipient address → forwarding address"
   type        = map(string)
   default     = {}
+  sensitive   = true
 }

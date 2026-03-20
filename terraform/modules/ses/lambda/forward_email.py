@@ -13,6 +13,7 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 
 import boto3
+from botocore.exceptions import ClientError
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -34,12 +35,14 @@ def handler(event, context):
             r.lower() for r in notification.get("receipt", {}).get("recipients", [])
         ]
 
-        logger.info(
-            "Processing message %s for recipients: %s", message_id, recipients
-        )
+        logger.info("Processing message %s for %d recipient(s)", message_id, len(recipients))
 
-        raw = s3.get_object(Bucket=S3_BUCKET, Key=f"incoming/{message_id}")
-        original = email.message_from_bytes(raw["Body"].read())
+        try:
+            raw = s3.get_object(Bucket=S3_BUCKET, Key=f"incoming/{message_id}")
+            original = email.message_from_bytes(raw["Body"].read())
+        except ClientError:
+            logger.exception("Failed to fetch message %s from S3", message_id)
+            continue
 
         for recipient in recipients:
             forward_to = FORWARDING_RULES.get(recipient)
@@ -47,15 +50,18 @@ def handler(event, context):
                 logger.warning("No forwarding rule for %s, skipping", recipient)
                 continue
 
-            forwarded = build_forwarded_message(original, recipient, forward_to)
-
-            ses.send_raw_email(
-                Source=f"noreply@{FROM_DOMAIN}",
-                Destinations=[forward_to],
-                RawMessage={"Data": forwarded.as_string()},
-            )
-
-            logger.info("Forwarded %s → %s", recipient, forward_to)
+            try:
+                forwarded = build_forwarded_message(original, recipient, forward_to)
+                ses.send_raw_email(
+                    Source=f"noreply@{FROM_DOMAIN}",
+                    Destinations=[forward_to],
+                    RawMessage={"Data": forwarded.as_string()},
+                )
+                logger.info("Forwarded message %s for %s", message_id, recipient)
+            except ClientError:
+                logger.exception(
+                    "Failed to forward message %s for %s", message_id, recipient
+                )
 
 
 def build_forwarded_message(original, original_recipient, forward_to):

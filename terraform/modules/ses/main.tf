@@ -123,6 +123,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "ses_incoming" {
     expiration {
       days = 30
     }
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
   }
 }
 
@@ -310,7 +314,7 @@ resource "aws_iam_role_policy" "email_forwarder" {
         Sid      = "SESSend"
         Effect   = "Allow"
         Action   = ["ses:SendRawEmail"]
-        Resource = "*"
+        Resource = aws_ses_domain_identity.main.arn
       },
       {
         Sid    = "CloudWatchLogs"

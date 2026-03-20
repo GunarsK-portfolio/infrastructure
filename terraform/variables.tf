@@ -372,6 +372,14 @@ variable "alarm_email_addresses" {
   default     = []
 }
 
+# Email Forwarding
+variable "email_forwarding_rules" {
+  description = "Map of forwarding rules: recipient address → forwarding address"
+  type        = map(string)
+  default     = {}
+  sensitive   = true
+}
+
 # Tags
 variable "additional_tags" {
   description = "Additional tags to apply to all resources"
