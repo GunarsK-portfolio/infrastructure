@@ -405,12 +405,17 @@ module "budgets" {
   alert_emails         = var.budget_alert_emails
 }
 
-# SES Module - Email Sending
+# SES Module - Email Sending & Receiving
 module "ses" {
   source = "./modules/ses"
 
-  domain_name = var.domain_name
-  zone_id     = module.dns.zone_id
+  project_name = var.project_name
+  environment  = var.environment
+  domain_name  = var.domain_name
+  zone_id      = module.dns.zone_id
+  tags         = local.common_tags
+
+  email_forwarding_rules = var.email_forwarding_rules
 
   depends_on = [module.dns]
 }
