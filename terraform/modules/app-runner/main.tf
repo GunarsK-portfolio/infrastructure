@@ -65,6 +65,7 @@ locals {
       RABBITMQ_RETRY_DELAYS    = "1m,5m,30m,2h,12h"
       VERIFY_RATE_LIMIT_MAX    = "3"
       VERIFY_RATE_LIMIT_WINDOW = "1h"
+      GOOGLE_REDIRECT_URL      = "https://rpg.${var.domain_name}/oauth/google/callback"
     }
     "admin-api" = {
       ENVIRONMENT     = local.environment_map[var.environment]
@@ -196,11 +197,13 @@ locals {
   # Format: arn:secret-arn:json-key:: extracts specific JSON field
   service_secrets = {
     "auth-service" = {
-      DB_PASSWORD       = "${var.secrets_arns["aurora_admin"]}:password::"
-      REDIS_PASSWORD    = "${var.secrets_arns["redis_auth"]}:token::"
-      JWT_SECRET        = "${var.secrets_arns["jwt_secret"]}:secret::"
-      RABBITMQ_USER     = "${var.secrets_arns["rabbitmq"]}:username::"
-      RABBITMQ_PASSWORD = "${var.secrets_arns["rabbitmq"]}:password::"
+      DB_PASSWORD          = "${var.secrets_arns["aurora_admin"]}:password::"
+      REDIS_PASSWORD       = "${var.secrets_arns["redis_auth"]}:token::"
+      JWT_SECRET           = "${var.secrets_arns["jwt_secret"]}:secret::"
+      RABBITMQ_USER        = "${var.secrets_arns["rabbitmq"]}:username::"
+      RABBITMQ_PASSWORD    = "${var.secrets_arns["rabbitmq"]}:password::"
+      GOOGLE_CLIENT_ID     = "${var.secrets_arns["google_oauth"]}:client_id::"
+      GOOGLE_CLIENT_SECRET = "${var.secrets_arns["google_oauth"]}:client_secret::"
     }
     "admin-api" = {
       DB_PASSWORD = "${var.secrets_arns["aurora_admin"]}:password::"

@@ -70,6 +70,12 @@ output "rabbitmq_credentials_arn" {
   sensitive   = true
 }
 
+output "google_oauth_arn" {
+  description = "ARN of Google OAuth credentials secret"
+  value       = aws_secretsmanager_secret.google_oauth.arn
+  sensitive   = true
+}
+
 output "secret_arns" {
   description = "Map of all secret ARNs"
   value = {
@@ -83,6 +89,7 @@ output "secret_arns" {
     redis_auth       = aws_secretsmanager_secret.redis_auth_token.arn
     jwt_secret       = aws_secretsmanager_secret.jwt_secret.arn
     rabbitmq         = aws_secretsmanager_secret.rabbitmq_credentials.arn
+    google_oauth     = aws_secretsmanager_secret.google_oauth.arn
   }
   sensitive = true
 }
