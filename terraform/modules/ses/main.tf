@@ -90,6 +90,11 @@ data "aws_region" "current" {}
 
 data "aws_caller_identity" "current" {}
 
+data "aws_kms_alias" "s3" {
+  count = local.enable_forwarding ? 1 : 0
+  name  = "alias/aws/s3"
+}
+
 # =============================================================================
 # Email Receiving & Forwarding
 # =============================================================================
@@ -318,6 +323,12 @@ resource "aws_iam_role_policy" "email_forwarder" {
         Effect   = "Allow"
         Action   = ["s3:GetObject"]
         Resource = "${aws_s3_bucket.ses_incoming[0].arn}/*"
+      },
+      {
+        Sid      = "KMSDecrypt"
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
+        Resource = data.aws_kms_alias.s3[0].target_key_arn
       },
       {
         Sid      = "SESSend"
