@@ -415,6 +415,7 @@ module "ses" {
   zone_id      = module.dns.zone_id
   tags         = local.common_tags
 
+  kms_key_arn            = module.secrets.kms_key_arn
   email_forwarding_rules = var.email_forwarding_rules
 
   depends_on = [module.dns]

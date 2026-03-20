@@ -128,6 +128,25 @@ resource "aws_kms_key" "secrets" {
         }
       },
       {
+        Sid    = "Allow SES to use the key"
+        Effect = "Allow"
+        Principal = {
+          Service = "ses.amazonaws.com"
+        }
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceAccount" = data.aws_caller_identity.current.account_id
+          }
+        }
+      },
+      {
         Sid    = "Allow CloudWatch Logs to use the key"
         Effect = "Allow"
         Principal = {

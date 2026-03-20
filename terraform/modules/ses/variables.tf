@@ -26,6 +26,12 @@ variable "tags" {
   default     = {}
 }
 
+variable "kms_key_arn" {
+  description = "Customer-managed KMS key ARN for S3 encryption"
+  type        = string
+  default     = null
+}
+
 variable "email_forwarding_rules" {
   description = "Map of forwarding rules: recipient address → forwarding address"
   type        = map(string)

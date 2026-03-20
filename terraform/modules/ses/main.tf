@@ -90,11 +90,6 @@ data "aws_region" "current" {}
 
 data "aws_caller_identity" "current" {}
 
-data "aws_kms_alias" "s3" {
-  count = local.enable_forwarding ? 1 : 0
-  name  = "alias/aws/s3"
-}
-
 # =============================================================================
 # Email Receiving & Forwarding
 # =============================================================================
@@ -151,8 +146,10 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "ses_incoming" {
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "aws:kms"
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = var.kms_key_arn
     }
+    bucket_key_enabled = true
   }
 }
 
@@ -217,6 +214,7 @@ resource "aws_ses_receipt_rule" "forward" {
   s3_action {
     bucket_name       = aws_s3_bucket.ses_incoming[0].id
     object_key_prefix = "incoming/"
+    kms_key_arn       = var.kms_key_arn
     position          = 1
   }
 
@@ -328,7 +326,7 @@ resource "aws_iam_role_policy" "email_forwarder" {
         Sid      = "KMSDecrypt"
         Effect   = "Allow"
         Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
-        Resource = data.aws_kms_alias.s3[0].target_key_arn
+        Resource = var.kms_key_arn
       },
       {
         Sid      = "SESSend"
