@@ -52,12 +52,15 @@ def handler(event, context):
 
             try:
                 forwarded = build_forwarded_message(original, recipient, forward_to)
-                ses.send_raw_email(
+                response = ses.send_raw_email(
                     Source=f"noreply@{FROM_DOMAIN}",
                     Destinations=[forward_to],
                     RawMessage={"Data": forwarded.as_string()},
                 )
-                logger.info("Forwarded message %s for %s", message_id, recipient)
+                logger.info(
+                    "Forwarded message %s for %s, SES MessageId: %s",
+                    message_id, recipient, response.get("MessageId"),
+                )
             except ClientError:
                 logger.exception(
                     "Failed to forward message %s for %s", message_id, recipient
