@@ -106,14 +106,15 @@ resource "aws_route53_record" "ses_inbound_mx" {
   name    = var.domain_name
   type    = "MX"
   ttl     = 600
-  records = ["10 inbound-smtp.${data.aws_region.current.name}.amazonaws.com"]
+  records = ["10 inbound-smtp.${data.aws_region.current.region}.amazonaws.com"]
 }
 
 # S3 bucket for raw incoming emails
 resource "aws_s3_bucket" "ses_incoming" {
   count = local.enable_forwarding ? 1 : 0
 
-  bucket = "${var.project_name}-ses-incoming-${var.environment}-${data.aws_caller_identity.current.account_id}"
+  bucket        = "${var.project_name}-ses-incoming-${var.environment}-${data.aws_caller_identity.current.account_id}"
+  force_destroy = true
 
   tags = merge(var.tags, {
     Name = "${var.project_name}-ses-incoming"
