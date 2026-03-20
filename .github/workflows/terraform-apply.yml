@@ -54,6 +54,7 @@ jobs:
           TF_VAR_enable_http_endpoint: ${{ secrets.TF_VAR_enable_http_endpoint || 'false' }}
           TF_VAR_enable_xray_tracing: ${{ secrets.TF_VAR_enable_xray_tracing || 'true' }}
           TF_VAR_service_image_tags: ${{ vars.TF_VAR_service_image_tags }}
+          TF_VAR_email_forwarding_rules: ${{ secrets.TF_VAR_email_forwarding_rules }}
 
       - name: Terraform Apply
         run: terraform apply -auto-approve -input=false
@@ -68,6 +69,7 @@ jobs:
           TF_VAR_enable_http_endpoint: ${{ secrets.TF_VAR_enable_http_endpoint || 'false' }}
           TF_VAR_enable_xray_tracing: ${{ secrets.TF_VAR_enable_xray_tracing || 'true' }}
           TF_VAR_service_image_tags: ${{ vars.TF_VAR_service_image_tags }}
+          TF_VAR_email_forwarding_rules: ${{ secrets.TF_VAR_email_forwarding_rules }}
 
       - name: Save Terraform Outputs
         id: outputs
