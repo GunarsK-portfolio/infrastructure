@@ -9,3 +9,25 @@ variable "zone_id" {
   description = "Route53 hosted zone ID for DNS records"
   type        = string
 }
+
+variable "project_name" {
+  description = "Project name for resource naming"
+  type        = string
+}
+
+variable "environment" {
+  description = "Environment name for resource naming"
+  type        = string
+}
+
+variable "tags" {
+  description = "Tags to apply to all resources"
+  type        = map(string)
+  default     = {}
+}
+
+variable "email_forwarding_rules" {
+  description = "Map of forwarding rules: recipient address → forwarding address"
+  type        = map(string)
+  default     = {}
+}
