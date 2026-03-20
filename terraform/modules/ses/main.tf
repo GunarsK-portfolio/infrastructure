@@ -76,6 +76,15 @@ resource "aws_route53_record" "ses_mail_from_spf" {
   records = ["v=spf1 include:amazonses.com ~all"]
 }
 
+# DMARC policy — required for Gmail delivery
+resource "aws_route53_record" "dmarc" {
+  zone_id = var.zone_id
+  name    = "_dmarc.${var.domain_name}"
+  type    = "TXT"
+  ttl     = 600
+  records = ["v=DMARC1; p=none; rua=mailto:dmarc@${var.domain_name}"]
+}
+
 # Current region data source
 data "aws_region" "current" {}
 
@@ -97,14 +106,15 @@ resource "aws_route53_record" "ses_inbound_mx" {
   name    = var.domain_name
   type    = "MX"
   ttl     = 600
-  records = ["10 inbound-smtp.${data.aws_region.current.name}.amazonaws.com"]
+  records = ["10 inbound-smtp.${data.aws_region.current.region}.amazonaws.com"]
 }
 
 # S3 bucket for raw incoming emails
 resource "aws_s3_bucket" "ses_incoming" {
   count = local.enable_forwarding ? 1 : 0
 
-  bucket = "${var.project_name}-ses-incoming-${var.environment}-${data.aws_caller_identity.current.account_id}"
+  bucket        = "${var.project_name}-ses-incoming-${var.environment}-${data.aws_caller_identity.current.account_id}"
+  force_destroy = true
 
   tags = merge(var.tags, {
     Name = "${var.project_name}-ses-incoming"
@@ -137,8 +147,10 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "ses_incoming" {
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "aws:kms"
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = var.kms_key_arn
     }
+    bucket_key_enabled = true
   }
 }
 
@@ -309,6 +321,12 @@ resource "aws_iam_role_policy" "email_forwarder" {
         Effect   = "Allow"
         Action   = ["s3:GetObject"]
         Resource = "${aws_s3_bucket.ses_incoming[0].arn}/*"
+      },
+      {
+        Sid      = "KMSDecrypt"
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
+        Resource = var.kms_key_arn
       },
       {
         Sid      = "SESSend"
