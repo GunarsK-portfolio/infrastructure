@@ -79,7 +79,10 @@ def rewrite_for_forwarding(original, forward_to):
     del msg["Return-Path"]
     del msg["DKIM-Signature"]
 
-    msg.replace_header("From", f"noreply@{FROM_DOMAIN}")
+    if msg.get("From"):
+        msg.replace_header("From", f"noreply@{FROM_DOMAIN}")
+    else:
+        msg["From"] = f"noreply@{FROM_DOMAIN}"
     msg["To"] = forward_to
     msg["X-Original-From"] = original_from
 
@@ -89,10 +92,10 @@ def rewrite_for_forwarding(original, forward_to):
         msg["Reply-To"] = original_from
 
     # Prefix subject
-    if not original_subject.lower().startswith("fwd:"):
-        try:
-            msg.replace_header("Subject", f"Fwd: {original_subject}")
-        except KeyError:
-            msg["Subject"] = f"Fwd: {original_subject}"
+    fwd_subject = f"Fwd: {original_subject}"
+    if msg.get("Subject"):
+        msg.replace_header("Subject", fwd_subject)
+    else:
+        msg["Subject"] = fwd_subject
 
     return msg

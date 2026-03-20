@@ -215,7 +215,6 @@ resource "aws_ses_receipt_rule" "forward" {
   s3_action {
     bucket_name       = aws_s3_bucket.ses_incoming[0].id
     object_key_prefix = "incoming/"
-    kms_key_arn       = var.kms_key_arn
     position          = 1
   }
 
