@@ -48,7 +48,7 @@ locals {
       REDIS_HOST         = var.elasticache_endpoint
       REDIS_PORT         = "6379"
       JWT_ACCESS_EXPIRY  = "15m"
-      JWT_REFRESH_EXPIRY = "8760h"
+      JWT_REFRESH_EXPIRY = "720h"
       # Cookie configuration for httpOnly auth tokens
       COOKIE_DOMAIN            = ".${var.domain_name}"
       COOKIE_SECURE            = "true"
