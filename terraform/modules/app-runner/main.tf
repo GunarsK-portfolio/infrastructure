@@ -117,7 +117,7 @@ locals {
       S3_AVATARS_BUCKET    = var.s3_bucket_names["character-portraits"]
       MAX_FILE_SIZE        = "10485760"
       ALLOWED_FILE_TYPES   = "image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
-      ALLOWED_ORIGINS      = "https://${var.domain_name},https://admin.${var.domain_name}"
+      ALLOWED_ORIGINS      = "https://${var.domain_name},https://admin.${var.domain_name},https://rpg.${var.domain_name}"
     }
     "messaging-api" = {
       ENVIRONMENT           = local.environment_map[var.environment]
