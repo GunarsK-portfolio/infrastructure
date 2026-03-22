@@ -114,6 +114,7 @@ locals {
       S3_IMAGES_BUCKET     = var.s3_bucket_names["images"]
       S3_DOCUMENTS_BUCKET  = var.s3_bucket_names["documents"]
       S3_MINIATURES_BUCKET = var.s3_bucket_names["miniatures"]
+      S3_AVATARS_BUCKET    = var.s3_bucket_names["character-portraits"]
       MAX_FILE_SIZE        = "10485760"
       ALLOWED_FILE_TYPES   = "image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
       ALLOWED_ORIGINS      = "https://${var.domain_name},https://admin.${var.domain_name}"

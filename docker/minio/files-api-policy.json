@@ -11,7 +11,8 @@
       "Resource": [
         "arn:aws:s3:::images/*",
         "arn:aws:s3:::miniatures/*",
-        "arn:aws:s3:::documents/*"
+        "arn:aws:s3:::documents/*",
+        "arn:aws:s3:::character-portraits/*"
       ]
     },
     {
@@ -22,7 +23,8 @@
       "Resource": [
         "arn:aws:s3:::images",
         "arn:aws:s3:::miniatures",
-        "arn:aws:s3:::documents"
+        "arn:aws:s3:::documents",
+        "arn:aws:s3:::character-portraits"
       ]
     }
   ]
