@@ -196,6 +196,7 @@ services:
       /usr/bin/mc mb --ignore-existing myminio/images;
       /usr/bin/mc mb --ignore-existing myminio/miniatures;
       /usr/bin/mc mb --ignore-existing myminio/documents;
+      /usr/bin/mc mb --ignore-existing myminio/character-portraits;
       /usr/bin/mc admin policy create myminio files-api-policy /policies/files-api-policy.json;
       /usr/bin/mc admin user add myminio ${S3_ACCESS_KEY} ${S3_SECRET_KEY};
       /usr/bin/mc admin policy attach myminio files-api-policy --user ${S3_ACCESS_KEY};

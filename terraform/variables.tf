@@ -268,7 +268,8 @@ variable "s3_buckets" {
   default = [
     "images",
     "documents",
-    "miniatures"
+    "miniatures",
+    "character-portraits"
   ]
 
   validation {
