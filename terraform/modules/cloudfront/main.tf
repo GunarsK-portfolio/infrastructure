@@ -542,6 +542,31 @@ resource "aws_cloudfront_distribution" "files" {
     }
   }
 
+  # File downloads are public (no auth required) and use UUID-based keys,
+  # so edge caching is safe with no invalidation concerns.
+  ordered_cache_behavior {
+    path_pattern               = "/api/v1/files/*"
+    allowed_methods            = ["GET", "HEAD", "OPTIONS"]
+    cached_methods             = ["GET", "HEAD"]
+    target_origin_id           = "files-api"
+    viewer_protocol_policy     = "redirect-to-https"
+    compress                   = true
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.api_cors.id
+
+    forwarded_values {
+      query_string = false
+      headers      = []
+
+      cookies {
+        forward = "none"
+      }
+    }
+
+    min_ttl     = 0
+    default_ttl = 31536000
+    max_ttl     = 31536000
+  }
+
   default_cache_behavior {
     allowed_methods            = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods             = ["GET", "HEAD"]
