@@ -31,7 +31,7 @@ variable "owner" {
 }
 
 variable "domain_name" {
-  description = "Primary domain name (e.g., gunarsk.com). Subdomains: admin.*, auth.*, files.*"
+  description = "Primary domain name (e.g., gunarsk.com). Subdomains: admin.*, auth.*, files.*, message.*, rpg.*"
   type        = string
   default     = "gunarsk.com"
 }

@@ -16,11 +16,11 @@ project_name = "my-project"  # [RECOMMENDED] Customize for resource naming
 owner        = "YourTeam"    # [OPTIONAL] Team or individual owner
 
 # Domain Configuration
-domain_name = "example.com"  # [REQUIRED] Your primary domain (subdomains: admin.*, auth.*, files.*)
+domain_name = "example.com"  # [REQUIRED] Your primary domain (subdomains: admin.*, auth.*, files.*, message.*, rpg.*)
 
 # Network Configuration
 vpc_cidr           = "10.0.0.0/16"                  # [OPTIONAL] VPC CIDR block
-availability_zones = ["us-east-1a", "us-east-1b"]   # [OPTIONAL] Auto-detected if using defaults
+# availability_zones = ["us-east-1a", "us-east-1b"]  # [OPTIONAL] Auto-detected from region when omitted
 
 # Bastion Configuration
 bastion_instance_type = "t4g.nano"  # [OPTIONAL] EC2 instance type for bastion host
