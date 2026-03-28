@@ -81,6 +81,8 @@ module "database" {
   enable_performance_insights = var.enable_performance_insights
   enable_http_endpoint        = var.enable_http_endpoint
 
+  alarm_sns_topic_arn = module.monitoring.sns_topic_arn
+
   tags = local.common_tags
 }
 
@@ -95,6 +97,8 @@ module "cache" {
 
   # Reference auth token from Secrets Manager
   auth_token_secret_arn = module.secrets.redis_auth_token_arn
+
+  alarm_sns_topic_arn = module.monitoring.sns_topic_arn
 
   tags = local.common_tags
 }
@@ -113,6 +117,8 @@ module "mq" {
 
   # Encryption
   kms_key_arn = module.secrets.kms_key_arn
+
+  alarm_sns_topic_arn = module.monitoring.sns_topic_arn
 
   tags = local.common_tags
 }
