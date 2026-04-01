@@ -45,7 +45,7 @@ output "internet_gateway_id" {
   value       = aws_internet_gateway.main.id
 }
 
-output "nat_gateway_ids" {
-  description = "IDs of NAT Gateways (if enabled)"
-  value       = var.enable_nat_gateway ? aws_nat_gateway.main[*].id : []
+output "nat_gateway_id" {
+  description = "ID of the NAT Gateway (if enabled)"
+  value       = var.enable_nat_gateway ? aws_nat_gateway.main[0].id : null
 }
