@@ -49,6 +49,7 @@ resource "aws_cloudwatch_log_group" "app_runner" {
 # Consolidates per-service metrics into combined views
 # Detailed per-service monitoring via alarms (no cost)
 resource "aws_cloudwatch_dashboard" "main" {
+  count          = var.enable_dashboard ? 1 : 0
   dashboard_name = "${var.project_name}-${var.environment}-dashboard"
 
   dashboard_body = jsonencode({

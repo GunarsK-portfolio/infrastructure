@@ -38,6 +38,12 @@ variable "enable_waf_alarms" {
   default     = true
 }
 
+variable "enable_dashboard" {
+  description = "Enable CloudWatch dashboard"
+  type        = bool
+  default     = false
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)
