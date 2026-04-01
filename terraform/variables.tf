@@ -294,7 +294,7 @@ variable "log_retention_days" {
 variable "enable_enhanced_monitoring" {
   description = "Enable enhanced monitoring for Aurora"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "enable_http_endpoint" {
@@ -310,10 +310,16 @@ variable "enable_performance_insights" {
 }
 
 
+variable "enable_dashboard" {
+  description = "Enable CloudWatch dashboard"
+  type        = bool
+  default     = false
+}
+
 variable "enable_vpc_flow_logs" {
   description = "Enable VPC Flow Logs for network monitoring"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "enable_guardduty" {

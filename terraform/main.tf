@@ -338,6 +338,8 @@ module "monitoring" {
   environment        = var.environment
   log_retention_days = var.log_retention_days
 
+  enable_dashboard = var.enable_dashboard
+
   # Resources to monitor
   app_runner_service_arns = module.app_runner.service_arns
   cloudfront_distribution_ids = {
