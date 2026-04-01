@@ -144,7 +144,7 @@ output "waf_web_acl_id" {
 # Monitoring Outputs
 output "cloudwatch_dashboard_name" {
   description = "CloudWatch dashboard name"
-  value       = module.monitoring.dashboard_name
+  value       = try(module.monitoring.dashboard_name, "")
 }
 
 output "cloudwatch_log_group_names" {
