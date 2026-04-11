@@ -266,7 +266,7 @@ services:
 
   # Database Migrations (Flyway)
   flyway:
-    image: flyway/flyway:12.2.0
+    image: flyway/flyway:12.3.0
     container_name: flyway
     restart: "no"
     command: migrate
