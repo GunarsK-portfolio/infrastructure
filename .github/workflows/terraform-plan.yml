@@ -64,7 +64,7 @@ jobs:
           TF_VAR_email_forwarding_rules: ${{ secrets.TF_VAR_email_forwarding_rules }}
 
       - name: Comment PR with results
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         if: github.event_name == 'pull_request'
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
