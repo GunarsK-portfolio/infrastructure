@@ -134,11 +134,25 @@ jobs:
       - name: Run TFLint
         run: tflint --recursive --format compact
 
+  # Workflow lint - Validate GitHub Actions workflows
+  workflow-lint:
+    name: Workflow Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install actionlint
+        run: bash <(curl -s https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+
+      - name: Run actionlint
+        run: ./actionlint -color
+
   # Summary job - require all to pass
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
-    needs: [yaml-lint, docker-compose-validate, shellcheck, python-lint, secret-scan, markdown-lint, terraform-lint]
+    needs: [yaml-lint, docker-compose-validate, shellcheck, python-lint, secret-scan, markdown-lint, terraform-lint, workflow-lint]
     if: always()
     steps:
       - name: Check all jobs status
