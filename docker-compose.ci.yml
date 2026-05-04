@@ -9,7 +9,7 @@ name: portfolio-ci
 services:
   traefik:
     container_name: traefik-ci
-    ports:
+    ports: !override
       - "127.0.0.1:18080:80"
       - "127.0.0.1:18443:443"
       - "127.0.0.1:18081:81"
@@ -19,17 +19,17 @@ services:
 
   postgres:
     container_name: postgres-ci
-    ports:
+    ports: !override
       - "127.0.0.1:15432:5432"
 
   redis:
     container_name: redis-ci
-    ports:
+    ports: !override
       - "127.0.0.1:16379:6379"
 
   minio:
     container_name: minio-ci
-    ports:
+    ports: !override
       - "127.0.0.1:19000:9000"
       - "127.0.0.1:19001:9001"
 
@@ -38,13 +38,13 @@ services:
 
   rabbitmq:
     container_name: rabbitmq-ci
-    ports:
+    ports: !override
       - "127.0.0.1:25672:5672"
       - "127.0.0.1:35672:15672"
 
   localstack:
     container_name: localstack-ci
-    ports:
+    ports: !override
       - "127.0.0.1:14566:4566"
 
   flyway:
@@ -52,12 +52,12 @@ services:
 
   auth-service:
     container_name: auth-service-ci
-    ports:
+    ports: !override
       - "127.0.0.1:18084:8084"
 
   files-api:
     container_name: files-api-ci
-    ports:
+    ports: !override
       - "127.0.0.1:18085:8085"
 
 networks:
