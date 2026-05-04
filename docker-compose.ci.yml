@@ -80,12 +80,20 @@ services:
   auth-service:
     container_name: auth-service-ci
     image: infrastructure-auth-service
+    # CI frontend origin is rpg-traefik on 18543. Without this override the
+    # auth-service CORS allow-list comes from ALLOWED_ORIGINS_AUTH (defaulted
+    # to local-dev origins) and login XHR from the SPA gets blocked, surfacing
+    # as a "CORS error" in the browser.
+    environment:
+      ALLOWED_ORIGINS: "https://localhost:18543"
     ports: !override
       - "127.0.0.1:18084:8084"
 
   files-api:
     container_name: files-api-ci
     image: infrastructure-files-api
+    environment:
+      ALLOWED_ORIGINS: "https://localhost:18543"
     ports: !override
       - "127.0.0.1:18085:8085"
 
