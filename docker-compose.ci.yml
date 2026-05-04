@@ -1,6 +1,10 @@
 # CI-only override: shifts host port bindings to a 1XXXX range so e2e workflows
-# can run on a self-hosted runner without colliding with a local dev stack.
+# can run on a self-hosted runner without colliding with a local dev stack,
+# and uses its own project name so cleanup (`docker compose down -v`) only
+# removes CI containers/volumes — never the local dev stack.
 # Usage: docker compose -f docker-compose.yml -f docker-compose.ci.yml up
+
+name: portfolio-ci
 
 services:
   traefik:
