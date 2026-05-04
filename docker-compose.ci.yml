@@ -52,11 +52,13 @@ services:
 
   auth-service:
     container_name: auth-service-ci
+    image: infrastructure-auth-service
     ports: !override
       - "127.0.0.1:18084:8084"
 
   files-api:
     container_name: files-api-ci
+    image: infrastructure-files-api
     ports: !override
       - "127.0.0.1:18085:8085"
 
