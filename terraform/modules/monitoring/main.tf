@@ -430,7 +430,8 @@ resource "aws_cloudwatch_metric_alarm" "elasticache_memory" {
   tags = var.tags
 }
 
-# Pre-create App Runner application log group for the metric filter; import if it already exists.
+# Pre-create App Runner application log group for the metric filter.
+# App Runner may auto-create this log group with its own settings; ignore drift to avoid apply churn.
 resource "aws_cloudwatch_log_group" "ai_rpg_public_api" {
   count = contains(keys(var.app_runner_service_ids), "rpg-public-api") ? 1 : 0
 
@@ -439,6 +440,10 @@ resource "aws_cloudwatch_log_group" "ai_rpg_public_api" {
   kms_key_id        = var.kms_key_arn
 
   tags = var.tags
+
+  lifecycle {
+    ignore_changes = all
+  }
 }
 
 resource "aws_cloudwatch_log_metric_filter" "ai_inference_cost_ms" {
@@ -449,11 +454,10 @@ resource "aws_cloudwatch_log_metric_filter" "ai_inference_cost_ms" {
   pattern        = "{ $.msg = \"ai_inference_cost\" }"
 
   metric_transformation {
-    name          = "AIInferenceCostMs"
-    namespace     = "${var.project_name}/${var.environment}/AI"
-    value         = "$.execution_ms"
-    default_value = "0"
-    unit          = "Milliseconds"
+    name      = "AIInferenceCostMs"
+    namespace = "${var.project_name}/${var.environment}/AI"
+    value     = "$.execution_ms"
+    unit      = "Milliseconds"
   }
 }
 
