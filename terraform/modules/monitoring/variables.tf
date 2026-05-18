@@ -21,6 +21,19 @@ variable "app_runner_service_arns" {
   type        = map(string)
 }
 
+variable "app_runner_service_ids" {
+  description = "Map of App Runner service IDs (service_name => service_id). Used to construct App Runner-generated CloudWatch log group names."
+  type        = map(string)
+  default     = {}
+}
+
+# AI homebrew assistant cost alarm
+variable "ai_inference_cost_threshold_ms" {
+  description = "Sum of AI inference execution_ms per 5 min that triggers the cost alarm"
+  type        = number
+  default     = 300000
+}
+
 variable "cloudfront_distribution_ids" {
   description = "Map of CloudFront distribution IDs"
   type        = map(string)

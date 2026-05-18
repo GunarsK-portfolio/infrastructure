@@ -875,6 +875,63 @@ resource "aws_wafv2_web_acl" "main" {
     }
   }
 
+  # Backstop for per-user middleware in rpg-public-api; non-terminating under threshold.
+  rule {
+    name     = "rate-limit-ai-suggest"
+    priority = 17
+
+    action {
+      block {}
+    }
+
+    statement {
+      rate_based_statement {
+        limit                 = 10
+        aggregate_key_type    = "IP"
+        evaluation_window_sec = 60
+
+        scope_down_statement {
+          and_statement {
+            statement {
+              byte_match_statement {
+                field_to_match {
+                  single_header {
+                    name = "host"
+                  }
+                }
+                positional_constraint = "STARTS_WITH"
+                search_string         = "rpg.${var.domain_name}"
+                text_transformation {
+                  priority = 0
+                  type     = "LOWERCASE"
+                }
+              }
+            }
+            statement {
+              byte_match_statement {
+                field_to_match {
+                  uri_path {}
+                }
+                positional_constraint = "EXACTLY"
+                search_string         = "/api/v1/classifiers/ai-suggest"
+                text_transformation {
+                  priority = 0
+                  type     = "LOWERCASE"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "RateLimitAISuggest"
+      sampled_requests_enabled   = true
+    }
+  }
+
   visibility_config {
     cloudwatch_metrics_enabled = true
     metric_name                = "${var.project_name}-${var.environment}-waf"

@@ -72,6 +72,9 @@ email_forwarding_rules = {  # [OPTIONAL] Recipient → forwarding address
   # "privacy@yourdomain.com" = "your@email.com"
 }
 
+# RPG AI Homebrew Assistant
+runpod_inference_url = ""  # [OPTIONAL] RunPod Serverless /runsync URL
+
 # Additional Tags
 additional_tags = {  # [OPTIONAL] Custom resource tags
   CostCenter = "Engineering"

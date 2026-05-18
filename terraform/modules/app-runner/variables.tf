@@ -85,6 +85,12 @@ variable "enable_xray_tracing" {
   default     = true
 }
 
+variable "runpod_inference_url" {
+  description = "RunPod Serverless /runsync URL for rpg-public-api AI homebrew assistant"
+  type        = string
+  default     = ""
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)

@@ -430,6 +430,41 @@ resource "aws_cloudwatch_metric_alarm" "elasticache_memory" {
   tags = var.tags
 }
 
+# Targets App Runner-generated log group; first apply may fail until service scales up once.
+resource "aws_cloudwatch_log_metric_filter" "ai_inference_cost_ms" {
+  count = contains(keys(var.app_runner_service_ids), "rpg-public-api") ? 1 : 0
+
+  name           = "${var.project_name}-${var.environment}-ai-inference-cost-ms"
+  log_group_name = "/aws/apprunner/${var.project_name}-${var.environment}-rpg-public-api/${var.app_runner_service_ids["rpg-public-api"]}/application"
+  pattern        = "{ $.msg = \"ai_inference_cost\" }"
+
+  metric_transformation {
+    name          = "AIInferenceCostMs"
+    namespace     = "${var.project_name}/${var.environment}/AI"
+    value         = "$.execution_ms"
+    default_value = "0"
+    unit          = "Milliseconds"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "ai_inference_cost_high" {
+  count = contains(keys(var.app_runner_service_ids), "rpg-public-api") ? 1 : 0
+
+  alarm_name          = "${var.project_name}-${var.environment}-ai-inference-cost-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "AIInferenceCostMs"
+  namespace           = "${var.project_name}/${var.environment}/AI"
+  period              = 300
+  statistic           = "Sum"
+  threshold           = var.ai_inference_cost_threshold_ms
+  alarm_description   = "AI inference total execution time exceeded ${var.ai_inference_cost_threshold_ms} ms in 5 min - possible cost-amplification abuse"
+  alarm_actions       = [aws_sns_topic.alarms.arn]
+  treat_missing_data  = "notBreaching"
+
+  tags = var.tags
+}
+
 # ElastiCache Alarm - Evictions
 resource "aws_cloudwatch_metric_alarm" "elasticache_evictions" {
   for_each = var.enable_cache_alarms ? toset(["enabled"]) : toset([])
