@@ -89,6 +89,11 @@ variable "runpod_inference_url" {
   description = "RunPod Serverless /runsync URL for rpg-public-api AI homebrew assistant"
   type        = string
   default     = ""
+
+  validation {
+    condition     = var.runpod_inference_url == "" || can(regex("^https://[a-zA-Z0-9.-]+/.+", var.runpod_inference_url))
+    error_message = "runpod_inference_url must be empty or a valid HTTPS URL"
+  }
 }
 
 variable "tags" {

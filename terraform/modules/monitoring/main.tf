@@ -430,12 +430,22 @@ resource "aws_cloudwatch_metric_alarm" "elasticache_memory" {
   tags = var.tags
 }
 
-# Targets App Runner-generated log group; first apply may fail until service scales up once.
+# Pre-create App Runner application log group for the metric filter; import if it already exists.
+resource "aws_cloudwatch_log_group" "ai_rpg_public_api" {
+  count = contains(keys(var.app_runner_service_ids), "rpg-public-api") ? 1 : 0
+
+  name              = "/aws/apprunner/${var.project_name}-${var.environment}-rpg-public-api/${var.app_runner_service_ids["rpg-public-api"]}/application"
+  retention_in_days = var.log_retention_days
+  kms_key_id        = var.kms_key_arn
+
+  tags = var.tags
+}
+
 resource "aws_cloudwatch_log_metric_filter" "ai_inference_cost_ms" {
   count = contains(keys(var.app_runner_service_ids), "rpg-public-api") ? 1 : 0
 
   name           = "${var.project_name}-${var.environment}-ai-inference-cost-ms"
-  log_group_name = "/aws/apprunner/${var.project_name}-${var.environment}-rpg-public-api/${var.app_runner_service_ids["rpg-public-api"]}/application"
+  log_group_name = aws_cloudwatch_log_group.ai_rpg_public_api[0].name
   pattern        = "{ $.msg = \"ai_inference_cost\" }"
 
   metric_transformation {
