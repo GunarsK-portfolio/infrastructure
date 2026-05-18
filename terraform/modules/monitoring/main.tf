@@ -430,6 +430,55 @@ resource "aws_cloudwatch_metric_alarm" "elasticache_memory" {
   tags = var.tags
 }
 
+# Pre-create App Runner application log group for the metric filter.
+# App Runner may auto-create this log group with its own settings; ignore drift to avoid apply churn.
+resource "aws_cloudwatch_log_group" "ai_rpg_public_api" {
+  count = contains(keys(var.app_runner_service_ids), "rpg-public-api") ? 1 : 0
+
+  name              = "/aws/apprunner/${var.project_name}-${var.environment}-rpg-public-api/${var.app_runner_service_ids["rpg-public-api"]}/application"
+  retention_in_days = var.log_retention_days
+  kms_key_id        = var.kms_key_arn
+
+  tags = var.tags
+
+  lifecycle {
+    ignore_changes = [retention_in_days, tags]
+  }
+}
+
+resource "aws_cloudwatch_log_metric_filter" "ai_inference_cost_ms" {
+  count = contains(keys(var.app_runner_service_ids), "rpg-public-api") ? 1 : 0
+
+  name           = "${var.project_name}-${var.environment}-ai-inference-cost-ms"
+  log_group_name = aws_cloudwatch_log_group.ai_rpg_public_api[0].name
+  pattern        = "{ $.msg = \"ai_inference_cost\" }"
+
+  metric_transformation {
+    name      = "AIInferenceCostMs"
+    namespace = "${var.project_name}/${var.environment}/AI"
+    value     = "$.execution_ms"
+    unit      = "Milliseconds"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "ai_inference_cost_high" {
+  count = contains(keys(var.app_runner_service_ids), "rpg-public-api") ? 1 : 0
+
+  alarm_name          = "${var.project_name}-${var.environment}-ai-inference-cost-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "AIInferenceCostMs"
+  namespace           = "${var.project_name}/${var.environment}/AI"
+  period              = 300
+  statistic           = "Sum"
+  threshold           = var.ai_inference_cost_threshold_ms
+  alarm_description   = "AI inference total execution time exceeded ${var.ai_inference_cost_threshold_ms} ms in 5 min - possible cost-amplification abuse"
+  alarm_actions       = [aws_sns_topic.alarms.arn]
+  treat_missing_data  = "notBreaching"
+
+  tags = var.tags
+}
+
 # ElastiCache Alarm - Evictions
 resource "aws_cloudwatch_metric_alarm" "elasticache_evictions" {
   for_each = var.enable_cache_alarms ? toset(["enabled"]) : toset([])

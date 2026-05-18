@@ -534,6 +534,32 @@ resource "aws_secretsmanager_secret_version" "google_oauth" {
   }
 }
 
+# RunPod Serverless API Key (rpg-public-api -> RunPod inference endpoint)
+resource "aws_secretsmanager_secret" "runpod_api_key" {
+  name_prefix             = "${var.project_name}-${var.environment}-runpod-api-key-"
+  description             = "RunPod Serverless API key for AI homebrew assistant inference"
+  kms_key_id              = aws_kms_key.secrets.id
+  recovery_window_in_days = 30
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-runpod-api-key"
+    }
+  )
+}
+
+resource "aws_secretsmanager_secret_version" "runpod_api_key" {
+  secret_id = aws_secretsmanager_secret.runpod_api_key.id
+  secret_string = jsonencode({
+    api_key = "placeholder"
+  })
+
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
+}
+
 # Random passwords (temporary, must be replaced)
 resource "random_password" "aurora_master" {
   length  = 32

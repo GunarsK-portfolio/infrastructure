@@ -185,6 +185,12 @@ locals {
       MAX_BODY_SIZE   = "1048576"
       REDIS_HOST      = var.elasticache_endpoint
       REDIS_PORT      = "6379"
+      # Flip to "true" only after RunPod endpoint exists and api_key secret is populated.
+      AI_ASSISTANT_ENABLED = "false"
+      LLM_PROVIDER         = "runpod"
+      RUNPOD_INFERENCE_URL = var.runpod_inference_url
+      AI_MAX_ITERATIONS    = "3"
+      AI_RAG_TOP_K         = "30"
     }
     "rpg-public-web" = {
       ENVIRONMENT  = local.environment_map[var.environment]
@@ -231,9 +237,10 @@ locals {
     "admin-web"  = {}
     "public-web" = {}
     "rpg-public-api" = {
-      DB_PASSWORD    = "${var.secrets_arns["aurora_rpg_app"]}:password::"
-      JWT_SECRET     = "${var.secrets_arns["jwt_secret"]}:secret::"
-      REDIS_PASSWORD = "${var.secrets_arns["redis_auth"]}:token::"
+      DB_PASSWORD              = "${var.secrets_arns["aurora_rpg_app"]}:password::"
+      JWT_SECRET               = "${var.secrets_arns["jwt_secret"]}:secret::"
+      REDIS_PASSWORD           = "${var.secrets_arns["redis_auth"]}:token::"
+      RUNPOD_INFERENCE_API_KEY = "${var.secrets_arns["runpod_api_key"]}:api_key::"
     }
     "rpg-public-web" = {}
   }

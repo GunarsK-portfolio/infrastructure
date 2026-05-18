@@ -76,6 +76,12 @@ output "google_oauth_arn" {
   sensitive   = true
 }
 
+output "runpod_api_key_arn" {
+  description = "ARN of RunPod Serverless API key secret"
+  value       = aws_secretsmanager_secret.runpod_api_key.arn
+  sensitive   = true
+}
+
 output "secret_arns" {
   description = "Map of all secret ARNs"
   value = {
@@ -90,6 +96,7 @@ output "secret_arns" {
     jwt_secret       = aws_secretsmanager_secret.jwt_secret.arn
     rabbitmq         = aws_secretsmanager_secret.rabbitmq_credentials.arn
     google_oauth     = aws_secretsmanager_secret.google_oauth.arn
+    runpod_api_key   = aws_secretsmanager_secret.runpod_api_key.arn
   }
   sensitive = true
 }

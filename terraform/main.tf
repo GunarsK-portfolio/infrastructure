@@ -274,6 +274,8 @@ module "app_runner" {
   # Domain name for service URLs
   domain_name = var.domain_name
 
+  runpod_inference_url = var.runpod_inference_url
+
   # Observability
   enable_xray_tracing = var.enable_xray_tracing
 
@@ -342,6 +344,7 @@ module "monitoring" {
 
   # Resources to monitor
   app_runner_service_arns = module.app_runner.service_arns
+  app_runner_service_ids  = module.app_runner.service_ids
   cloudfront_distribution_ids = {
     public  = module.cloudfront.public_distribution_id
     admin   = module.cloudfront.admin_distribution_id

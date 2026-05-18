@@ -387,6 +387,12 @@ variable "email_forwarding_rules" {
   sensitive   = true
 }
 
+variable "runpod_inference_url" {
+  description = "RunPod Serverless /runsync URL for the rpg-public-api AI homebrew assistant"
+  type        = string
+  default     = ""
+}
+
 # Tags
 variable "additional_tags" {
   description = "Additional tags to apply to all resources"
