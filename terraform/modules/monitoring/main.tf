@@ -442,7 +442,7 @@ resource "aws_cloudwatch_log_group" "ai_rpg_public_api" {
   tags = var.tags
 
   lifecycle {
-    ignore_changes = all
+    ignore_changes = [retention_in_days, tags]
   }
 }
 
