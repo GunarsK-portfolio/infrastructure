@@ -102,7 +102,7 @@ variable "modal_inference_url" {
   default     = ""
 
   validation {
-    condition     = var.modal_inference_url == "" || can(regex("^https://[a-zA-Z0-9.-]+/.+", var.modal_inference_url))
+    condition     = var.modal_inference_url == "" || can(regex("^https://[a-zA-Z0-9.-]+(/.*)?$", var.modal_inference_url))
     error_message = "modal_inference_url must be empty or a valid HTTPS URL"
   }
 }
