@@ -28,7 +28,7 @@ bastion_instance_type = "t4g.nano"  # [OPTIONAL] EC2 instance type for bastion h
 # Aurora Serverless v2 Configuration
 aurora_min_capacity          = 0.5   # [OPTIONAL] Minimum ACUs (0.5-256)
 aurora_max_capacity          = 4     # [OPTIONAL] Maximum ACUs (0.5-256)
-aurora_engine_version        = "17.4" # [OPTIONAL] PostgreSQL version
+aurora_engine_version        = "17.7" # [OPTIONAL] PostgreSQL version
 aurora_backup_retention_days = 30     # [OPTIONAL] Backup retention period (7-35 days)
 enable_http_endpoint         = false  # [OPTIONAL] Aurora Data API HTTP endpoint
 

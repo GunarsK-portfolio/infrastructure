@@ -29,7 +29,7 @@ variable "database_name" {
 variable "engine_version" {
   description = "PostgreSQL engine version"
   type        = string
-  default     = "17.4"
+  default     = "17.7"
 }
 
 variable "min_capacity" {
