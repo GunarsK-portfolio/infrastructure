@@ -9,7 +9,7 @@ AWS serverless infrastructure for production deployment.
 | Service | Type | Purpose |
 | --------- | ------ | --------- |
 | **App Runner** | Compute | Serverless container runtime for 7 microservices (auth-service, admin-api, public-api, files-api, messaging-api, admin-web, public-web). Auto-scales 1-10 instances per service. |
-| **Aurora Serverless v2** | Database | PostgreSQL 17.4 with auto-scaling (1-16 ACU). Multi-AZ deployment with 30-day backups, encryption, and pg_cron/pg_stat_statements extensions. |
+| **Aurora Serverless v2** | Database | PostgreSQL 17.7 with auto-scaling (1-16 ACU). Multi-AZ deployment with 30-day backups, encryption, and pg_cron/pg_stat_statements extensions. |
 | **ElastiCache** | Cache | Valkey 8.2 (Redis-compatible) for session storage. Single cache.t4g.micro node (~$12/month). |
 | **S3** | Storage | Object storage for images, documents, miniatures. Versioning enabled with lifecycle policies and access logging. |
 | **CloudFront** | CDN | 5 distributions (public, admin, auth, files, message) with path-based routing, TLS 1.2+, HTTP/3, and global edge caching. |
@@ -53,7 +53,7 @@ AWS serverless infrastructure for production deployment.
 
 ### Database
 
-- Aurora Serverless v2 PostgreSQL 17.4
+- Aurora Serverless v2 PostgreSQL 17.7
 - Scaling: 1-16 ACU (configurable)
 - Multi-AZ deployment
 - Encryption: KMS at rest, TLS in transit

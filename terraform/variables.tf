@@ -92,7 +92,7 @@ variable "aurora_max_capacity" {
 variable "aurora_engine_version" {
   description = "PostgreSQL engine version for Aurora"
   type        = string
-  default     = "17.4"
+  default     = "17.7"
 }
 
 variable "aurora_backup_retention_days" {
