@@ -74,6 +74,7 @@ email_forwarding_rules = {  # [OPTIONAL] Recipient → forwarding address
 
 # RPG AI Homebrew Assistant
 runpod_inference_url = ""  # [OPTIONAL] RunPod Serverless /runsync URL
+modal_inference_url  = ""  # [OPTIONAL] Modal Serverless web URL
 
 # Additional Tags
 additional_tags = {  # [OPTIONAL] Custom resource tags

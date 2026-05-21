@@ -96,6 +96,17 @@ variable "runpod_inference_url" {
   }
 }
 
+variable "modal_inference_url" {
+  description = "Modal Serverless web URL for rpg-public-api AI homebrew assistant"
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.modal_inference_url == "" || can(regex("^https://[a-zA-Z0-9.-]+/.+", var.modal_inference_url))
+    error_message = "modal_inference_url must be empty or a valid HTTPS URL"
+  }
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)

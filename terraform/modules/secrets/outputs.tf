@@ -82,21 +82,28 @@ output "runpod_api_key_arn" {
   sensitive   = true
 }
 
+output "modal_inference_token_arn" {
+  description = "ARN of Modal Serverless inference token secret"
+  value       = aws_secretsmanager_secret.modal_inference_token.arn
+  sensitive   = true
+}
+
 output "secret_arns" {
   description = "Map of all secret ARNs"
   value = {
-    aurora_master    = aws_secretsmanager_secret.aurora_master_password.arn
-    aurora_owner     = aws_secretsmanager_secret.aurora_owner_password.arn
-    aurora_admin     = aws_secretsmanager_secret.aurora_admin_password.arn
-    aurora_public    = aws_secretsmanager_secret.aurora_public_password.arn
-    aurora_messaging = aws_secretsmanager_secret.aurora_messaging_password.arn
-    aurora_rpg_owner = aws_secretsmanager_secret.aurora_rpg_owner_password.arn
-    aurora_rpg_app   = aws_secretsmanager_secret.aurora_rpg_app_password.arn
-    redis_auth       = aws_secretsmanager_secret.redis_auth_token.arn
-    jwt_secret       = aws_secretsmanager_secret.jwt_secret.arn
-    rabbitmq         = aws_secretsmanager_secret.rabbitmq_credentials.arn
-    google_oauth     = aws_secretsmanager_secret.google_oauth.arn
-    runpod_api_key   = aws_secretsmanager_secret.runpod_api_key.arn
+    aurora_master         = aws_secretsmanager_secret.aurora_master_password.arn
+    aurora_owner          = aws_secretsmanager_secret.aurora_owner_password.arn
+    aurora_admin          = aws_secretsmanager_secret.aurora_admin_password.arn
+    aurora_public         = aws_secretsmanager_secret.aurora_public_password.arn
+    aurora_messaging      = aws_secretsmanager_secret.aurora_messaging_password.arn
+    aurora_rpg_owner      = aws_secretsmanager_secret.aurora_rpg_owner_password.arn
+    aurora_rpg_app        = aws_secretsmanager_secret.aurora_rpg_app_password.arn
+    redis_auth            = aws_secretsmanager_secret.redis_auth_token.arn
+    jwt_secret            = aws_secretsmanager_secret.jwt_secret.arn
+    rabbitmq              = aws_secretsmanager_secret.rabbitmq_credentials.arn
+    google_oauth          = aws_secretsmanager_secret.google_oauth.arn
+    runpod_api_key        = aws_secretsmanager_secret.runpod_api_key.arn
+    modal_inference_token = aws_secretsmanager_secret.modal_inference_token.arn
   }
   sensitive = true
 }

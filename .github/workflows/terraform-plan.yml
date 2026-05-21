@@ -62,6 +62,8 @@ jobs:
           TF_VAR_enable_vpc_flow_logs: ${{ secrets.TF_VAR_enable_vpc_flow_logs || 'true' }}
           TF_VAR_service_image_tags: ${{ vars.TF_VAR_service_image_tags }}
           TF_VAR_email_forwarding_rules: ${{ secrets.TF_VAR_email_forwarding_rules }}
+          TF_VAR_runpod_inference_url: ${{ secrets.TF_VAR_runpod_inference_url }}
+          TF_VAR_modal_inference_url: ${{ secrets.TF_VAR_modal_inference_url }}
 
       - name: Comment PR with results
         uses: actions/github-script@v9

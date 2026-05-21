@@ -90,10 +90,10 @@ resource "aws_wafv2_web_acl" "main" {
     allow {}
   }
 
-  # Rate limiting for login endpoint (strict to prevent brute-force)
-  # Matches: auth.gunarsk.com/*/login
+  # Rate limiting for login + register (auth writes): shared 10 req/5min per IP
+  # Matches: auth.gunarsk.com/*/login or /register
   rule {
-    name     = "rate-limit-login"
+    name     = "rate-limit-auth-write"
     priority = 1
 
     action {
@@ -123,73 +123,32 @@ resource "aws_wafv2_web_acl" "main" {
               }
             }
             statement {
-              byte_match_statement {
-                field_to_match {
-                  uri_path {}
-                }
-                positional_constraint = "CONTAINS"
-                search_string         = "/login"
-                text_transformation {
-                  priority = 0
-                  type     = "LOWERCASE"
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    visibility_config {
-      cloudwatch_metrics_enabled = true
-      metric_name                = "RateLimitLogin"
-      sampled_requests_enabled   = true
-    }
-  }
-
-  # Rate limiting for registration endpoint (strict to prevent abuse)
-  # bcrypt hashing is CPU-intensive, repeated attempts cause resource exhaustion
-  # Matches: auth.gunarsk.com/*/register
-  rule {
-    name     = "rate-limit-register"
-    priority = 2
-
-    action {
-      block {}
-    }
-
-    statement {
-      rate_based_statement {
-        limit              = 10
-        aggregate_key_type = "IP"
-
-        scope_down_statement {
-          and_statement {
-            statement {
-              byte_match_statement {
-                field_to_match {
-                  single_header {
-                    name = "host"
+              or_statement {
+                statement {
+                  byte_match_statement {
+                    field_to_match {
+                      uri_path {}
+                    }
+                    positional_constraint = "CONTAINS"
+                    search_string         = "/login"
+                    text_transformation {
+                      priority = 0
+                      type     = "LOWERCASE"
+                    }
                   }
                 }
-                positional_constraint = "STARTS_WITH"
-                search_string         = "auth.${var.domain_name}"
-                text_transformation {
-                  priority = 0
-                  type     = "LOWERCASE"
-                }
-              }
-            }
-            statement {
-              byte_match_statement {
-                field_to_match {
-                  uri_path {}
-                }
-                positional_constraint = "CONTAINS"
-                search_string         = "/register"
-                text_transformation {
-                  priority = 0
-                  type     = "LOWERCASE"
+                statement {
+                  byte_match_statement {
+                    field_to_match {
+                      uri_path {}
+                    }
+                    positional_constraint = "CONTAINS"
+                    search_string         = "/register"
+                    text_transformation {
+                      priority = 0
+                      type     = "LOWERCASE"
+                    }
+                  }
                 }
               }
             }
@@ -200,7 +159,7 @@ resource "aws_wafv2_web_acl" "main" {
 
     visibility_config {
       cloudwatch_metrics_enabled = true
-      metric_name                = "RateLimitRegister"
+      metric_name                = "RateLimitAuthWrite"
       sampled_requests_enabled   = true
     }
   }
