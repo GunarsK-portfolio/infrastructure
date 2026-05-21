@@ -185,10 +185,11 @@ locals {
       MAX_BODY_SIZE   = "1048576"
       REDIS_HOST      = var.elasticache_endpoint
       REDIS_PORT      = "6379"
-      # Flip to "true" only after RunPod endpoint exists and api_key secret is populated.
+      # Flip to "true" only after the selected provider endpoint exists and its secret is populated.
       AI_ASSISTANT_ENABLED = "false"
-      LLM_PROVIDER         = "runpod"
+      LLM_PROVIDER         = "modal"
       RUNPOD_INFERENCE_URL = var.runpod_inference_url
+      MODAL_INFERENCE_URL  = var.modal_inference_url
       AI_MAX_ITERATIONS    = "3"
       AI_RAG_TOP_K         = "30"
     }
@@ -241,6 +242,7 @@ locals {
       JWT_SECRET               = "${var.secrets_arns["jwt_secret"]}:secret::"
       REDIS_PASSWORD           = "${var.secrets_arns["redis_auth"]}:token::"
       RUNPOD_INFERENCE_API_KEY = "${var.secrets_arns["runpod_api_key"]}:api_key::"
+      MODAL_INFERENCE_TOKEN    = "${var.secrets_arns["modal_inference_token"]}:token::"
     }
     "rpg-public-web" = {}
   }

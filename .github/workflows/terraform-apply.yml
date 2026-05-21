@@ -55,6 +55,8 @@ jobs:
           TF_VAR_enable_xray_tracing: ${{ secrets.TF_VAR_enable_xray_tracing || 'true' }}
           TF_VAR_service_image_tags: ${{ vars.TF_VAR_service_image_tags }}
           TF_VAR_email_forwarding_rules: ${{ secrets.TF_VAR_email_forwarding_rules }}
+          TF_VAR_runpod_inference_url: ${{ secrets.TF_VAR_runpod_inference_url }}
+          TF_VAR_modal_inference_url: ${{ secrets.TF_VAR_modal_inference_url }}
 
       - name: Terraform Apply
         run: terraform apply -auto-approve -input=false
@@ -70,6 +72,8 @@ jobs:
           TF_VAR_enable_xray_tracing: ${{ secrets.TF_VAR_enable_xray_tracing || 'true' }}
           TF_VAR_service_image_tags: ${{ vars.TF_VAR_service_image_tags }}
           TF_VAR_email_forwarding_rules: ${{ secrets.TF_VAR_email_forwarding_rules }}
+          TF_VAR_runpod_inference_url: ${{ secrets.TF_VAR_runpod_inference_url }}
+          TF_VAR_modal_inference_url: ${{ secrets.TF_VAR_modal_inference_url }}
 
       - name: Save Terraform Outputs
         id: outputs

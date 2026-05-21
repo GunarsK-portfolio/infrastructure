@@ -393,6 +393,12 @@ variable "runpod_inference_url" {
   default     = ""
 }
 
+variable "modal_inference_url" {
+  description = "Modal Serverless web URL for the rpg-public-api AI homebrew assistant"
+  type        = string
+  default     = ""
+}
+
 # Tags
 variable "additional_tags" {
   description = "Additional tags to apply to all resources"

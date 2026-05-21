@@ -275,6 +275,7 @@ module "app_runner" {
   domain_name = var.domain_name
 
   runpod_inference_url = var.runpod_inference_url
+  modal_inference_url  = var.modal_inference_url
 
   # Observability
   enable_xray_tracing = var.enable_xray_tracing
