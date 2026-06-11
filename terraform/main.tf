@@ -38,8 +38,9 @@ module "networking" {
   availability_zones = local.availability_zones
 
   enable_vpc_flow_logs = var.enable_vpc_flow_logs
-  enable_nat_gateway   = false
-  kms_key_arn          = module.secrets.kms_key_arn # Use secrets KMS key for flow logs
+  # Internet egress for rpg-ai-service -> Modal/RunPod inference endpoints
+  enable_nat_gateway = true
+  kms_key_arn        = module.secrets.kms_key_arn # Use secrets KMS key for flow logs
 
   tags = local.common_tags
 
@@ -172,7 +173,7 @@ module "rpg_ecr" {
   source = "./modules/ecr"
 
   project_name           = "rpg"
-  service_names          = ["public-api", "public-web"]
+  service_names          = ["public-api", "public-web", "ai-service"]
   create_scanning_config = false
 
   # Use customer-managed KMS key for encryption
@@ -254,6 +255,7 @@ module "app_runner" {
     {
       "rpg-public-api" = module.rpg_ecr.repository_urls["public-api"]
       "rpg-public-web" = module.rpg_ecr.repository_urls["public-web"]
+      "rpg-ai-service" = module.rpg_ecr.repository_urls["ai-service"]
     }
   )
 
