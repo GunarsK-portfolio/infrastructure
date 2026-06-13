@@ -233,6 +233,16 @@ variable "app_runner_services" {
       max_concurrency   = 100
       health_check_path = "/"
     }
+    rpg-ai-service = {
+      name              = "rpg-ai-service"
+      cpu               = "0.25 vCPU"
+      memory            = "0.5 GB"
+      port              = 8183
+      min_instances     = 1
+      max_instances     = 1
+      max_concurrency   = 10
+      health_check_path = "/health"
+    }
   }
 }
 
@@ -250,6 +260,7 @@ variable "service_image_tags" {
     public-web        = "latest"
     rpg-public-api    = "latest"
     rpg-public-web    = "latest"
+    rpg-ai-service    = "latest"
   }
 
   validation {
@@ -388,13 +399,13 @@ variable "email_forwarding_rules" {
 }
 
 variable "runpod_inference_url" {
-  description = "RunPod Serverless /runsync URL for the rpg-public-api AI homebrew assistant"
+  description = "RunPod Serverless /runsync URL for the rpg-ai-service AI homebrew assistant"
   type        = string
   default     = ""
 }
 
 variable "modal_inference_url" {
-  description = "Modal Serverless web URL for the rpg-public-api AI homebrew assistant"
+  description = "Modal Serverless web URL for the rpg-ai-service AI homebrew assistant"
   type        = string
   default     = ""
 }

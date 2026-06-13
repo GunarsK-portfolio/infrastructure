@@ -28,6 +28,7 @@ locals {
     "messaging-service" = "msg-svc"
     "rpg-public-api"    = "rpg-api"
     "rpg-public-web"    = "rpg-web"
+    "rpg-ai-service"    = "rpg-ai"
   }
 
   # Service-specific environment variables
@@ -185,19 +186,49 @@ locals {
       MAX_BODY_SIZE   = "1048576"
       REDIS_HOST      = var.elasticache_endpoint
       REDIS_PORT      = "6379"
-      # Flip to "true" only after the selected provider endpoint exists and its secret is populated.
+      # Async AI queue path; inference lives in rpg-ai-service.
+      # Flip to "true" only after rpg-ai-service is deployed and healthy.
       AI_ASSISTANT_ENABLED = "false"
-      LLM_PROVIDER         = "modal"
-      RUNPOD_INFERENCE_URL = var.runpod_inference_url
-      MODAL_INFERENCE_URL  = var.modal_inference_url
-      AI_MAX_ITERATIONS    = "3"
-      AI_RAG_TOP_K         = "30"
+      AI_MAX_IN_FLIGHT     = "3"
+      AI_RATE_PER_MINUTE   = "10"
+      # RabbitMQ publisher. Exchange/queue/retry values MUST match rpg-ai-service
+      # (both sides declare the same topology; mismatched retry TTLs fail declaration).
+      RABBITMQ_HOST         = var.mq_endpoint
+      RABBITMQ_PORT         = "5671"
+      RABBITMQ_TLS          = "true"
+      RABBITMQ_EXCHANGE     = "ai_requests"
+      RABBITMQ_QUEUE        = "ai_requests"
+      RABBITMQ_RETRY_DELAYS = "30s,2m,10m"
     }
     "rpg-public-web" = {
       ENVIRONMENT  = local.environment_map[var.environment]
       SERVICE_NAME = "rpg-public-web"
       LOG_LEVEL    = "info"
       LOG_FORMAT   = "json"
+    }
+    "rpg-ai-service" = {
+      ENVIRONMENT  = local.environment_map[var.environment]
+      SERVICE_NAME = "rpg-ai-service"
+      LOG_LEVEL    = "info"
+      LOG_FORMAT   = "json"
+      HEALTH_PORT  = "8183"
+      DB_HOST      = var.aurora_endpoint
+      DB_PORT      = "5432"
+      DB_NAME      = "cosmere_rpg"
+      DB_USER      = "cosmere_app"
+      DB_SSLMODE   = "require"
+      # RabbitMQ consumer. Exchange/queue/retry values MUST match rpg-public-api.
+      RABBITMQ_HOST         = var.mq_endpoint
+      RABBITMQ_PORT         = "5671"
+      RABBITMQ_TLS          = "true"
+      RABBITMQ_EXCHANGE     = "ai_requests"
+      RABBITMQ_QUEUE        = "ai_requests"
+      RABBITMQ_RETRY_DELAYS = "30s,2m,10m"
+      LLM_PROVIDER          = "modal"
+      RUNPOD_INFERENCE_URL  = var.runpod_inference_url
+      MODAL_INFERENCE_URL   = var.modal_inference_url
+      AI_MAX_ITERATIONS     = "3"
+      AI_RAG_TOP_K          = "30"
     }
   }
 
@@ -238,13 +269,20 @@ locals {
     "admin-web"  = {}
     "public-web" = {}
     "rpg-public-api" = {
+      DB_PASSWORD       = "${var.secrets_arns["aurora_rpg_app"]}:password::"
+      JWT_SECRET        = "${var.secrets_arns["jwt_secret"]}:secret::"
+      REDIS_PASSWORD    = "${var.secrets_arns["redis_auth"]}:token::"
+      RABBITMQ_USER     = "${var.secrets_arns["rabbitmq"]}:username::"
+      RABBITMQ_PASSWORD = "${var.secrets_arns["rabbitmq"]}:password::"
+    }
+    "rpg-public-web" = {}
+    "rpg-ai-service" = {
       DB_PASSWORD              = "${var.secrets_arns["aurora_rpg_app"]}:password::"
-      JWT_SECRET               = "${var.secrets_arns["jwt_secret"]}:secret::"
-      REDIS_PASSWORD           = "${var.secrets_arns["redis_auth"]}:token::"
+      RABBITMQ_USER            = "${var.secrets_arns["rabbitmq"]}:username::"
+      RABBITMQ_PASSWORD        = "${var.secrets_arns["rabbitmq"]}:password::"
       RUNPOD_INFERENCE_API_KEY = "${var.secrets_arns["runpod_api_key"]}:api_key::"
       MODAL_INFERENCE_TOKEN    = "${var.secrets_arns["modal_inference_token"]}:token::"
     }
-    "rpg-public-web" = {}
   }
 }
 
