@@ -17,6 +17,7 @@ services:
       # Docker provider
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=infrastructure_network"
       - "--providers.docker.constraints=Label(`traefik.constraint-portfolio`,`true`)"
       - "--providers.file.directory=/config"
       - "--providers.file.watch=true"
