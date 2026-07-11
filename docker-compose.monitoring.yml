@@ -61,7 +61,7 @@ services:
 
   # Prometheus - Metrics collection and storage
   prometheus:
-    image: prom/prometheus:v3.12.0
+    image: prom/prometheus:v3.13.1
     container_name: prometheus
     restart: unless-stopped
     command:
