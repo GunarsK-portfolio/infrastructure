@@ -179,8 +179,8 @@ locals {
       GIN_MODE        = "release"
       DB_HOST         = var.aurora_endpoint
       DB_PORT         = "5432"
-      DB_NAME         = "cosmere_rpg"
-      DB_USER         = "cosmere_app"
+      DB_NAME         = "adeptry"
+      DB_USER         = "adeptry_app"
       DB_SSLMODE      = "require"
       ALLOWED_ORIGINS = "https://rpg.${var.domain_name}"
       MAX_BODY_SIZE   = "1048576"
@@ -214,8 +214,8 @@ locals {
       HEALTH_PORT  = "8183"
       DB_HOST      = var.aurora_endpoint
       DB_PORT      = "5432"
-      DB_NAME      = "cosmere_rpg"
-      DB_USER      = "cosmere_app"
+      DB_NAME      = "adeptry"
+      DB_USER      = "adeptry_app"
       DB_SSLMODE   = "require"
       # RabbitMQ consumer. Exchange/queue/retry values MUST match rpg-public-api.
       RABBITMQ_HOST         = var.mq_endpoint

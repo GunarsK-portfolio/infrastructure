@@ -4,10 +4,19 @@ Generate secure passwords and secrets for local development environment.
 This script creates a .env file with randomly generated credentials.
 """
 
+import os
 import secrets
 import string
 import sys
 from pathlib import Path
+
+
+def write_private(path, text):
+    """Create owner-only with LF endings. Permissions are a no-op on Windows."""
+    handle = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(handle, 'w', encoding='utf-8', newline='\n') as env_file:
+        env_file.write(text)
+    os.chmod(path, 0o600)
 
 
 def generate_password(length=32, use_special_chars=False):
@@ -99,17 +108,18 @@ def generate_env_file(infrastructure_dir, force=False):
         env_content = env_content.replace(old_value, new_value)
 
     # Write the new .env file
-    with open(env_path, 'w') as f:
-        f.write(env_content)
+    write_private(env_path, env_content)
 
     # Create a backup file with just the secrets for reference
     secrets_backup_path = infrastructure_dir / '.secrets.txt'
-    with open(secrets_backup_path, 'w') as f:
-        f.write("# Generated Secrets - KEEP THIS FILE SECURE!\n")
-        f.write("# This file is for backup reference only.\n")
-        f.write("# DO NOT COMMIT THIS FILE TO VERSION CONTROL!\n\n")
-        for key, value in secrets_map.items():
-            f.write(f"{key}={value}\n")
+    backup_lines = [
+        "# Generated Secrets - KEEP THIS FILE SECURE!",
+        "# This file is for backup reference only.",
+        "# DO NOT COMMIT THIS FILE TO VERSION CONTROL!",
+        "",
+    ]
+    backup_lines += [f"{key}={value}" for key, value in secrets_map.items()]
+    write_private(secrets_backup_path, '\n'.join(backup_lines) + '\n')
 
     print(f"\n[SUCCESS] Generated {env_path}")
     print(f"[SUCCESS] Secrets backup saved to {secrets_backup_path}")
