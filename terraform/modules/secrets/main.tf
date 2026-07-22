@@ -377,7 +377,7 @@ resource "aws_secretsmanager_secret_version" "aurora_messaging_password" {
 # RPG Aurora Owner User Password (DDL rights - used by Flyway)
 resource "aws_secretsmanager_secret" "aurora_rpg_owner_password" {
   name_prefix             = "${var.project_name}-${var.environment}-aurora-rpg-owner-"
-  description             = "Aurora RPG owner user password (DDL rights for cosmere_rpg)"
+  description             = "Aurora RPG owner user password (DDL rights for adeptry)"
   kms_key_id              = aws_kms_key.secrets.id
   recovery_window_in_days = 30
 
@@ -392,7 +392,7 @@ resource "aws_secretsmanager_secret" "aurora_rpg_owner_password" {
 resource "aws_secretsmanager_secret_version" "aurora_rpg_owner_password" {
   secret_id = aws_secretsmanager_secret.aurora_rpg_owner_password.id
   secret_string = jsonencode({
-    username = "cosmere_owner"
+    username = "adeptry_owner"
     password = random_password.aurora_rpg_owner.result
   })
 
@@ -404,7 +404,7 @@ resource "aws_secretsmanager_secret_version" "aurora_rpg_owner_password" {
 # RPG Aurora App User Password (CRUD rights - used by rpg-public-api)
 resource "aws_secretsmanager_secret" "aurora_rpg_app_password" {
   name_prefix             = "${var.project_name}-${var.environment}-aurora-rpg-app-"
-  description             = "Aurora RPG app user password (CRUD rights for cosmere_rpg)"
+  description             = "Aurora RPG app user password (CRUD rights for adeptry)"
   kms_key_id              = aws_kms_key.secrets.id
   recovery_window_in_days = 30
 
@@ -419,7 +419,7 @@ resource "aws_secretsmanager_secret" "aurora_rpg_app_password" {
 resource "aws_secretsmanager_secret_version" "aurora_rpg_app_password" {
   secret_id = aws_secretsmanager_secret.aurora_rpg_app_password.id
   secret_string = jsonencode({
-    username = "cosmere_app"
+    username = "adeptry_app"
     password = random_password.aurora_rpg_app.result
   })
 
