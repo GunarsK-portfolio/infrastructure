@@ -1087,7 +1087,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "100 * (sum by (tool_name) (count_over_time({service_name=\"claude-code\"} |= \"claude_code.tool_result\" | json | success=\"true\" [15m]))) / (sum by (tool_name) (count_over_time({service_name=\"claude-code\"} |= \"claude_code.tool_result\" [15m])))",
+          "expr": "100 * (sum by (tool_name) (count_over_time({service_name=\"claude-code\"} |= \"claude_code.tool_result\" | success=\"true\" [15m]))) / (sum by (tool_name) (count_over_time({service_name=\"claude-code\"} |= \"claude_code.tool_result\" [15m])))",
           "interval": "",
           "legendFormat": "{{tool_name}}",
           "refId": "A"
@@ -1271,7 +1271,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (status_code) (rate({service_name=\"claude-code\"} |= \"claude_code.api_error\" | json | __error__ = \"\" [$__interval]))",
+          "expr": "sum by (status_code) (rate({service_name=\"claude-code\"} |= \"claude_code.api_error\" [$__interval]))",
           "interval": "",
           "legendFormat": "HTTP {{status_code}}",
           "refId": "A"
@@ -1281,9 +1281,179 @@
       "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "Seconds",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 48
+      },
+      "id": 18,
+      "options": {
+        "legend": {
+          "calcs": ["sum"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (hook_name) (sum_over_time({service_name=\"claude-code\"} |= \"claude_code.hook_execution_complete\" | unwrap total_duration_ms [$__interval])) / 1000",
+          "interval": "",
+          "legendFormat": "{{hook_name}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Hook Time by Hook",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "Milliseconds",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 48
+      },
+      "id": 19,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "quantile_over_time(0.95, {service_name=\"claude-code\"} |= \"claude_code.tool_result\" | unwrap duration_ms [$__interval]) by (tool_name)",
+          "interval": "",
+          "legendFormat": "{{tool_name}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Tool Execution p95 by Tool",
+      "type": "timeseries"
+    },
+    {
       "title": "📝 User Activity & Productivity",
       "type": "row",
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 48},
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 56},
       "collapsed": false
     },
     {
@@ -1346,7 +1516,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 49
+        "y": 57
       },
       "id": 11,
       "options": {
@@ -1435,7 +1605,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 49
+        "y": 57
       },
       "id": 12,
       "options": {
@@ -1477,7 +1647,7 @@
     {
       "title": "🔍 Event Logs",
       "type": "row",
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 57},
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 65},
       "collapsed": false
     },
     {
@@ -1489,7 +1659,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 58
+        "y": 66
       },
       "id": 13,
       "options": {
@@ -1524,7 +1694,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 58
+        "y": 66
       },
       "id": 17,
       "options": {

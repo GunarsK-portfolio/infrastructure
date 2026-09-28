@@ -7,11 +7,11 @@ server:
 
 common:
   instance_addr: 127.0.0.1
-  path_prefix: /tmp/loki
+  path_prefix: /loki
   storage:
     filesystem:
-      chunks_directory: /tmp/loki/chunks
-      rules_directory: /tmp/loki/rules
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
   replication_factor: 1
   ring:
     kvstore:
@@ -44,6 +44,10 @@ ruler:
 limits_config:
   allow_structured_metadata: true # Enable OTLP ingestion support
   retention_period: 168h # 7 days retention for development
+  retention_stream:
+    - selector: '{service_name="claude-code"}'
+      priority: 1
+      period: 2160h # 90 days for Claude Code telemetry
   reject_old_samples: true
   reject_old_samples_max_age: 168h
   ingestion_rate_mb: 10
@@ -54,7 +58,7 @@ limits_config:
 
 # Compactor configuration
 compactor:
-  working_directory: /tmp/loki/compactor
+  working_directory: /loki/compactor
   compaction_interval: 10m
   retention_enabled: true
   retention_delete_delay: 2h
